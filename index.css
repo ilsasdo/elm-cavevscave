@@ -1,0 +1,20 @@
+.tile {
+  height: 200px;
+  width: 200px;
+  background-size: contain;
+  border-radius: 10px;
+  border-style: groove;
+  position: relative;
+}
+
+.tile .action {
+  height: 25px;
+  width: 25px;
+  position: absolute;
+  border-radius: 10px;
+}
+
+.tile .action.doable:hover {
+  background-image: radial-gradient(rgba(255, 255, 255, 127), rgba(255, 255, 255, 0));
+  cursor: pointer;
+}
