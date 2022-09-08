@@ -244,9 +244,9 @@ tileWarehouse =
         (priceFree |> priceWood 2)
         (Walls Required Optional None Optional)
         (Actions
-            [ Action ( 20, middleY )
+            [ Action ( 30, middleY )
                 mediumIcon
-                (require .food (gt 2))
+                (require .food ((<) 2))
                 (\board ->
                     board
                         |> addFood -2
@@ -267,10 +267,10 @@ tileShelf =
         (priceFree |> priceWood 2)
         (Walls Required None None None)
         (Actions
-            [ Action ( firstX,  middleY + offsetY ) littleIcon (require .wood (lt 2)) (topWood 2)
-            , Action ( secondX, middleY + offsetY ) littleIcon (require .stone (lt 2)) (topStone 2)
-            , Action ( thirdX,  middleY + offsetY ) littleIcon (require .emmer (lt 2)) (topEmmer 2)
-            , Action ( fourthX, middleY + offsetY ) littleIcon (require .flax (lt 2)) (topFlax 2)
+            [ Action ( firstX,  middleY + offsetY ) littleIcon (require .wood ((>) 2)) (topWood 2)
+            , Action ( secondX, middleY + offsetY ) littleIcon (require .stone ((>) 2)) (topStone 2)
+            , Action ( thirdX,  middleY + offsetY ) littleIcon (require .emmer ((>) 2)) (topEmmer 2)
+            , Action ( fourthX, middleY + offsetY ) littleIcon (require .flax ((>) 2)) (topFlax 2)
             ]
         )
 
@@ -299,8 +299,7 @@ tileFoodCorner =
         (priceFree |> priceStone 1)
         (Walls Required None None Required)
         (Actions
-            [ Action ( 20, 20 ) ( 40, 20 ) alwaysDoable (topFood 3)
-            ]
+            [ Action ( 20, 20 ) ( 40, 20 ) alwaysDoable (\board -> top .food 3 board.currentPlayer)]
         )
 
 
@@ -312,8 +311,8 @@ tileSpinningWheel =
         (priceFree |> priceWood 1)
         (Walls Required None None None)
         (Actions
-            [ Action topLeft  mediumIcon (require .flax (gt 1)) (\board -> board |> addFlax -1 |> addGold 1)
-            , Action topRight mediumIcon (require .flax (gt 3)) (\board -> board |> addFlax -3 |> addGold 2)
+            [ Action topLeft  mediumIcon (require .flax ((>) 1)) (\board -> board |> addFlax -1 |> addGold 1)
+            , Action topRight mediumIcon (require .flax ((>) 3)) (\board -> board |> addFlax -3 |> addGold 2)
             ]
         )
 
@@ -327,6 +326,8 @@ topWood : Int -> CaveBoard -> CaveBoard
 topWood qty ({ resources } as board) =
     { board | resources = { resources | wood = Basics.max resources.wood qty } }
 
+
+top: (Resources -> Int) -> Int ->
 
 topFood : Int -> CaveBoard -> CaveBoard
 topFood qty ({ resources } as board) =
