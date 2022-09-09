@@ -1,0 +1,37 @@
+module Resources exposing (..)
+
+import Walls exposing (Wall(..), Walls)
+
+type alias Resources =
+    { gold : Int
+    , wood : Int
+    , stone : Int
+    , emmer : Int
+    , flax : Int
+    , food : Int
+    }
+
+
+noWalls: Walls
+noWalls =
+    Walls Optional Optional Optional Optional
+
+
+priceWood : Int -> Resources -> Resources
+priceWood qty resources =
+    { resources | wood = resources.wood + qty }
+
+
+priceStone : Int -> Resources -> Resources
+priceStone qty resources =
+    { resources | stone = resources.stone + qty }
+
+
+priceGold : Int -> Resources -> Resources
+priceGold qty resources =
+    { resources | gold = resources.gold + qty }
+
+
+priceFree: Resources
+priceFree =
+    Resources 0 0 0 0 0 0

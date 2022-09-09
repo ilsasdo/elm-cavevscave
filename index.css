@@ -5,6 +5,7 @@
   border-radius: 10px;
   border-style: groove;
   position: relative;
+  float: left;
 }
 
 .tile .action {
@@ -12,10 +13,14 @@
   width: 25px;
   position: absolute;
   border-radius: 10px;
-  background-color: rgba(255, 255, 255, 10);
+  border: 2px solid red;
+}
+
+.tile .action.doable {
+  border: 2px solid green;
 }
 
 .tile .action.doable:hover {
-  background-image: radial-gradient(rgba(255, 255, 255, 127), rgba(255, 255, 255, 0));
+  background-image: radial-gradient(rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0));
   cursor: pointer;
 }
