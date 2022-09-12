@@ -108,7 +108,10 @@ viewBoard board =
 
 viewTile : CaveBoard -> (RoomTile Resources) -> Html Msg
 viewTile board tile =
-    div [ style "background-image" ("url(" ++ tile.src ++ ")"), class "tile" ] (viewActions board tile.actions)
+    div [ style "background-image" ("url(" ++ tile.src ++ ")")
+        , class "tile"
+        , style "height" "200px"
+        , style "width" "200px" ] (viewActions board tile.actions)
 
 
 viewActions : CaveBoard -> Actions Resources -> List (Html Msg)
