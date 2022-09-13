@@ -8,8 +8,6 @@ type alias RoomTile state =
     { title : String
     , score : Int
     , src : String
-    , height: Int
-    , width: Int
     , price : Resources
     , walls : Walls
     , actions : Actions state
@@ -27,66 +25,55 @@ type Actions state
 
 
 type alias Action state =
-    { point : ( Int, Int )
-    , size : ( Int, Int )
+    { classes: String
     , isDoable : state -> Bool
     , do : state -> state
     }
 
 
-tileWidth = 200
-tileHeight = 200
-middleY = (120 / 200) * tileHeight
-firstX = (45 / 200) * tileWidth
-secondX = ((45 + 35) / 200) * tileWidth
-thirdX = ((45 + 35 + 35) / 200) * tileWidth
-fourthX = ((45 + 35 + 35 + 35) / 200) * tileWidth
-littleIcon = ((30 / 200) * tileWidth, (50 / 200) * tileHeight)
-
-
 firstAction: (state -> Bool) -> (state -> state) -> Action state
 firstAction isDoable do =
-    Action ( firstX, middleY ) littleIcon isDoable do
+    Action "first" isDoable do
 
 
 secondAction: (state -> Bool) -> (state -> state) -> Action state
 secondAction isDoable do =
-    Action ( secondX, middleY ) littleIcon isDoable do
+    Action "second" isDoable do
 
 
 thirdAction: (state -> Bool) -> (state -> state) -> Action state
 thirdAction isDoable do =
-    Action ( thirdX, middleY ) littleIcon isDoable do
+    Action "third" isDoable do
 
 
 fourthAction: (state -> Bool) -> (state -> state) -> Action state
 fourthAction isDoable do =
-    Action ( fourthX, middleY ) littleIcon isDoable do
+    Action "fourth" isDoable do
 
 
 leftAction: (state -> Bool) -> (state -> state) -> Action state
 leftAction isDoable do =
-    Action ( 5, 100 ) (90, 100) isDoable do
+    Action "left" isDoable do
 
 
 rightAction: (state -> Bool) -> (state -> state) -> Action state
 rightAction isDoable do =
-    Action ( 105, 100 ) (90, 100) isDoable do
+    Action "right" isDoable do
 
 
 topAction: (state -> Bool) -> (state -> state) -> Action state
 topAction isDoable do =
-    Action ( 10, 90 ) (180, 40) isDoable do
+    Action "top" isDoable do
 
 
 bottomAction: (state -> Bool) -> (state -> state) -> Action state
 bottomAction isDoable do =
-    Action ( 10, 140 ) (180, 40) isDoable do
+    Action "bottom" isDoable do
 
 
 fullAction: (state -> Bool) -> (state -> state) -> Action state
 fullAction isDoable do =
-    Action ( 10, 100 ) (180, 100) isDoable do
+    Action "full" isDoable do
 
 
 -------------------------------------------
@@ -97,7 +84,7 @@ tileCaveEntrance : RoomTile Resources
 tileCaveEntrance =
     RoomTile "Entrata della Cava"
         0
-        "assets/img/entrata_della_cava.jpg" tileWidth tileHeight
+        "assets/img/entrata_della_cava.jpg"
         priceFree
         noWalls
         (Actions
@@ -113,7 +100,7 @@ tileWarehouse : RoomTile Resources
 tileWarehouse =
     RoomTile "Magazzino"
         2
-        "assets/img/magazzino.jpg" tileWidth tileHeight
+        "assets/img/magazzino.jpg"
         (priceFree |> priceWood 2)
         (Walls Required Optional None Optional)
         (Actions
@@ -129,7 +116,7 @@ tileShelf : RoomTile Resources
 tileShelf =
     RoomTile "Shelf"
         3
-        "assets/img/scaffale.jpg" tileWidth tileHeight
+        "assets/img/scaffale.jpg"
         (priceFree |> priceWood 1)
         (Walls Required None None None)
         (Actions
@@ -145,7 +132,7 @@ tileFoodCorner: RoomTile Resources
 tileFoodCorner =
     RoomTile "Angolo del Cibo"
         3
-        "assets/img/angolo_del_cibo.jpg" tileWidth tileHeight
+        "assets/img/angolo_del_cibo.jpg"
         (priceFree |> priceStone 1)
         (Walls Required None None Required)
         (Actions
@@ -157,7 +144,7 @@ tileSpinningWheel: RoomTile Resources
 tileSpinningWheel =
     RoomTile "Filatoio"
         4
-        "assets/img/filatoio.jpg" tileWidth tileHeight
+        "assets/img/filatoio.jpg"
         (priceFree |> priceWood 1)
         (Walls Required None None None)
         (Actions
@@ -172,7 +159,7 @@ tileTunnel: RoomTile Resources
 tileTunnel =
     RoomTile "Tunnel"
         3
-        "assets/img/tunnel.jpg" tileWidth tileHeight
+        "assets/img/tunnel.jpg"
         (priceFree |> priceWood 1)
         (Walls None Required None Required)
         (Actions
@@ -186,7 +173,7 @@ tileAltareSacrificale: RoomTile Resources
 tileAltareSacrificale =
     RoomTile "Altare Sacrificale"
         7
-        "assets/img/altare_sacrificale.jpg" tileWidth tileHeight
+        "assets/img/altare_sacrificale.jpg"
         (priceFree |> priceStone 4)
         (Walls Required Optional None Optional)
         (Actions
@@ -201,7 +188,7 @@ tileBancarella: RoomTile Resources
 tileBancarella =
     RoomTile "Bancarella"
         6
-        "assets/img/bancarella.jpg" tileWidth tileHeight
+        "assets/img/bancarella.jpg"
         (priceFree |> priceWood 1 |> priceGold 1)
         (Walls Required Optional None Optional)
         (Actions
@@ -214,7 +201,7 @@ tileCameraSegreta: RoomTile Resources
 tileCameraSegreta =
     RoomTile "Camera Segreta"
         8
-        "assets/img/camera_segreta.jpg" tileWidth tileHeight
+        "assets/img/camera_segreta.jpg"
         (priceFree |> priceWood 2 |> priceStone 1)
         (Walls Required Required Required Required)
         (Actions
@@ -228,7 +215,7 @@ tileCavaInEspansione: RoomTile Resources
 tileCavaInEspansione =
     RoomTile "Cava in Espansione"
         8
-        "assets/img/cava_in_espansione.jpg" tileWidth tileHeight
+        "assets/img/cava_in_espansione.jpg"
         (priceFree |> priceWood 1 |> priceStone 3)
         (Walls Required Required None Required)
         (Actions
@@ -241,7 +228,7 @@ tileDeposito: RoomTile Resources
 tileDeposito =
     RoomTile "Deposito"
         6
-        "assets/img/deposito.jpg" tileWidth tileHeight
+        "assets/img/deposito.jpg"
         (priceFree |> priceWood 2 |> priceGold 1)
         (Walls Required None None Required)
         (Actions
@@ -253,7 +240,7 @@ tileFiliera: RoomTile Resources
 tileFiliera =
     RoomTile "Filiera"
         5
-        "assets/img/filiera.jpg" tileWidth tileHeight
+        "assets/img/filiera.jpg"
         (priceFree |> priceWood 2)
         (Walls Required None None Required)
         (Actions
@@ -265,7 +252,7 @@ tileForno: RoomTile Resources
 tileForno =
     RoomTile "Forno"
         6
-        "assets/img/forno.jpg" tileWidth tileHeight
+        "assets/img/forno.jpg"
         (priceFree |> priceWood 1 |> priceStone 2)
         (Walls Required Required None Required)
         (Actions
@@ -278,7 +265,7 @@ tileMacina: RoomTile Resources
 tileMacina =
     RoomTile "Macina"
         4
-        "assets/img/macina.jpg" tileWidth tileHeight
+        "assets/img/macina.jpg"
         (priceFree |> priceStone 1)
         (Walls Required None None Optional)
         (Actions
@@ -291,7 +278,7 @@ tileGoldMine: RoomTile Resources
 tileGoldMine =
     RoomTile "Miniera d'Oro"
         9
-        "assets/img/miniera_d_oro.jpg" tileWidth tileHeight
+        "assets/img/miniera_d_oro.jpg"
         (priceFree |> priceGold 5)
         (Walls Required Optional None Required)
         (Actions
@@ -302,7 +289,7 @@ tileOfficina: RoomTile Resources
 tileOfficina =
     RoomTile "Officina"
         5
-        "assets/img/officina.jpg" tileWidth tileHeight
+        "assets/img/officina.jpg"
         (priceFree |> priceWood 1 |> priceStone 2)
         (Walls Required Optional None Required)
         (Actions
@@ -316,7 +303,7 @@ tileSalotto: RoomTile Resources
 tileSalotto =
     RoomTile "Salotto"
         6
-        "assets/img/salotto.jpg" tileWidth tileHeight
+        "assets/img/salotto.jpg"
         (priceFree |> priceStone 1 |> priceGold 1)
         (Walls Required Required None Required)
         (Actions
@@ -327,7 +314,7 @@ tileLuxuryRoom: RoomTile Resources
 tileLuxuryRoom =
     RoomTile "Stanza di Lusso"
         12
-        "assets/img/stanza_di_lusso.jpg" tileWidth tileHeight
+        "assets/img/stanza_di_lusso.jpg"
         (priceFree |> priceGold 7)
         (Walls Required Required Optional Required)
         (Actions
@@ -339,7 +326,7 @@ tileStanzaDiSnodo: RoomTile Resources
 tileStanzaDiSnodo =
     RoomTile "Stanza di Snodo"
         6
-        "assets/img/stanza_di_snodo.jpg" tileWidth tileHeight
+        "assets/img/stanza_di_snodo.jpg"
         (priceFree |> priceWood 2)
         (Walls Required Required Optional Required)
         (Actions
@@ -350,7 +337,7 @@ tileTesoreria: RoomTile Resources
 tileTesoreria =
     RoomTile "Tesoreria"
         10
-        "assets/img/tesoreria.jpg" tileWidth tileHeight
+        "assets/img/tesoreria.jpg"
         (priceFree |> priceGold 3)
         (Walls Required Required Required Required)
         (Actions
@@ -399,32 +386,32 @@ topEmmer qty resources  =
 
 addWood : Int -> Resources -> Resources
 addWood qty resources  =
-    { resources | wood = resources.wood + qty }
+    { resources | wood = min 9 (resources.wood + qty) }
 
 
 addStone : Int -> Resources -> Resources
 addStone qty resources  =
-    { resources | stone = resources.stone + qty }
+    { resources | stone = min 9 (resources.stone + qty) }
 
 
 addFlax : Int -> Resources -> Resources
 addFlax qty resources  =
-    { resources | flax = resources.flax + qty }
+    { resources | flax = min 9 (resources.flax + qty) }
 
 
 addEmmer : Int -> Resources -> Resources
 addEmmer qty resources  =
-    { resources | emmer = resources.emmer + qty }
+    { resources | emmer = min 9 (resources.emmer + qty) }
 
 
 addFood : Int -> Resources -> Resources
 addFood qty resources  =
-    { resources | food = resources.food + qty }
+    { resources | food = min 9 (resources.food + qty) }
 
 
 addGold : Int -> Resources -> Resources
 addGold qty resources  =
-    { resources | gold = resources.gold + qty }
+    { resources | gold = min 19 (resources.gold + qty) }
 
 
 alwaysDoable : Resources -> Bool

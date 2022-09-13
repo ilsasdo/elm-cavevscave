@@ -3,12 +3,12 @@ module Resources exposing (..)
 import Walls exposing (Wall(..), Walls)
 
 type alias Resources =
-    { gold : Int
+    { food : Int
     , wood : Int
     , stone : Int
     , emmer : Int
     , flax : Int
-    , food : Int
+    , gold : Int
     }
 
 

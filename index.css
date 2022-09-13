@@ -4,6 +4,8 @@
   border-style: groove;
   position: relative;
   float: left;
+  aspect-ratio: 1;
+  height: 14%;
 }
 
 .tile .action {
@@ -19,4 +21,175 @@
 .tile .action.doable:hover {
   background-image: radial-gradient(rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0));
   cursor: pointer;
+}
+
+.tile .action.full {
+  aspect-ratio: 2/1;
+  width: 90%;
+  left: 5%;
+  top: 50%;
+}
+
+.tile .action.left {
+  aspect-ratio: 1;
+  width: 45%;
+  left: 2%;
+  top: 45%;
+}
+
+.tile .action.right {
+  aspect-ratio: 1;
+  width: 45%;
+  left: 52%;
+  top: 45%;
+}
+
+.tile .action.top {
+  aspect-ratio: 4/1;
+  width: 90%;
+  left: 5%;
+  top: 45%;
+}
+
+.tile .action.bottom {
+  aspect-ratio: 4/1;
+  width: 90%;
+  left: 5%;
+  top: 70%;
+}
+
+.tile .action.first {
+  aspect-ratio: 1/1.5;
+  width: 16%;
+  top: 55%;
+  left: 20%;
+}
+
+.tile .action.second {
+  aspect-ratio: 1/1.5;
+  width: 16%;
+  top: 55%;
+  left: 38%;
+}
+
+.tile .action.third {
+  aspect-ratio: 1/1.5;
+  width: 16%;
+  top: 55%;
+  left: 56%;
+}
+
+.tile .action.fourth {
+  aspect-ratio: 1/1.5;
+  width: 16%;
+  top: 55%;
+  left: 73%;
+}
+
+/*
+tileWidth = 200
+tileHeight = 200
+middleY = (120 // 200) * tileHeight
+firstX = (45 // 200) * tileWidth
+secondX = ((45 + 35) // 200) * tileWidth
+thirdX = ((45 + 35 + 35) // 200) * tileWidth
+fourthX = ((45 + 35 + 35 + 35) // 200) * tileWidth
+littleIcon = ((30 // 200) * tileWidth, (50 // 200) * tileHeight)
+*/
+
+
+
+.actiontiles {
+  background-color: gray;
+  height: 12.5%;
+  width: 100%;
+}
+
+.availablerooms {
+  width: 32%;
+  float: left;
+}
+
+.board {
+  background-image: url("assets/img/board.jpg");
+  background-size: contain;
+  background-repeat: no-repeat;
+  float: left;
+  width: 32%;
+  aspect-ratio: 2348/3838;
+}
+
+.resources {
+  border: 3px solid red;
+  width: 29%;
+  height: 74.5%;
+  position: relative;
+  float: right;
+}
+
+.resources > div {
+  width: 16.5%;
+  aspect-ratio: 1;
+  position: absolute;
+}
+
+.resources .food {
+  background-color: darkolivegreen;
+  left: 0;
+}
+
+.resources .wood {
+  background-color: saddlebrown;
+  left: 16.5%;
+}
+
+.resources .stone {
+  background-color: gray;
+  left: 33%;
+}
+
+.resources .emmer {
+  background-color: yellow;
+  left: 49.5%;
+}
+
+.resources .flax {
+  background-color: greenyellow;
+  left: 66%;
+}
+
+.resources .gold {
+  background-color: gold;
+  left: 82.5%;
+}
+
+.resources .qty0, .resources .qty10 {
+  bottom: 2%;
+}
+.resources .qty1, .resources .qty11  {
+  bottom: 12%;
+}
+.resources .qty2, .resources .qty12  {
+  bottom: 27%;
+}
+.resources .qty3, .resources .qty13  {
+  bottom: 37%;
+}
+.resources .qty4, .resources .qty14  {
+  bottom: 47%;
+}
+.resources .qty5, .resources .qty15  {
+  bottom: 56%;
+}
+.resources .qty6, .resources .qty16  {
+  bottom: 66%;
+}
+.resources .qty7, .resources .qty17  {
+  bottom: 75%;
+}
+.resources .qty8, .resources .qty18  {
+  bottom: 84%;
+}
+.resources .qty9, .resources .qty19  {
+  bottom: 93%;
 }

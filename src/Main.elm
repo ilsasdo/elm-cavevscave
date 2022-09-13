@@ -1,7 +1,7 @@
 module Main exposing (main)
 
 import Browser
-import CaveBoard exposing (CaveBoard)
+import CaveBoard exposing (CaveBoard, viewBoard)
 import Debug exposing (toString)
 import Html exposing (Html, div, p, text)
 import Html.Attributes exposing (class, style)
@@ -39,7 +39,7 @@ init _ =
 
 newBoard : CaveBoard
 newBoard =
-    CaveBoard (Resources 1 1 1 1 1 1)
+    CaveBoard (Resources 1 1 1 1 1 1) []
 
 
 newActionBoard : ActionBoard CaveBoard
@@ -49,7 +49,7 @@ newActionBoard =
 
 newAvailableRooms : List (RoomTile Resources)
 newAvailableRooms =
-    []
+    [tileShelf, tileSpinningWheel, tileMacina, tileSalotto, tileTunnel, tileFoodCorner]
 
 
 subscriptions : Game -> Sub Msg
@@ -68,83 +68,60 @@ update msg ({currentPlayer} as model) =
                 ( model, Cmd.none )
 
 view : Game -> Html Msg
-view model =
-    div [ style "float" "left"]
-        [ viewTile model.currentPlayer tileAltareSacrificale
-        , viewTile model.currentPlayer tileFoodCorner
-        , viewTile model.currentPlayer tileBancarella
-        , viewTile model.currentPlayer tileCameraSegreta
-        , viewTile model.currentPlayer tileCavaInEspansione
-        , viewTile model.currentPlayer tileDeposito
-        , viewTile model.currentPlayer tileCaveEntrance
-        , viewTile model.currentPlayer tileSpinningWheel
-        , viewTile model.currentPlayer tileFiliera
-        , viewTile model.currentPlayer tileForno
-        , viewTile model.currentPlayer tileMacina
-        , viewTile model.currentPlayer tileWarehouse
-        , viewTile model.currentPlayer tileGoldMine
-        , viewTile model.currentPlayer tileOfficina
-        , viewTile model.currentPlayer tileSalotto
-        , viewTile model.currentPlayer tileShelf
-        , viewTile model.currentPlayer tileLuxuryRoom
-        , viewTile model.currentPlayer tileStanzaDiSnodo
-        , viewTile model.currentPlayer tileTesoreria
-        , viewTile model.currentPlayer tileTunnel
-        , viewBoard model.currentPlayer
-        ]
+view game =
+    div [class "container"]
+        [viewStatusBar, viewActionTiles, viewMain game]
 
 
-viewBoard : CaveBoard -> Html Msg
-viewBoard board =
-    div []
-        [ p [] [ text ("gold 1111: " ++ toString board.resources.gold) ]
-        , p [] [ text ("wood: " ++ toString board.resources.wood) ]
-        , p [] [ text ("emmer: " ++ toString board.resources.emmer) ]
-        , p [] [ text ("flax: " ++ toString board.resources.flax) ]
-        , p [] [ text ("stone: " ++ toString board.resources.stone) ]
-        , p [] [ text ("food: " ++ toString board.resources.food) ]
-        ]
+viewStatusBar: Html Msg
+viewStatusBar =
+    div [class "statusbar"] [text "Status Bar: Player 1, First Move"]
+
+viewActionTiles: Html Msg
+viewActionTiles =
+    div [class "actiontiles"] [text "Available Actions"]
+
+viewMain: Game -> Html Msg
+viewMain game =
+    div [class "mainboard"] [
+        viewBoard game.currentPlayer,
+        viewAvailableRooms game.currentPlayer.resources game.availableRooms,
+        viewBoard game.waitingPlayer
+    ]
 
 
-viewTile : CaveBoard -> (RoomTile Resources) -> Html Msg
-viewTile board tile =
+viewAvailableRooms: Resources -> List (RoomTile Resources) -> Html Msg
+viewAvailableRooms resources rooms =
+    div [class "availablerooms"] (List.map (viewTile resources) rooms)
+
+
+viewTile : Resources -> (RoomTile Resources) -> Html Msg
+viewTile resources tile =
     div [ style "background-image" ("url(" ++ tile.src ++ ")")
-        , class "tile"
-        , style "height" "200px"
-        , style "width" "200px" ] (viewActions board tile.actions)
+        , class "tile"] (viewActions resources tile.actions)
 
 
-viewActions : CaveBoard -> Actions Resources -> List (Html Msg)
-viewActions board (Tiles.Actions actions) =
-    List.map (viewAction board) actions
+viewActions : Resources -> Actions Resources -> List (Html Msg)
+viewActions resources (Tiles.Actions actions) =
+    List.map (viewAction resources) actions
 
 
-viewAction : CaveBoard -> Action Resources -> Html Msg
-viewAction board action =
+viewAction : Resources -> Action Resources -> Html Msg
+viewAction resources action =
     let
-        ( x, y ) =
-            action.point
-
-        ( width, height ) =
-            action.size
-
-        doable =
-            action.isDoable board.resources
+       doable =
+            action.isDoable resources
     in
     div
         [ class
-            ("action"
+            ("action "++(action.classes)++" "
                 ++ (if doable then
-                        " doable"
+                        "doable"
 
                     else
-                        " notdoable"
+                        "notdoable"
                    )
             )
-        , style "left" (toString x)
-        , style "top" (toString y)
-        , style "height" (toString height)
-        , style "width" (toString width)
         , onClick (DoAction action)
         ]
         []
