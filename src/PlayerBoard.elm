@@ -1,13 +1,13 @@
-module CaveBoard exposing (..)
+module PlayerBoard exposing (..)
 
 import Debug exposing (toString)
 import Html exposing (Html, div)
 import Html.Attributes exposing (class, style)
 import Resources exposing (Resources)
-import Tiles exposing (RoomTile)
+import Tiles exposing (Msg, RoomTile, viewTile)
 import Walls exposing (Walls)
 
-type alias CaveBoard =
+type alias PlayerBoard =
     { resources : Resources
     , rooms: List (RoomTile Resources)  }
 
@@ -19,16 +19,20 @@ type alias Cave state =
     }
 
 
-viewBoard : CaveBoard -> Html a
+viewBoard : PlayerBoard -> Html Msg
 viewBoard board =
     div [class "board"]
-        [ viewRooms board.rooms
-        , viewResources board.resources ]
+        ([ viewResources board.resources ] ++ viewRooms board.resources board.rooms)
 
+viewRooms: Resources -> List (RoomTile Resources) -> List (Html Msg)
+viewRooms resources rooms =
+    List.indexedMap (viewRoom resources) rooms
 
-viewRooms rooms =
-    div [] []
-
+viewRoom: Resources -> Int -> RoomTile Resources -> Html Msg
+viewRoom resources index room =
+    div [class ("room"++(toString index))] [
+        Tiles.viewTile resources room
+    ]
 
 viewResources resources =
     div [class "resources"] [

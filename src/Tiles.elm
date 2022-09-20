@@ -1,8 +1,12 @@
 module Tiles exposing (..)
 
+import Html exposing (Html, div)
+import Html.Attributes exposing (class, style)
+import Html.Events exposing (onClick)
 import Resources exposing (Resources, noWalls, priceFree, priceGold, priceStone, priceWood)
 import Walls exposing (Wall(..), Walls)
 
+type Msg = DoAction (Action Resources)
 
 type alias RoomTile state =
     { title : String
@@ -343,6 +347,15 @@ tileTesoreria =
         (Actions
             [ fullAction (require ((<=) 3) .gold) (\res -> res |> addGold -3 |> addGold 4 |> addFood 1)])
 
+tilePlaceholder: RoomTile Resources
+tilePlaceholder =
+    RoomTile "Placeholder"
+        10
+        "assets/img/tesoreria.jpg"
+        (priceFree)
+        (Walls Required Required Required Required)
+        (Actions [])
+
 
 require: (Int -> Bool) -> (Resources -> Int) -> Resources -> Bool
 require condition getter resources =
@@ -417,3 +430,35 @@ addGold qty resources  =
 alwaysDoable : Resources -> Bool
 alwaysDoable board =
     True
+
+
+viewTile : Resources -> (RoomTile Resources) -> Html Msg
+viewTile resources tile =
+    div [ style "background-image" ("url(" ++ tile.src ++ ")")
+        , class "tile"] (viewActions resources tile.actions)
+
+
+viewActions : Resources -> Actions Resources -> List (Html Msg)
+viewActions resources (Actions actions) =
+    List.map (viewAction resources) actions
+
+
+viewAction : Resources -> Action Resources -> Html Msg
+viewAction resources action =
+    let
+       doable =
+            action.isDoable resources
+    in
+    div
+        [ class
+            ("action "++(action.classes)++" "
+                ++ (if doable then
+                        "doable"
+
+                    else
+                        "notdoable"
+                   )
+            )
+            , onClick (DoAction action)
+        ]
+        []

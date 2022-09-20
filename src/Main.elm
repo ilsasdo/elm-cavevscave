@@ -1,13 +1,15 @@
 module Main exposing (main)
 
+import Array
 import Browser
-import CaveBoard exposing (CaveBoard, viewBoard)
-import Debug exposing (toString)
+import PlayerBoard exposing (PlayerBoard, viewBoard)
 import Html exposing (Html, div, p, text)
 import Html.Attributes exposing (class, style)
-import Html.Events exposing (onClick)
+import Random
+import Random.Set as Random
 import Resources exposing (Resources)
-import Tiles as Tiles exposing (Action, ActionTile, Actions, RoomTile, tileAltareSacrificale, tileBancarella, tileCameraSegreta, tileCavaInEspansione, tileCaveEntrance, tileDeposito, tileFiliera, tileFoodCorner, tileForno, tileGoldMine, tileLuxuryRoom, tileMacina, tileOfficina, tileSalotto, tileShelf, tileSpinningWheel, tileStanzaDiSnodo, tileTesoreria, tileTunnel, tileWarehouse)
+import Set exposing (Set)
+import Tiles exposing (Action, ActionTile, Actions, RoomTile, tileAltareSacrificale, tileBancarella, tileCameraSegreta, tileCavaInEspansione, tileCaveEntrance, tileDeposito, tileFiliera, tileFoodCorner, tileForno, tileGoldMine, tileLuxuryRoom, tileMacina, tileOfficina, tilePlaceholder, tileSalotto, tileShelf, tileSpinningWheel, tileStanzaDiSnodo, tileTesoreria, tileTunnel, tileWarehouse, viewTile)
 
 
 type alias ActionBoard state =
@@ -16,17 +18,17 @@ type alias ActionBoard state =
 
 
 type alias Game =
-    { currentPlayer : CaveBoard
-    , waitingPlayer : CaveBoard
+    { activePlayer : PlayerBoard
+    , waitingPlayer : PlayerBoard
     , turn : Int
-    , actionBoard : (ActionBoard CaveBoard)
+    , actionBoard : (ActionBoard PlayerBoard)
     , availableRooms : List (RoomTile Resources)
     }
 
 
 type Msg
     = DoAction (Action Resources)
-
+     | InitPlayerBoard Int
 
 main =
     Browser.element { init = init, view = view, update = update, subscriptions = subscriptions }
@@ -34,22 +36,44 @@ main =
 
 init : () -> ( Game, Cmd Msg )
 init _ =
-    ( Game (newBoard) (newBoard) 1 (newActionBoard) (newAvailableRooms), Cmd.none )
+    ( Game (newBoard) (newBoard) 1 (newActionBoard) (newAvailableRooms), (initRandom 18) )
 
+initRandom: Int -> Cmd Msg
+initRandom max =
+    Random.generate InitPlayerBoard (Random.int 0 max)
 
-newBoard : CaveBoard
+newBoard : PlayerBoard
 newBoard =
-    CaveBoard (Resources 1 1 1 1 1 1) []
+    PlayerBoard (Resources 1 1 1 1 1 1) []
 
 
-newActionBoard : ActionBoard CaveBoard
+newActionBoard : ActionBoard PlayerBoard
 newActionBoard =
     ActionBoard []
 
 
 newAvailableRooms : List (RoomTile Resources)
 newAvailableRooms =
-    [tileShelf, tileSpinningWheel, tileMacina, tileSalotto, tileTunnel, tileFoodCorner]
+    [tileWarehouse,
+    tileAltareSacrificale,
+    tileBancarella,
+    tileCameraSegreta,
+    tileCavaInEspansione,
+    tileDeposito,
+    tileFiliera,
+    tileForno,
+    tileGoldMine,
+    tileOfficina,
+    tileLuxuryRoom,
+    tileStanzaDiSnodo,
+    tileTesoreria,
+    tilePlaceholder,
+    tilePlaceholder,
+    tilePlaceholder,
+    tilePlaceholder,
+    tilePlaceholder,
+
+    tileShelf, tileSpinningWheel, tileMacina, tileSalotto, tileTunnel, tileFoodCorner]
 
 
 subscriptions : Game -> Sub Msg
@@ -57,15 +81,42 @@ subscriptions model =
     Sub.none
 
 
+initPlayerBoard: Game -> Int -> Game
+initPlayerBoard ({activePlayer, waitingPlayer, availableRooms } as model) index =
+    let
+        arr = Array.fromList availableRooms
+        room = safeGet index arr tilePlaceholder
+    in
+    if List.length model.activePlayer.rooms == 9 then
+        { model | waitingPlayer = { waitingPlayer | rooms = room :: waitingPlayer.rooms }}
+    else
+        { model | activePlayer = { activePlayer | rooms = room :: activePlayer.rooms }}
+
+
+safeGet index arr def =
+    let
+        item = Array.get index arr
+    in
+        case item of
+            Just val -> val
+            Nothing -> def
+
 update : Msg -> Game -> ( Game, Cmd Msg )
-update msg ({currentPlayer} as model) =
+update msg ({activePlayer} as model) =
     case msg of
+        InitPlayerBoard index ->
+            if List.length model.waitingPlayer.rooms == 9 then
+                (model, Cmd.none)
+            else
+                (initPlayerBoard model index, (initRandom index))
+
         DoAction action ->
-            if action.isDoable model.currentPlayer.resources then
-                ( { model | currentPlayer = { currentPlayer | resources = action.do model.currentPlayer.resources} }, Cmd.none )
+            if action.isDoable model.activePlayer.resources then
+                ( { model | activePlayer = { activePlayer | resources = action.do model.activePlayer.resources} }, Cmd.none )
 
             else
                 ( model, Cmd.none )
+
 
 view : Game -> Html Msg
 view game =
@@ -84,9 +135,9 @@ viewActionTiles =
 viewMain: Game -> Html Msg
 viewMain game =
     div [class "mainboard"] [
-        viewBoard game.currentPlayer,
-        viewAvailableRooms game.currentPlayer.resources game.availableRooms,
-        viewBoard game.waitingPlayer
+        Html.map remap (viewBoard game.activePlayer),
+        viewAvailableRooms game.activePlayer.resources game.availableRooms,
+        Html.map remap (viewBoard game.waitingPlayer)
     ]
 
 
@@ -94,34 +145,13 @@ viewAvailableRooms: Resources -> List (RoomTile Resources) -> Html Msg
 viewAvailableRooms resources rooms =
     div [class "availablerooms"] (List.map (viewTile resources) rooms)
 
+viewTile room resources =
+    Html.map remap (Tiles.viewTile room resources)
 
-viewTile : Resources -> (RoomTile Resources) -> Html Msg
-viewTile resources tile =
-    div [ style "background-image" ("url(" ++ tile.src ++ ")")
-        , class "tile"] (viewActions resources tile.actions)
-
-
-viewActions : Resources -> Actions Resources -> List (Html Msg)
-viewActions resources (Tiles.Actions actions) =
-    List.map (viewAction resources) actions
+remap: Tiles.Msg -> Msg
+remap html =
+    case html of
+        Tiles.DoAction action ->
+            DoAction action
 
 
-viewAction : Resources -> Action Resources -> Html Msg
-viewAction resources action =
-    let
-       doable =
-            action.isDoable resources
-    in
-    div
-        [ class
-            ("action "++(action.classes)++" "
-                ++ (if doable then
-                        "doable"
-
-                    else
-                        "notdoable"
-                   )
-            )
-        , onClick (DoAction action)
-        ]
-        []
