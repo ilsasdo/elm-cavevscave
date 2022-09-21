@@ -322,3 +322,9 @@
   width: 4%;
   height: 15%;
 }
+
+.actiontile {
+  float: left;
+  display: inline-block;
+  width: 12.5%;
+}

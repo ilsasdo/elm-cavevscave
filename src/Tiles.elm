@@ -37,56 +37,206 @@ type alias Action state =
     }
 
 
-firstAction : (state -> Bool) -> (state -> state) -> Action state
-firstAction isDoable do =
-    Action "first" isDoable do
+viewTile : Resources -> RoomTile Resources -> Html Msg
+viewTile resources tile =
+    if tile.available then
+        div
+            [ style "background-image" ("url(" ++ tile.src ++ ")")
+            , class "tile"]
+            (viewActions resources tile.actions)
+    else
+        div [class "tile hidden" ] []
 
 
-secondAction : (state -> Bool) -> (state -> state) -> Action state
-secondAction isDoable do =
-    Action "second" isDoable do
+viewActions : Resources -> Actions Resources -> List (Html Msg)
+viewActions resources (Actions actions) =
+    List.map (viewAction resources) actions
 
 
-thirdAction : (state -> Bool) -> (state -> state) -> Action state
-thirdAction isDoable do =
-    Action "third" isDoable do
+viewAction : Resources -> Action Resources -> Html Msg
+viewAction resources action =
+    if action.isDoable resources then
+        div [ class ("action doable "++ action.classes)
+            , onClick (DoAction action) ] []
+    else
+        div [ class ("action notdoable " ++ action.classes)][]
 
 
-fourthAction : (state -> Bool) -> (state -> state) -> Action state
-fourthAction isDoable do =
-    Action "fourth" isDoable do
+-------------------------------------------
+-------------Round Tiles--------------------
+-------------------------------------------
+tileLavoriDomestici : RoomTile Resources
+tileLavoriDomestici =
+    RoomTile "Lavori Domestici" False
+        1
+        "assets/img/rounds/lavori_domestici.jpg"
+        priceFree
+        noWalls
+        (Actions [])
 
+tileColtivare : RoomTile Resources
+tileColtivare =
+    RoomTile "Coltivare" False
+        1
+        "assets/img/rounds/coltivare.jpg"
+        priceFree
+        noWalls
+        (Actions [])
 
-leftAction : (state -> Bool) -> (state -> state) -> Action state
-leftAction isDoable do =
-    Action "left" isDoable do
+tileSottobosco : RoomTile Resources
+tileSottobosco =
+    RoomTile "Sottobosco" False
+        1
+        "assets/img/rounds/sottobosco.jpg"
+        priceFree
+        noWalls
+        (Actions [])
 
+tileScavare : RoomTile Resources
+tileScavare =
+    RoomTile "Scavare" False
+        1
+        "assets/img/rounds/scavare.jpg"
+        priceFree
+        noWalls
+        (Actions [])
 
-rightAction : (state -> Bool) -> (state -> state) -> Action state
-rightAction isDoable do =
-    Action "right" isDoable do
+tileArredare : RoomTile Resources
+tileArredare =
+    RoomTile "Arredare" False
+        2
+        "assets/img/rounds/arredare.jpg"
+        priceFree
+        noWalls
+        (Actions [])
 
+tileCostruireUnMuro : RoomTile Resources
+tileCostruireUnMuro =
+    RoomTile "Costrurire un Muro" False
+        2
+        "assets/img/rounds/costruire_un_muro.jpg"
+        priceFree
+        noWalls
+        (Actions [])
 
-topAction : (state -> Bool) -> (state -> state) -> Action state
-topAction isDoable do =
-    Action "top" isDoable do
+tileMinare : RoomTile Resources
+tileMinare =
+    RoomTile "Minare" False
+        2
+        "assets/img/rounds/minare.jpg"
+        priceFree
+        noWalls
+        (Actions [])
 
+tileDemolireUnMuro : RoomTile Resources
+tileDemolireUnMuro =
+    RoomTile "Demolire un Muro" False
+        3
+        "assets/img/rounds/demolire_un_muro.jpg"
+        priceFree
+        noWalls
+        (Actions [])
 
-bottomAction : (state -> Bool) -> (state -> state) -> Action state
-bottomAction isDoable do =
-    Action "bottom" isDoable do
+tileEspansione : RoomTile Resources
+tileEspansione =
+    RoomTile "Espansione" False
+        3
+        "assets/img/rounds/espansione.jpg"
+        priceFree
+        noWalls
+        (Actions [])
 
+tileSpedizione : RoomTile Resources
+tileSpedizione =
+    RoomTile "Spedizione" False
+        3
+        "assets/img/rounds/spedizione.jpg"
+        priceFree
+        noWalls
+        (Actions [])
 
-fullAction : (state -> Bool) -> (state -> state) -> Action state
-fullAction isDoable do =
-    Action "full" isDoable do
+tilePerforare : RoomTile Resources
+tilePerforare =
+    RoomTile "Perforare" False
+        3
+        "assets/img/rounds/perforare.jpg"
+        priceFree
+        noWalls
+        (Actions [])
+
+tileRinnovare : RoomTile Resources
+tileRinnovare =
+    RoomTile "Rinnovare" False
+        4
+        "assets/img/rounds/rinnovare.jpg"
+        priceFree
+        noWalls
+        (Actions [])
 
 
 
 -------------------------------------------
-------------------TILES--------------------
+-------------EQUIPMENTS--------------------
 -------------------------------------------
+-- TODO: Handle Equipment Events
+tileSotterraneo : RoomTile Resources
+tileSotterraneo =
+    RoomTile "Sotterraneo" False
+        11
+        "assets/img/sotterraneo.jpg"
+        (priceFree |> priceGold 4 |> priceStone 3)
+        (Walls Placed Placed Placed Placed)
+        (Actions
+            []
+        )
 
+tileLavorareIlLino : RoomTile Resources
+tileLavorareIlLino =
+    RoomTile "Lavorare il Lino" False
+        3
+        "assets/img/lavorare_il_lino.jpg"
+        (priceFree |> priceStone 1)
+        (Walls Placed Optional None Placed)
+        (Actions
+            []
+        )
+
+tileEquipaggiamenti : RoomTile Resources
+tileEquipaggiamenti =
+    RoomTile "Equipaggiamenti" False
+        3
+        "assets/img/equipaggiamenti.jpg"
+        (priceFree |> priceWood 2)
+        (Walls Placed None None Optional)
+        (Actions
+            []
+        )
+
+tileDepositoDiLegna : RoomTile Resources
+tileDepositoDiLegna =
+    RoomTile "Deposito di Legna" False
+        2
+        "assets/img/deposito_di_legna.jpg"
+        (priceFree |> priceStone 1)
+        (Walls Placed None None Placed)
+        (Actions
+            []
+        )
+
+tileAnalisiTerritoriale : RoomTile Resources
+tileAnalisiTerritoriale =
+    RoomTile "Analisi Territoriale" False
+        5
+        "assets/img/deposito_di_legna.jpg"
+        priceFree
+        (Walls Placed None None Optional)
+        (Actions
+            []
+        )
+
+-------------------------------------------
+-------------ROOM TILES--------------------
+-------------------------------------------
 
 tileCaveEntrance : RoomTile Resources
 tileCaveEntrance =
@@ -469,27 +619,46 @@ alwaysDoable board =
     True
 
 
-viewTile : Resources -> RoomTile Resources -> Html Msg
-viewTile resources tile =
-    if tile.available then
-        div
-            [ style "background-image" ("url(" ++ tile.src ++ ")")
-            , class "tile"]
-            (viewActions resources tile.actions)
-    else
-        div [class "tile hidden" ] []
+firstAction : (state -> Bool) -> (state -> state) -> Action state
+firstAction isDoable do =
+    Action "first" isDoable do
 
 
-viewActions : Resources -> Actions Resources -> List (Html Msg)
-viewActions resources (Actions actions) =
-    List.map (viewAction resources) actions
+secondAction : (state -> Bool) -> (state -> state) -> Action state
+secondAction isDoable do =
+    Action "second" isDoable do
 
 
-viewAction : Resources -> Action Resources -> Html Msg
-viewAction resources action =
-    if action.isDoable resources then
-        div [ class ("action doable "++ action.classes)
-            , onClick (DoAction action) ] []
-    else
-        div [ class ("action notdoable " ++ action.classes)][]
+thirdAction : (state -> Bool) -> (state -> state) -> Action state
+thirdAction isDoable do =
+    Action "third" isDoable do
 
+
+fourthAction : (state -> Bool) -> (state -> state) -> Action state
+fourthAction isDoable do =
+    Action "fourth" isDoable do
+
+
+leftAction : (state -> Bool) -> (state -> state) -> Action state
+leftAction isDoable do =
+    Action "left" isDoable do
+
+
+rightAction : (state -> Bool) -> (state -> state) -> Action state
+rightAction isDoable do =
+    Action "right" isDoable do
+
+
+topAction : (state -> Bool) -> (state -> state) -> Action state
+topAction isDoable do =
+    Action "top" isDoable do
+
+
+bottomAction : (state -> Bool) -> (state -> state) -> Action state
+bottomAction isDoable do =
+    Action "bottom" isDoable do
+
+
+fullAction : (state -> Bool) -> (state -> state) -> Action state
+fullAction isDoable do =
+    Action "full" isDoable do
