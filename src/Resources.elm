@@ -2,6 +2,7 @@ module Resources exposing (..)
 
 import Walls exposing (Wall(..), Walls)
 
+
 type alias Resources =
     { food : Int
     , wood : Int
@@ -12,7 +13,7 @@ type alias Resources =
     }
 
 
-noWalls: Walls
+noWalls : Walls
 noWalls =
     Walls Optional Optional Optional Optional
 
@@ -32,6 +33,6 @@ priceGold qty resources =
     { resources | gold = resources.gold + qty }
 
 
-priceFree: Resources
+priceFree : Resources
 priceFree =
     Resources 0 0 0 0 0 0

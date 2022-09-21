@@ -1,15 +1,14 @@
 module Main exposing (main)
 
-import Array
 import Browser
-import PlayerBoard exposing (PlayerBoard, viewBoard)
 import Html exposing (Html, div, p, text)
 import Html.Attributes exposing (class, style)
+import PlayerBoard exposing (PlayerBoard, viewBoard)
 import Random
-import Random.Set as Random
+import Random.List
 import Resources exposing (Resources)
-import Set exposing (Set)
-import Tiles exposing (Action, ActionTile, Actions, RoomTile, tileAltareSacrificale, tileBancarella, tileCameraSegreta, tileCavaInEspansione, tileCaveEntrance, tileDeposito, tileFiliera, tileFoodCorner, tileForno, tileGoldMine, tileLuxuryRoom, tileMacina, tileOfficina, tilePlaceholder, tileSalotto, tileShelf, tileSpinningWheel, tileStanzaDiSnodo, tileTesoreria, tileTunnel, tileWarehouse, viewTile)
+import Tiles exposing (Action, ActionTile, Actions, RoomTile, tileAltareSacrificale, tileBancarella, tileCameraSegreta, tileCavaInEspansione, tileDeposito, tileFiliera, tileFoodCorner, tileForno, tileGoldMine, tileLuxuryRoom, tileMacina, tileOfficina, tilePlaceholder, tileSalotto, tileShelf, tileSpinningWheel, tileStanzaDiSnodo, tileTesoreria, tileTunnel, tileWarehouse, viewTile)
+import Walls
 
 
 type alias ActionBoard state =
@@ -21,14 +20,15 @@ type alias Game =
     { activePlayer : PlayerBoard
     , waitingPlayer : PlayerBoard
     , turn : Int
-    , actionBoard : (ActionBoard PlayerBoard)
+    , actionBoard : ActionBoard PlayerBoard
     , availableRooms : List (RoomTile Resources)
     }
 
 
 type Msg
     = DoAction (Action Resources)
-     | InitPlayerBoard Int
+    | InitPlayerBoard (List (RoomTile Resources))
+
 
 main =
     Browser.element { init = init, view = view, update = update, subscriptions = subscriptions }
@@ -36,15 +36,38 @@ main =
 
 init : () -> ( Game, Cmd Msg )
 init _ =
-    ( Game (newBoard) (newBoard) 1 (newActionBoard) (newAvailableRooms), (initRandom 18) )
+    ( Game newBoard newBoard 1 newActionBoard newAvailableRooms
+    , initRandom
+        [ tileWarehouse
+        , tileAltareSacrificale
+        , tileBancarella
+        , tileCameraSegreta
+        , tileCavaInEspansione
+        , tileDeposito
+        , tileFiliera
+        , tileForno
+        , tileGoldMine
+        , tileOfficina
+        , tileLuxuryRoom
+        , tileStanzaDiSnodo
+        , tileTesoreria
+        , tilePlaceholder
+        , tilePlaceholder
+        , tilePlaceholder
+        , tilePlaceholder
+        , tilePlaceholder
+        ]
+    )
 
-initRandom: Int -> Cmd Msg
-initRandom max =
-    Random.generate InitPlayerBoard (Random.int 0 max)
+
+initRandom : List (RoomTile Resources) -> Cmd Msg
+initRandom rooms =
+    Random.generate InitPlayerBoard (Random.List.shuffle rooms)
+
 
 newBoard : PlayerBoard
 newBoard =
-    PlayerBoard (Resources 1 1 1 1 1 1) []
+    PlayerBoard (Resources 1 1 1 1 1 1) [] (List.repeat 14 Walls.None)
 
 
 newActionBoard : ActionBoard PlayerBoard
@@ -54,26 +77,13 @@ newActionBoard =
 
 newAvailableRooms : List (RoomTile Resources)
 newAvailableRooms =
-    [tileWarehouse,
-    tileAltareSacrificale,
-    tileBancarella,
-    tileCameraSegreta,
-    tileCavaInEspansione,
-    tileDeposito,
-    tileFiliera,
-    tileForno,
-    tileGoldMine,
-    tileOfficina,
-    tileLuxuryRoom,
-    tileStanzaDiSnodo,
-    tileTesoreria,
-    tilePlaceholder,
-    tilePlaceholder,
-    tilePlaceholder,
-    tilePlaceholder,
-    tilePlaceholder,
-
-    tileShelf, tileSpinningWheel, tileMacina, tileSalotto, tileTunnel, tileFoodCorner]
+    [ tileShelf
+    , tileSpinningWheel
+    , tileMacina
+    , tileSalotto
+    , tileTunnel
+    , tileFoodCorner
+    ]
 
 
 subscriptions : Game -> Sub Msg
@@ -81,38 +91,20 @@ subscriptions model =
     Sub.none
 
 
-initPlayerBoard: Game -> Int -> Game
-initPlayerBoard ({activePlayer, waitingPlayer, availableRooms } as model) index =
-    let
-        arr = Array.fromList availableRooms
-        room = safeGet index arr tilePlaceholder
-    in
-    if List.length model.activePlayer.rooms == 9 then
-        { model | waitingPlayer = { waitingPlayer | rooms = room :: waitingPlayer.rooms }}
-    else
-        { model | activePlayer = { activePlayer | rooms = room :: activePlayer.rooms }}
-
-
-safeGet index arr def =
-    let
-        item = Array.get index arr
-    in
-        case item of
-            Just val -> val
-            Nothing -> def
-
 update : Msg -> Game -> ( Game, Cmd Msg )
-update msg ({activePlayer} as model) =
+update msg ({ activePlayer, waitingPlayer } as model) =
     case msg of
-        InitPlayerBoard index ->
-            if List.length model.waitingPlayer.rooms == 9 then
-                (model, Cmd.none)
-            else
-                (initPlayerBoard model index, (initRandom index))
+        InitPlayerBoard rooms ->
+            ( { model
+                | activePlayer = { activePlayer | rooms = List.take 9 rooms }
+                , waitingPlayer = { waitingPlayer | rooms = List.drop 9 rooms |> List.take 9 }
+              }
+            , Cmd.none
+            )
 
         DoAction action ->
             if action.isDoable model.activePlayer.resources then
-                ( { model | activePlayer = { activePlayer | resources = action.do model.activePlayer.resources} }, Cmd.none )
+                ( { model | activePlayer = { activePlayer | resources = action.do model.activePlayer.resources } }, Cmd.none )
 
             else
                 ( model, Cmd.none )
@@ -120,38 +112,40 @@ update msg ({activePlayer} as model) =
 
 view : Game -> Html Msg
 view game =
-    div [class "container"]
-        [viewStatusBar, viewActionTiles, viewMain game]
+    div [ class "container" ]
+        [ viewStatusBar, viewActionTiles, viewMain game ]
 
 
-viewStatusBar: Html Msg
+viewStatusBar : Html Msg
 viewStatusBar =
-    div [class "statusbar"] [text "Status Bar: Player 1, First Move"]
+    div [ class "statusbar" ] [ text "Status Bar: Player 1, First Move" ]
 
-viewActionTiles: Html Msg
+
+viewActionTiles : Html Msg
 viewActionTiles =
-    div [class "actiontiles"] [text "Available Actions"]
+    div [ class "actiontiles" ] [ text "Available Actions" ]
 
-viewMain: Game -> Html Msg
+
+viewMain : Game -> Html Msg
 viewMain game =
-    div [class "mainboard"] [
-        Html.map remap (viewBoard game.activePlayer),
-        viewAvailableRooms game.activePlayer.resources game.availableRooms,
-        Html.map remap (viewBoard game.waitingPlayer)
-    ]
+    div [ class "mainboard" ]
+        [ Html.map remap (viewBoard game.activePlayer)
+        , viewAvailableRooms game.activePlayer.resources game.availableRooms
+        , Html.map remap (viewBoard game.waitingPlayer)
+        ]
 
 
-viewAvailableRooms: Resources -> List (RoomTile Resources) -> Html Msg
+viewAvailableRooms : Resources -> List (RoomTile Resources) -> Html Msg
 viewAvailableRooms resources rooms =
-    div [class "availablerooms"] (List.map (viewTile resources) rooms)
+    div [ class "availablerooms" ] (List.map (viewTile resources) rooms)
+
 
 viewTile room resources =
-    Html.map remap (Tiles.viewTile room resources)
+    div [class "availableroom"] [Html.map remap (Tiles.viewTile room resources)]
 
-remap: Tiles.Msg -> Msg
+
+remap : Tiles.Msg -> Msg
 remap html =
     case html of
         Tiles.DoAction action ->
             DoAction action
-
-

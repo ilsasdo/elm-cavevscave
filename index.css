@@ -3,9 +3,12 @@
   border-radius: 10px;
   border-style: groove;
   position: relative;
-  float: left;
   aspect-ratio: 1;
   height: 14%;
+}
+
+.tile.hidden {
+  background-color: gray;
 }
 
 .tile .action {
@@ -86,34 +89,17 @@
   left: 73%;
 }
 
-/*
-tileWidth = 200
-tileHeight = 200
-middleY = (120 // 200) * tileHeight
-firstX = (45 // 200) * tileWidth
-secondX = ((45 + 35) // 200) * tileWidth
-thirdX = ((45 + 35 + 35) // 200) * tileWidth
-fourthX = ((45 + 35 + 35 + 35) // 200) * tileWidth
-littleIcon = ((30 // 200) * tileWidth, (50 // 200) * tileHeight)
-*/
-
-
-
 .actiontiles {
   background-color: gray;
   height: 12.5%;
   width: 100%;
 }
 
-.availablerooms {
-  width: 32%;
-  float: left;
-}
-
 .board {
   background-image: url("assets/img/board.jpg");
   background-size: contain;
   background-repeat: no-repeat;
+  position: relative;
   float: left;
   width: 32%;
   aspect-ratio: 2348/3838;
@@ -192,4 +178,147 @@ littleIcon = ((30 // 200) * tileWidth, (50 // 200) * tileHeight)
 }
 .resources .qty9, .resources .qty19  {
   bottom: 93%;
+}
+
+.availablerooms {
+  width: 32%;
+  float: left;
+}
+
+.availableroom {
+  float: left;
+}
+
+.room {
+  position: absolute;
+  display: inline-block;
+  width: 25%;
+}
+
+.room-0 {
+  top: 10%;
+  left: 5%;
+}
+.room-1 {
+  top: 10%;
+  left: 32%;
+}
+.room-2 {
+  top: 27%;
+  left: 5%;
+}
+.room-3 {
+  top: 27%;
+  left: 32%;
+}
+.room-4 {
+  top: 45%;
+  left: 32%;
+}
+.room-5 {
+  top: 62%;
+  left: 32%;
+}
+.room-6 {
+  top: 80%;
+  left: 5%;
+}
+.room-7 {
+  top: 80%;
+  left: 32%;
+}
+.room-8 {
+  top: 80%;
+  left: 60%;
+}
+
+.wall {
+  position: absolute;
+  display: inline-block;
+  border: 1px solid red;
+}
+
+.wall-0 {
+  top: 10%;
+  left: 29%;
+  width: 4%;
+  height: 15%;
+}
+.wall-1 {
+  top: 25%;
+  left: 5%;
+  width: 23%;
+  height: 2.5%;
+}
+.wall-2 {
+  top: 25%;
+  left: 32.5%;
+  width: 23%;
+  height: 2.5%;
+}
+.wall-3 {
+  top: 27%;
+  left: 29%;
+  width: 4%;
+  height: 15%;
+}
+.wall-4 {
+  top: 42%;
+  left: 5%;
+  width: 23%;
+  height: 2.5%;
+}
+.wall-5 {
+  top: 42%;
+  left: 32.5%;
+  width: 23%;
+  height: 2.5%;
+}
+.wall-6 {
+  top: 45%;
+  left: 29%;
+  width: 4%;
+  height: 15%;
+}
+.wall-7 {
+  top: 60%;
+  left: 5%;
+  width: 23%;
+  height: 2.5%;
+}
+.wall-8 {
+  top: 60%;
+  left: 32.5%;
+  width: 23%;
+  height: 2.5%;
+}
+.wall-9 {
+  top: 62%;
+  left: 29%;
+  width: 4%;
+  height: 15%;
+}
+.wall-10 {
+  top: 77%;
+  left: 5%;
+  width: 23%;
+  height: 2.5%;
+}
+.wall-11 {
+  top: 77%;
+  left: 32.5%;
+  width: 23%;
+  height: 2.5%;
+}
+.wall-12 {
+  top: 80%;
+  left: 29%;
+  width: 4%;
+  height: 15%;
+}
+.wall-13 {
+  top: 80%;
+  left: 56%;
+  width: 4%;
+  height: 15%;
 }

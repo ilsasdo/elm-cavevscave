@@ -1,11 +1,11 @@
 module Walls exposing (..)
 
+
 type Wall
-    = Fixed
-    | Placed
-    | Required
+    = Placed
     | Optional
     | None
+
 
 type alias Walls =
     { north : Wall
