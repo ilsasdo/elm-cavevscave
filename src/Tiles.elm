@@ -67,7 +67,7 @@ viewAction resources action =
 -------------------------------------------
 tileLavoriDomestici : RoomTile Resources
 tileLavoriDomestici =
-    RoomTile "Lavori Domestici" False
+    RoomTile "Lavori Domestici" True
         1
         "assets/img/rounds/lavori_domestici.jpg"
         priceFree
@@ -76,7 +76,7 @@ tileLavoriDomestici =
 
 tileColtivare : RoomTile Resources
 tileColtivare =
-    RoomTile "Coltivare" False
+    RoomTile "Coltivare" True
         1
         "assets/img/rounds/coltivare.jpg"
         priceFree
@@ -85,7 +85,7 @@ tileColtivare =
 
 tileSottobosco : RoomTile Resources
 tileSottobosco =
-    RoomTile "Sottobosco" False
+    RoomTile "Sottobosco" True
         1
         "assets/img/rounds/sottobosco.jpg"
         priceFree
@@ -94,7 +94,7 @@ tileSottobosco =
 
 tileScavare : RoomTile Resources
 tileScavare =
-    RoomTile "Scavare" False
+    RoomTile "Scavare" True
         1
         "assets/img/rounds/scavare.jpg"
         priceFree

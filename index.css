@@ -3,8 +3,9 @@
   border-radius: 10px;
   border-style: groove;
   position: relative;
-  aspect-ratio: 1;
-  height: 14%;
+  /*aspect-ratio: 1;*/
+  height: 100%;
+  width: 100%;
 }
 
 .tile.hidden {
@@ -87,12 +88,6 @@
   width: 16%;
   top: 55%;
   left: 73%;
-}
-
-.actiontiles {
-  background-color: gray;
-  height: 12.5%;
-  width: 100%;
 }
 
 .board {
@@ -187,12 +182,16 @@
 
 .availableroom {
   float: left;
+  display: inline-block;
+  width: 23%;
+  aspect-ratio: 1;
 }
 
 .room {
   position: absolute;
   display: inline-block;
-  width: 25%;
+  width: 23%;
+  aspect-ratio: 1;
 }
 
 .room-0 {
@@ -323,8 +322,14 @@
   height: 15%;
 }
 
+.actiontiles {
+  background-color: gray;
+  display: flex;
+  flex-wrap: wrap;
+}
+
 .actiontile {
-  float: left;
   display: inline-block;
-  width: 12.5%;
+  width: 8.3%;
+  aspect-ratio: 1;
 }

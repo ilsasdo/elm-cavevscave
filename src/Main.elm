@@ -96,7 +96,7 @@ update : Msg -> Game -> ( Game, Cmd Msg )
 update msg ({ activePlayer, waitingPlayer } as model) =
     case msg of
         InitRoundTiles tiles ->
-            ( {model | roundTiles = model.roundTiles ++ tiles }, Cmd.none)
+            ( {model | roundTiles = tiles ++ model.roundTiles }, Cmd.none)
 
         InitPlayerBoard rooms ->
             ( { model
