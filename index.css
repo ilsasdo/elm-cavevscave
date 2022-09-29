@@ -333,3 +333,7 @@
   width: 8.3%;
   aspect-ratio: 1;
 }
+
+.pick {
+  cursor: pointer;
+}

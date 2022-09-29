@@ -12,6 +12,7 @@ type alias PlayerBoard =
     { resources : Resources
     , rooms : List (RoomTile Resources)
     , walls : List Wall
+    , actionTiles : List (RoomTile Resources)
     }
 
 
@@ -24,11 +25,24 @@ type alias Cave state =
 
 viewBoard : PlayerBoard -> Html Msg
 viewBoard board =
-    div [ class "board" ]
-        ([ viewResources board.resources ]
-            ++ viewRooms board.resources board.rooms
-            ++ viewWalls board.walls
-        )
+    div []
+        [ (viewActionTiles board.resources board.actionTiles)
+        , div [ class "board" ]
+            ([ viewResources board.resources ]
+                ++ viewRooms board.resources board.rooms
+                ++ viewWalls board.walls
+            )
+        ]
+
+
+viewActionTiles: Resources -> List (RoomTile Resources) -> Html Msg
+viewActionTiles resources actionTiles =
+    div [ class "actiontiles" ] (List.map (viewActionTile resources) actionTiles)
+
+
+viewActionTile: Resources -> RoomTile Resources -> Html Msg
+viewActionTile resources actionTile =
+    div [class "actiontile" ] [Tiles.viewTile resources actionTile]
 
 
 viewWalls : List Wall -> List (Html Msg)
@@ -41,8 +55,10 @@ viewWall index wall =
     case wall of
         Placed ->
             div [ class ("wall placed wall-" ++ toString index) ] []
+
         Optional ->
             div [ class ("wall placed wall-" ++ toString index) ] []
+
         None ->
             div [ class ("wall available wall-" ++ toString index) ] []
 
