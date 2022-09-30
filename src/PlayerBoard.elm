@@ -2,31 +2,31 @@ module PlayerBoard exposing (..)
 
 import Debug exposing (toString)
 import Html exposing (Html, div)
-import Html.Attributes exposing (class, style)
+import Html.Attributes exposing (class)
 import Resources exposing (Resources)
-import Tiles exposing (Msg, RoomTile, viewTile)
+import Tiles exposing (Action, Msg, RoomTile, viewTile)
 import Walls exposing (Wall(..), Walls)
 
 
-type alias PlayerBoard =
+type alias PlayerBoard msg =
     { resources : Resources
-    , rooms : List (RoomTile Resources)
+    , rooms : List (RoomTile Resources msg)
     , walls : List Wall
-    , actionTiles : List (RoomTile Resources)
+    , actionTiles : List (RoomTile Resources msg)
     }
 
 
-type alias Cave state =
+type alias Cave state msg =
     { bonus : Bool
-    , tile : RoomTile state
+    , tile : RoomTile state msg
     , walls : Walls
     }
 
 
-viewBoard : PlayerBoard -> Html Msg
+viewBoard : PlayerBoard msg -> Html msg
 viewBoard board =
     div []
-        [ (viewActionTiles board.resources board.actionTiles)
+        [ viewActionTiles board.resources board.actionTiles
         , div [ class "board" ]
             ([ viewResources board.resources ]
                 ++ viewRooms board.resources board.rooms
@@ -35,22 +35,17 @@ viewBoard board =
         ]
 
 
-viewActionTiles: Resources -> List (RoomTile Resources) -> Html Msg
+viewActionTiles : Resources -> List (RoomTile Resources msg) -> Html msg
 viewActionTiles resources actionTiles =
-    div [ class "actiontiles" ] (List.map (viewActionTile resources) actionTiles)
+    div [ class "actiontiles" ] (List.map (viewTile [ class "actiontile" ] resources) actionTiles)
 
 
-viewActionTile: Resources -> RoomTile Resources -> Html Msg
-viewActionTile resources actionTile =
-    div [class "actiontile" ] [Tiles.viewTile resources actionTile]
-
-
-viewWalls : List Wall -> List (Html Msg)
+viewWalls : List Wall -> List (Html msg)
 viewWalls walls =
     List.indexedMap viewWall walls
 
 
-viewWall : Int -> Wall -> Html Msg
+viewWall : Int -> Wall -> Html msg
 viewWall index wall =
     case wall of
         Placed ->
@@ -63,15 +58,15 @@ viewWall index wall =
             div [ class ("wall available wall-" ++ toString index) ] []
 
 
-viewRooms : Resources -> List (RoomTile Resources) -> List (Html Msg)
+viewRooms : Resources -> List (RoomTile Resources msg) -> List (Html msg)
 viewRooms resources rooms =
     List.indexedMap (viewRoom resources) rooms
 
 
-viewRoom : Resources -> Int -> RoomTile Resources -> Html Msg
+viewRoom : Resources -> Int -> RoomTile Resources msg -> Html msg
 viewRoom resources index room =
     div [ class ("room room-" ++ toString index) ]
-        [ Tiles.viewTile resources room ]
+        [ viewTile [] resources room ]
 
 
 viewResources resources =

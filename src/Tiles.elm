@@ -1,19 +1,22 @@
 module Tiles exposing (..)
 
-import Html exposing (Html, div)
+import Html exposing (Attribute, Html, div)
 import Html.Attributes exposing (class, style)
 import Html.Events exposing (onClick)
-import Resources exposing (Resources, noWalls, priceFree, priceGold, priceStone, priceWood)
+import Resources exposing (Resources, noWalls, priceFood, priceFree, priceGold, priceStone, priceWood)
 import Walls exposing (Wall(..), Walls)
 
 
 type Msg
-    = DoAction (RoomTile Resources) (Action Resources)
-    | Escavate
+    = Escavate
     | None
 
 
-type alias RoomTile state =
+type Events msg
+    = OnActionClick (RoomTile Resources msg -> Action Resources msg -> msg)
+
+
+type alias RoomTile state msg =
     { title : String
     , available : Bool
     , active : Bool
@@ -21,57 +24,73 @@ type alias RoomTile state =
     , src : String
     , price : Resources
     , walls : Walls
-    , actions : Actions state
+    , actions : List (Action state msg)
     }
 
 
-type alias ActionTile state =
-    { actions : List (Action state)}
-
-
-type Actions state
-    = Actions (List (Action state))
-
-
-type alias Action state =
+type alias Action state msg =
     { classes : String
-    , available: Bool
+    , available : Bool
     , isDoable : state -> Bool
-    , do : state -> (state, Msg)
+    , do : state -> state
+    , actionClick : Events msg
     }
 
 
-viewTile : Resources -> RoomTile Resources -> Html Msg
-viewTile resources tile =
-    if tile.active then
-        div [ style "background-image" ("url(" ++ tile.src ++ ")")
-            , class "tile"]
-            (viewActions tile resources tile.actions)
+viewTile : List (Attribute msg) -> Resources -> RoomTile Resources msg -> Html msg
+viewTile attributes resources tile =
+    div attributes
+        [ if tile.active then
+            div
+                [ style "background-image" ("url(" ++ tile.src ++ ")")
+                , class "tile"
+                ]
+                (List.indexedMap (\index -> \action -> viewAction tile resources action index) tile.actions)
 
-    else if tile.available then
-        div [ style "background-image" ("url(" ++ tile.src ++ ")")
-            , class "tile"] []
+          else if tile.available then
+            div
+                [ style "background-image" ("url(" ++ tile.src ++ ")")
+                , class "tile"
+                ]
+                []
 
-    else
-        div [class "tile hidden" ] []
+          else
+            div [ class "tile hidden" ] []
+        ]
 
 
-viewActions : RoomTile Resources -> Resources -> Actions Resources -> List (Html Msg)
-viewActions tile resources (Actions actions) =
-    List.indexedMap (\index -> \action -> viewAction tile resources action index) actions
-
-
-viewAction : RoomTile Resources -> Resources -> Action Resources -> Int -> Html Msg
+viewAction : RoomTile Resources msg -> Resources -> Action Resources msg -> Int -> Html msg
 viewAction tile resources action index =
     let
-        actions = case tile.actions of Actions act -> act
-        newTile = {tile | actions = Actions (List.indexedMap (\i -> \a -> if i == index then {a | available = False } else a ) actions) }
+        newTile =
+            { tile | actions = consumeAction tile.actions index }
     in
     if action.available && action.isDoable resources then
-        div [ class ("action doable "++ action.classes)
-            , onClick (DoAction newTile action) ] []
+        div [ class ("action doable " ++ action.classes), onClick (triggerActionEvent action newTile) ] []
+
     else
-        div [ class ("action notdoable " ++ action.classes)][]
+        div [ class ("action notdoable " ++ action.classes) ] []
+
+
+triggerActionEvent : Action Resources msg -> RoomTile Resources msg -> msg
+triggerActionEvent action tile =
+    case action.actionClick of
+        OnActionClick msg ->
+            msg tile action
+
+
+consumeAction actions index =
+    List.indexedMap
+        (\i ->
+            \a ->
+                if i == index then
+                    { a | available = False }
+
+                else
+                    a
+        )
+        actions
+
 
 
 ---------------------------------------------
@@ -79,116 +98,151 @@ viewAction tile resources action index =
 ---------------------------------------------
 
 
-tileLavoriDomestici : RoomTile Resources
-tileLavoriDomestici =
-    RoomTile "Lavori Domestici" True False
+tileLavoriDomestici : Events msg -> RoomTile Resources msg
+tileLavoriDomestici actionClick =
+    RoomTile "Lavori Domestici"
+        True
+        False
         1
         "assets/img/rounds/lavori_domestici.jpg"
         priceFree
         noWalls
-        (Actions [])
+        []
 
-tileColtivare : RoomTile Resources
-tileColtivare =
-    RoomTile "Coltivare" True False
+
+tileColtivare : Events msg -> RoomTile Resources msg
+tileColtivare actionClick =
+    RoomTile "Coltivare"
+        True
+        False
         1
         "assets/img/rounds/coltivare.jpg"
         priceFree
         noWalls
-        (Actions [])
+        []
 
-tileSottobosco : RoomTile Resources
-tileSottobosco =
-    RoomTile "Sottobosco" True False
+
+tileSottobosco : Events msg -> RoomTile Resources msg
+tileSottobosco actionClick =
+    RoomTile "Sottobosco"
+        True
+        False
         1
         "assets/img/rounds/sottobosco.jpg"
         priceFree
         noWalls
-        (Actions [])
+        []
 
-tileScavare : RoomTile Resources
-tileScavare =
-    RoomTile "Scavare" True False
+
+tileScavare : Events msg -> Events msg -> RoomTile Resources msg
+tileScavare actionClick escavate =
+    RoomTile "Scavare"
+        True
+        False
         1
         "assets/img/rounds/scavare.jpg"
         priceFree
         noWalls
-        (Actions [
-            topAction alwaysDoable (\r -> (r, Escavate)),
-            bottomAction alwaysDoable (\resources -> (resources |> addStone 1, None) )
-        ])
+        [ topLeftAction alwaysDoable (\r -> r) escavate
+        , topRightAction (require ((<=) 2) .food) (addFood -2) escavate
+        , bottomAction alwaysDoable (addStone 1) actionClick
+        ]
 
-tileArredare : RoomTile Resources
-tileArredare =
-    RoomTile "Arredare" False False
+
+tileArredare : Events msg -> RoomTile Resources msg
+tileArredare actionClick =
+    RoomTile "Arredare"
+        False
+        False
         2
         "assets/img/rounds/arredare.jpg"
         priceFree
         noWalls
-        (Actions [])
+        []
 
-tileCostruireUnMuro : RoomTile Resources
-tileCostruireUnMuro =
-    RoomTile "Costrurire un Muro" False False
+
+tileCostruireUnMuro : Events msg -> RoomTile Resources msg
+tileCostruireUnMuro actionClick =
+    RoomTile "Costrurire un Muro"
+        False
+        False
         2
         "assets/img/rounds/costruire_un_muro.jpg"
         priceFree
         noWalls
-        (Actions [])
+        []
 
-tileMinare : RoomTile Resources
-tileMinare =
-    RoomTile "Minare" False False
+
+tileMinare : Events msg -> RoomTile Resources msg
+tileMinare actionClick =
+    RoomTile "Minare"
+        False
+        False
         2
         "assets/img/rounds/minare.jpg"
         priceFree
         noWalls
-        (Actions [])
+        []
 
-tileDemolireUnMuro : RoomTile Resources
-tileDemolireUnMuro =
-    RoomTile "Demolire un Muro" False False
+
+tileDemolireUnMuro : Events msg -> RoomTile Resources msg
+tileDemolireUnMuro actionClick =
+    RoomTile "Demolire un Muro"
+        False
+        False
         3
         "assets/img/rounds/demolire_un_muro.jpg"
         priceFree
         noWalls
-        (Actions [])
+        []
 
-tileEspansione : RoomTile Resources
-tileEspansione =
-    RoomTile "Espansione" False False
+
+tileEspansione : Events msg -> RoomTile Resources msg
+tileEspansione actionClick =
+    RoomTile "Espansione"
+        False
+        False
         3
         "assets/img/rounds/espansione.jpg"
         priceFree
         noWalls
-        (Actions [])
+        []
 
-tileSpedizione : RoomTile Resources
-tileSpedizione =
-    RoomTile "Spedizione" False False
+
+tileSpedizione : Events msg -> RoomTile Resources msg
+tileSpedizione actionClick =
+    RoomTile "Spedizione"
+        False
+        False
         3
         "assets/img/rounds/spedizione.jpg"
         priceFree
         noWalls
-        (Actions [])
+        []
 
-tilePerforare : RoomTile Resources
-tilePerforare =
-    RoomTile "Perforare" False False
+
+tilePerforare : Events msg -> RoomTile Resources msg
+tilePerforare actionClick =
+    RoomTile "Perforare"
+        False
+        False
         3
         "assets/img/rounds/perforare.jpg"
         priceFree
         noWalls
-        (Actions [])
+        []
 
-tileRinnovare : RoomTile Resources
-tileRinnovare =
-    RoomTile "Rinnovare" False False
+
+tileRinnovare : Events msg -> RoomTile Resources msg
+tileRinnovare actionClick =
+    RoomTile "Rinnovare"
+        False
+        False
         4
         "assets/img/rounds/rinnovare.jpg"
         priceFree
         noWalls
-        (Actions [])
+        []
 
 
 
@@ -196,365 +250,378 @@ tileRinnovare =
 -------------EQUIPMENTS--------------------
 -------------------------------------------
 -- TODO: Handle Equipment Events
-tileSotterraneo : RoomTile Resources
-tileSotterraneo =
-    RoomTile "Sotterraneo" False False
+
+
+tileSotterraneo : Events msg -> RoomTile Resources msg
+tileSotterraneo actionClick =
+    RoomTile "Sotterraneo"
+        False
+        False
         11
         "assets/img/sotterraneo.jpg"
         (priceFree |> priceGold 4 |> priceStone 3)
         (Walls Placed Placed Placed Placed)
-        (Actions
-            []
-        )
+        []
 
-tileLavorareIlLino : RoomTile Resources
-tileLavorareIlLino =
-    RoomTile "Lavorare il Lino" False False
+
+tileLavorareIlLino : Events msg -> RoomTile Resources msg
+tileLavorareIlLino actionClick =
+    RoomTile "Lavorare il Lino"
+        False
+        False
         3
         "assets/img/lavorare_il_lino.jpg"
         (priceFree |> priceStone 1)
         (Walls Placed Optional Walls.None Placed)
-        (Actions
-            []
-        )
+        []
 
-tileEquipaggiamenti : RoomTile Resources
-tileEquipaggiamenti =
-    RoomTile "Equipaggiamenti" False False
+
+tileEquipaggiamenti : Events msg -> RoomTile Resources msg
+tileEquipaggiamenti actionClick =
+    RoomTile "Equipaggiamenti"
+        False
+        False
         3
         "assets/img/equipaggiamenti.jpg"
         (priceFree |> priceWood 2)
         (Walls Placed Walls.None Walls.None Optional)
-        (Actions
-            []
-        )
+        []
 
-tileDepositoDiLegna : RoomTile Resources
-tileDepositoDiLegna =
-    RoomTile "Deposito di Legna" False False
+
+tileDepositoDiLegna : Events msg -> RoomTile Resources msg
+tileDepositoDiLegna actionClick =
+    RoomTile "Deposito di Legna"
+        False
+        False
         2
         "assets/img/deposito_di_legna.jpg"
         (priceFree |> priceStone 1)
         (Walls Placed Walls.None Walls.None Placed)
-        (Actions
-            []
-        )
+        []
 
-tileAnalisiTerritoriale : RoomTile Resources
-tileAnalisiTerritoriale =
-    RoomTile "Analisi Territoriale" False False
+
+tileAnalisiTerritoriale : Events msg -> RoomTile Resources msg
+tileAnalisiTerritoriale actionClick =
+    RoomTile "Analisi Territoriale"
+        False
+        False
         5
         "assets/img/deposito_di_legna.jpg"
         priceFree
         (Walls Placed Walls.None Walls.None Optional)
-        (Actions
-            []
-        )
+        []
+
+
 
 -------------------------------------------
 -------------ROOM TILES--------------------
 -------------------------------------------
 
-tileCaveEntrance : RoomTile Resources
-tileCaveEntrance =
-    RoomTile "Entrata della Cava" False False
+
+tileCaveEntrance : Events msg -> RoomTile Resources msg
+tileCaveEntrance actionClick =
+    RoomTile "Entrata della Cava"
+        False
+        False
         0
         "assets/img/entrata_della_cava.jpg"
         priceFree
         noWalls
-        (Actions
-            [ firstAction alwaysDoable (\res -> (addWood 1 res, None))
-            , secondAction alwaysDoable (\res -> (addStone 1 res, None))
-            , thirdAction alwaysDoable (\res -> (addEmmer 1 res, None))
-            , fourthAction alwaysDoable (\res -> (addFlax 1 res, None))
-            ]
-        )
+        [ firstAction alwaysDoable (addWood 1) actionClick
+        , secondAction alwaysDoable (addStone 1) actionClick
+        , thirdAction alwaysDoable (addEmmer 1) actionClick
+        , fourthAction alwaysDoable (addFlax 1) actionClick
+        ]
 
 
-tileWarehouse : RoomTile Resources
-tileWarehouse =
-    RoomTile "Magazzino" False False
+tileWarehouse : Events msg -> RoomTile Resources msg
+tileWarehouse actionClick =
+    RoomTile "Magazzino"
+        False
+        False
         2
         "assets/img/magazzino.jpg"
         (priceFree |> priceWood 2)
         (Walls Placed Optional Walls.None Optional)
-        (Actions
-            [ fullAction (require ((<=) 2) .food)
-                (\res ->
-                    (res
-                        |> addFood -2
-                        |> addWood 1
-                        |> addStone 1
-                        |> addFlax 1
-                        |> addEmmer 1, None)
-                )
-            ]
-        )
+        [ fullAction (require ((<=) 2) .food)
+            (\res ->
+                res
+                    |> addFood -2
+                    |> addWood 1
+                    |> addStone 1
+                    |> addFlax 1
+                    |> addEmmer 1
+            )
+            actionClick
+        ]
 
 
-tileShelf : RoomTile Resources
-tileShelf =
-    RoomTile "Shelf" True False
+tileShelf : Events msg -> RoomTile Resources msg
+tileShelf actionClick =
+    RoomTile "Shelf"
+        True
+        False
         3
         "assets/img/scaffale.jpg"
         (priceFree |> priceWood 1)
         (Walls Placed Walls.None Walls.None Walls.None)
-        (Actions
-            [ firstAction (require ((>) 2) .wood) (\res -> (topWood 2 res, None))
-            , secondAction (require ((>) 2) .stone) (\res -> (topStone 2 res, None))
-            , thirdAction (require ((>) 2) .emmer) (\res -> (topEmmer 2 res, None))
-            , fourthAction (require ((>) 2) .flax) (\res -> (topFlax 2 res, None))
-            ]
-        )
+        [ firstAction (require ((>) 2) .wood) (topWood 2) actionClick
+        , secondAction (require ((>) 2) .stone) (topStone 2) actionClick
+        , thirdAction (require ((>) 2) .emmer) (topEmmer 2) actionClick
+        , fourthAction (require ((>) 2) .flax) (topFlax 2) actionClick
+        ]
 
 
-tileFoodCorner : RoomTile Resources
-tileFoodCorner =
-    RoomTile "Angolo del Cibo" True False
+tileFoodCorner : Events msg -> RoomTile Resources msg
+tileFoodCorner actionClick =
+    RoomTile "Angolo del Cibo"
+        True
+        False
         3
         "assets/img/angolo_del_cibo.jpg"
         (priceFree |> priceStone 1)
         (Walls Placed Walls.None Walls.None Placed)
-        (Actions
-            [ fullAction (require ((>) 3) .food) (\res -> (topFood 3 res, None)) ]
-        )
+        [ fullAction (require ((>) 3) .food) (topFood 3) actionClick ]
 
 
-tileSpinningWheel : RoomTile Resources
-tileSpinningWheel =
-    RoomTile "Filatoio" True False
+tileSpinningWheel : Events msg -> RoomTile Resources msg
+tileSpinningWheel actionClick =
+    RoomTile "Filatoio"
+        True
+        False
         4
         "assets/img/filatoio.jpg"
         (priceFree |> priceWood 1)
         (Walls Placed Walls.None Walls.None Walls.None)
-        (Actions
-            [ leftAction (require ((<=) 1) .flax) (\res -> (res |> addFlax -1 |> addGold 1, None))
-            , rightAction (require ((<=) 3) .flax) (\res -> (res |> addFlax -3 |> addGold 2, None))
-            ]
-        )
+        [ leftAction (require ((<=) 1) .flax) (\res -> res |> addFlax -1 |> addGold 1) actionClick
+        , rightAction (require ((<=) 3) .flax) (\res -> res |> addFlax -3 |> addGold 2) actionClick
+        ]
 
 
 
 -- TODO: these two actions are not mutually exclusive
 
 
-tileTunnel : RoomTile Resources
-tileTunnel =
-    RoomTile "Tunnel" True False
+tileTunnel : Events msg -> RoomTile Resources msg
+tileTunnel actionClick =
+    RoomTile "Tunnel"
+        True
+        False
         3
         "assets/img/tunnel.jpg"
         (priceFree |> priceWood 1)
         (Walls Walls.None Placed Walls.None Placed)
-        (Actions
-            [ topAction alwaysDoable (\res -> (addFood 2 res, None))
-            , bottomAction (require ((>) 3) .stone) (\resources -> (resources |> addStone 1 |> minStone 3, None))
-            ]
-        )
+        [ topAction alwaysDoable (addFood 2) actionClick
+        , bottomAction (require ((>) 3) .stone) (\resources -> resources |> addStone 1 |> minStone 3) actionClick
+        ]
 
 
-tileAltareSacrificale : RoomTile Resources
-tileAltareSacrificale =
-    RoomTile "Altare Sacrificale" False False
+tileAltareSacrificale : Events msg -> RoomTile Resources msg
+tileAltareSacrificale actionClick =
+    RoomTile "Altare Sacrificale"
+        False
+        False
         7
         "assets/img/altare_sacrificale.jpg"
         (priceFree |> priceStone 4)
         (Walls Placed Optional Walls.None Optional)
-        (Actions
-            [ fullAction
-                (\res ->
-                    (require ((<=) 1) .wood res)
-                        && (require ((<=) 1) .emmer res)
-                        && (require ((<=) 1) .flax res)
-                        && (require ((<=) 1) .food res)
-                )
-                (\res -> (res |> addEmmer -1 |> addWood -1 |> addFlax -1 |> addFood -1 |> addGold 3, None))
-            ]
-        )
+        [ fullAction
+            (\res ->
+                require ((<=) 1) .wood res
+                    && require ((<=) 1) .emmer res
+                    && require ((<=) 1) .flax res
+                    && require ((<=) 1) .food res
+            )
+            (\res -> res |> addEmmer -1 |> addWood -1 |> addFlax -1 |> addFood -1 |> addGold 3)
+            actionClick
+        ]
 
 
-tileBancarella : RoomTile Resources
-tileBancarella =
-    RoomTile "Bancarella" False False
+tileBancarella : Events msg -> RoomTile Resources msg
+tileBancarella actionClick =
+    RoomTile "Bancarella"
+        False
+        False
         6
         "assets/img/bancarella.jpg"
         (priceFree |> priceWood 1 |> priceGold 1)
         (Walls Placed Optional Walls.None Optional)
-        (Actions
-            [ leftAction (require ((<=) 5) .emmer) (\res -> (res |> addEmmer -5 |> addGold 4, None))
-            , rightAction (require ((<=) 5) .flax) (\res -> (res |> addFlax -5 |> addGold 4, None))
-            ]
-        )
+        [ leftAction (require ((<=) 5) .emmer) (\res -> res |> addEmmer -5 |> addGold 4) actionClick
+        , rightAction (require ((<=) 5) .flax) (\res -> res |> addFlax -5 |> addGold 4) actionClick
+        ]
 
 
-tileCameraSegreta : RoomTile Resources
-tileCameraSegreta =
-    RoomTile "Camera Segreta" False False
+tileCameraSegreta : Events msg -> RoomTile Resources msg
+tileCameraSegreta actionClick =
+    RoomTile "Camera Segreta"
+        False
+        False
         8
         "assets/img/camera_segreta.jpg"
         (priceFree |> priceWood 2 |> priceStone 1)
         (Walls Placed Placed Placed Placed)
-        (Actions
-            [ leftAction alwaysDoable (\res -> (res |> addFlax 3, None))
-            , rightAction alwaysDoable (\res -> (res |> addGold 1, None))
-            ]
-        )
+        [ leftAction alwaysDoable (\res -> res |> addFlax 3) actionClick
+        , rightAction alwaysDoable (\res -> res |> addGold 1) actionClick
+        ]
 
 
-tileCavaInEspansione : RoomTile Resources
-tileCavaInEspansione =
-    RoomTile "Cava in Espansione" False False
+tileCavaInEspansione : Events msg -> RoomTile Resources msg
+tileCavaInEspansione actionClick =
+    RoomTile "Cava in Espansione"
+        False
+        False
         8
         "assets/img/cava_in_espansione.jpg"
         (priceFree |> priceWood 1 |> priceStone 3)
         (Walls Placed Placed Walls.None Placed)
-        (Actions
-            [ fullAction (require ((<=) 1) .gold) (\res -> (res, Escavate))
-            ]
-        )
+        [ fullAction (require ((<=) 1) .gold) (\res -> res) actionClick ]
 
 
-tileDeposito : RoomTile Resources
-tileDeposito =
-    RoomTile "Deposito" False False
+tileDeposito : Events msg -> RoomTile Resources msg
+tileDeposito actionClick =
+    RoomTile "Deposito"
+        False
+        False
         6
         "assets/img/deposito.jpg"
         (priceFree |> priceWood 2 |> priceGold 1)
         (Walls Placed Walls.None Walls.None Placed)
-        (Actions
-            [ fullAction alwaysDoable (\res -> (res |> addEmmer 1 |> addFlax 1 |> addFood 1, None)) ]
-        )
+        [ fullAction alwaysDoable (\res -> res |> addEmmer 1 |> addFlax 1 |> addFood 1) actionClick ]
 
 
-tileFiliera : RoomTile Resources
-tileFiliera =
-    RoomTile "Filiera" False False
+tileFiliera : Events msg -> RoomTile Resources msg
+tileFiliera actionClick =
+    RoomTile "Filiera"
+        False
+        False
         5
         "assets/img/filiera.jpg"
         (priceFree |> priceWood 2)
         (Walls Placed Walls.None Walls.None Placed)
-        (Actions
-            [ fullAction (require ((<=) 2) .flax) (\res -> (res |> addFlax -2 |> addGold 2 |> addFood 2, None)) ]
-        )
+        [ fullAction (require ((<=) 2) .flax) (\res -> res |> addFlax -2 |> addGold 2 |> addFood 2) actionClick ]
 
 
-tileForno : RoomTile Resources
-tileForno =
-    RoomTile "Forno" False False
+tileForno : Events msg -> RoomTile Resources msg
+tileForno actionClick =
+    RoomTile "Forno"
+        False
+        False
         6
         "assets/img/forno.jpg"
         (priceFree |> priceWood 1 |> priceStone 2)
         (Walls Placed Placed Walls.None Placed)
-        (Actions
-            [ leftAction (require ((<=) 2) .emmer) (\res -> (res |> addEmmer -2 |> addFood 4 |> addGold 1, None))
-            , rightAction (require ((<=) 3) .emmer) (\res -> (res |> addEmmer -3 |> addFood 4 |> addGold 2, None))
-            ]
-        )
+        [ leftAction (require ((<=) 2) .emmer) (\res -> res |> addEmmer -2 |> addFood 4 |> addGold 1) actionClick
+        , rightAction (require ((<=) 3) .emmer) (\res -> res |> addEmmer -3 |> addFood 4 |> addGold 2) actionClick
+        ]
 
 
-tileMacina : RoomTile Resources
-tileMacina =
-    RoomTile "Macina" True False
+tileMacina : Events msg -> RoomTile Resources msg
+tileMacina actionClick =
+    RoomTile "Macina"
+        True
+        False
         4
         "assets/img/macina.jpg"
         (priceFree |> priceStone 1)
         (Walls Placed Walls.None Walls.None Optional)
-        (Actions
-            [ leftAction (require ((<=) 2) .emmer) (\res -> (res |> addEmmer -1 |> addFood 3, None))
-            , rightAction (require ((<=) 3) .emmer) (\res -> (res |> addEmmer -4 |> addFood 7, None))
-            ]
-        )
+        [ leftAction (require ((<=) 2) .emmer) (\res -> res |> addEmmer -1 |> addFood 3) actionClick
+        , rightAction (require ((<=) 3) .emmer) (\res -> res |> addEmmer -4 |> addFood 7) actionClick
+        ]
 
 
-tileGoldMine : RoomTile Resources
-tileGoldMine =
-    RoomTile "Miniera d'Oro" False False
+tileGoldMine : Events msg -> RoomTile Resources msg
+tileGoldMine actionClick =
+    RoomTile "Miniera d'Oro"
+        False
+        False
         9
         "assets/img/miniera_d_oro.jpg"
         (priceFree |> priceGold 5)
         (Walls Placed Optional Walls.None Placed)
-        (Actions
-            [ fullAction alwaysDoable (\res -> (res |> addGold 1 |> addStone 1, None)) ]
-        )
+        [ fullAction alwaysDoable (\res -> res |> addGold 1 |> addStone 1) actionClick ]
 
 
-tileOfficina : RoomTile Resources
-tileOfficina =
-    RoomTile "Officina" False False
+tileOfficina : Events msg -> RoomTile Resources msg
+tileOfficina actionClick =
+    RoomTile "Officina"
+        False
+        False
         5
         "assets/img/officina.jpg"
         (priceFree |> priceWood 1 |> priceStone 2)
         (Walls Placed Optional Walls.None Placed)
-        (Actions
-            [ fullAction
-                (\res ->
-                    require ((<=) 1) .flax res
-                        && require ((<=) 2) .food res
-                )
-                (\res -> (res |> addWood -2 |> addFlax -1 |> addGold 3, None))
-            ]
-        )
+        [ fullAction
+            (\res ->
+                require ((<=) 1) .flax res
+                    && require ((<=) 2) .food res
+            )
+            (\res -> res |> addWood -2 |> addFlax -1 |> addGold 3)
+            actionClick
+        ]
 
 
-tileSalotto : RoomTile Resources
-tileSalotto =
-    RoomTile "Salotto" True False
+tileSalotto : Events msg -> RoomTile Resources msg
+tileSalotto actionClick =
+    RoomTile "Salotto"
+        True
+        False
         6
         "assets/img/salotto.jpg"
         (priceFree |> priceStone 1 |> priceGold 1)
         (Walls Placed Placed Walls.None Placed)
-        (Actions
-            [ fullAction alwaysDoable (\res -> (res |> topWood 1 |> topWood 1 |> topEmmer 1 |> topFlax 1 |> topFood 1 |> topGold 1, None)) ]
-        )
+        [ fullAction alwaysDoable (\res -> res |> topWood 1 |> topWood 1 |> topEmmer 1 |> topFlax 1 |> topFood 1 |> topGold 1) actionClick ]
 
 
-tileLuxuryRoom : RoomTile Resources
-tileLuxuryRoom =
-    RoomTile "Stanza di Lusso" False False
+tileLuxuryRoom : Events msg -> RoomTile Resources msg
+tileLuxuryRoom actionClick =
+    RoomTile "Stanza di Lusso"
+        False
+        False
         12
         "assets/img/stanza_di_lusso.jpg"
         (priceFree |> priceGold 7)
         (Walls Placed Placed Optional Placed)
-        (Actions
-            [ fullAction alwaysDoable (\res -> (res |> addGold 1 |> addFlax 1, None)) ]
-        )
+        [ fullAction alwaysDoable (\res -> res |> addGold 1 |> addFlax 1) actionClick ]
 
 
 
 -- TODO: the user should choose three resources to spend
 
 
-tileStanzaDiSnodo : RoomTile Resources
-tileStanzaDiSnodo =
-    RoomTile "Stanza di Snodo" False False
+tileStanzaDiSnodo : Events msg -> RoomTile Resources msg
+tileStanzaDiSnodo actionClick =
+    RoomTile "Stanza di Snodo"
+        False
+        False
         6
         "assets/img/stanza_di_snodo.jpg"
         (priceFree |> priceWood 2)
         (Walls Placed Placed Optional Placed)
-        (Actions
-            [ fullAction alwaysDoable (\res -> (res |> addGold 2, None)) ]
-        )
+        [ fullAction alwaysDoable (\res -> res |> addGold 2) actionClick ]
 
 
-tileTesoreria : RoomTile Resources
-tileTesoreria =
-    RoomTile "Tesoreria" False False
+tileTesoreria : Events msg -> RoomTile Resources msg
+tileTesoreria actionClick =
+    RoomTile "Tesoreria"
+        False
+        False
         10
         "assets/img/tesoreria.jpg"
         (priceFree |> priceGold 3)
         (Walls Placed Placed Placed Placed)
-        (Actions
-            [ fullAction (require ((<=) 3) .gold) (\res -> (res |> addGold -3 |> addGold 4 |> addFood 1, None)) ]
-        )
+        [ fullAction (require ((<=) 3) .gold) (\res -> res |> addGold -3 |> addGold 4 |> addFood 1) actionClick ]
 
 
-tilePlaceholder : RoomTile Resources
-tilePlaceholder =
-    RoomTile "Placeholder" False False
+tilePlaceholder : Events msg -> RoomTile Resources msg
+tilePlaceholder actionClick =
+    RoomTile "Placeholder"
+        False
+        False
         10
         "assets/img/tesoreria.jpg"
         priceFree
         (Walls Placed Placed Placed Placed)
-        (Actions [])
+        []
 
 
 require : (Int -> Bool) -> (Resources -> Int) -> Resources -> Bool
@@ -632,46 +699,54 @@ alwaysDoable board =
     True
 
 
-firstAction : (state -> Bool) -> (state -> (state, Msg)) -> Action state
-firstAction isDoable do =
-    Action "first" True isDoable do
+firstAction : (state -> Bool) -> (state -> state) -> Events msg -> Action state msg
+firstAction isDoable do events =
+    Action "first" True isDoable do events
 
 
-secondAction : (state -> Bool) -> (state -> (state, Msg)) -> Action state
-secondAction isDoable do =
-    Action "second" True isDoable do
+secondAction : (state -> Bool) -> (state -> state) -> Events msg -> Action state msg
+secondAction isDoable do events =
+    Action "second" True isDoable do events
 
 
-thirdAction : (state -> Bool) -> (state -> (state, Msg)) -> Action state
-thirdAction isDoable do =
-    Action "third" True isDoable do
+thirdAction : (state -> Bool) -> (state -> state) -> Events msg -> Action state msg
+thirdAction isDoable do events =
+    Action "third" True isDoable do events
 
 
-fourthAction : (state -> Bool) -> (state -> (state, Msg)) -> Action state
-fourthAction isDoable do =
-    Action "fourth" True isDoable do
+fourthAction : (state -> Bool) -> (state -> state) -> Events msg -> Action state msg
+fourthAction isDoable do events =
+    Action "fourth" True isDoable do events
 
 
-leftAction : (state -> Bool) -> (state -> (state, Msg)) -> Action state
-leftAction isDoable do =
-    Action "left" True isDoable do
+leftAction : (state -> Bool) -> (state -> state) -> Events msg -> Action state msg
+leftAction isDoable do events =
+    Action "left" True isDoable do events
 
 
-rightAction : (state -> Bool) -> (state -> (state, Msg)) -> Action state
-rightAction isDoable do =
-    Action "right" True isDoable do
+rightAction : (state -> Bool) -> (state -> state) -> Events msg -> Action state msg
+rightAction isDoable do events =
+    Action "right" True isDoable do events
 
 
-topAction : (state -> Bool) -> (state -> (state, Msg)) -> Action state
-topAction isDoable do =
-    Action "top" True isDoable do
+topAction : (state -> Bool) -> (state -> state) -> Events msg -> Action state msg
+topAction isDoable do events =
+    Action "top" True isDoable do events
+
+topLeftAction : (state -> Bool) -> (state -> state) -> Events msg -> Action state msg
+topLeftAction isDoable do events =
+    Action "topleft" True isDoable do events
+
+topRightAction : (state -> Bool) -> (state -> state) -> Events msg -> Action state msg
+topRightAction isDoable do events =
+    Action "topright" True isDoable do events
 
 
-bottomAction : (state -> Bool) -> (state -> (state, Msg)) -> Action state
-bottomAction isDoable do =
-    Action "bottom" True isDoable do
+bottomAction : (state -> Bool) -> (state -> state) -> Events msg -> Action state msg
+bottomAction isDoable do events =
+    Action "bottom" True isDoable do events
 
 
-fullAction : (state -> Bool) -> (state -> (state, Msg)) -> Action state
-fullAction isDoable do =
-    Action "full" True isDoable do
+fullAction : (state -> Bool) -> (state -> state) -> Events msg -> Action state msg
+fullAction isDoable do events =
+    Action "full" True isDoable do events

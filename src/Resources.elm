@@ -18,9 +18,16 @@ noWalls =
     Walls Optional Optional Optional Optional
 
 
+
+
 priceWood : Int -> Resources -> Resources
 priceWood qty resources =
     { resources | wood = resources.wood + qty }
+
+
+priceFood : Int -> Resources -> Resources
+priceFood qty resources =
+    { resources | food = resources.food + qty }
 
 
 priceStone : Int -> Resources -> Resources
