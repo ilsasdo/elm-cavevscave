@@ -7,19 +7,20 @@ import Resources exposing (Resources, noWalls, priceFood, priceFree, priceGold, 
 import Walls exposing (Wall(..), Walls)
 
 
-type Msg
-    = Escavate
-    | None
-
-
 type Events msg
     = OnActionClick (RoomTile Resources msg -> Action Resources msg -> msg)
 
 
+type TileStatus =
+      Available
+    | Active
+    | Rock
+    | Empty
+
+
 type alias RoomTile state msg =
     { title : String
-    , available : Bool
-    , active : Bool
+    , status : TileStatus
     , score : Int
     , src : String
     , price : Resources
@@ -36,26 +37,39 @@ type alias Action state msg =
     , actionClick : Events msg
     }
 
+tileSetStatus tile status tiles =
+    List.map (\t ->
+                if t.title == tile.title then
+                    { t | status = status }
+
+                else
+                    t
+            )
+            tiles
 
 viewTile : List (Attribute msg) -> Resources -> RoomTile Resources msg -> Html msg
 viewTile attributes resources tile =
     div attributes
-        [ if tile.active then
-            div
-                [ style "background-image" ("url(" ++ tile.src ++ ")")
-                , class "tile"
-                ]
-                (List.indexedMap (\index -> \action -> viewAction tile resources action index) tile.actions)
+        [ case tile.status of
+            Active ->
+                div
+                    [ style "background-image" ("url(" ++ tile.src ++ ")")
+                    , class "tile"
+                    ]
+                    (List.indexedMap (\index -> \action -> viewAction tile resources action index) tile.actions)
 
-          else if tile.available then
-            div
-                [ style "background-image" ("url(" ++ tile.src ++ ")")
-                , class "tile"
-                ]
-                []
+            Available ->
+                div
+                    [ style "background-image" ("url(" ++ tile.src ++ ")")
+                    , class "tile"
+                    ]
+                    []
 
-          else
-            div [ class "tile hidden" ] []
+            Empty ->
+                div [ class "tile empty" ] []
+
+            Rock ->
+                div [ class "tile hidden" ] []
         ]
 
 
@@ -101,8 +115,7 @@ consumeAction actions index =
 tileLavoriDomestici : Events msg -> RoomTile Resources msg
 tileLavoriDomestici actionClick =
     RoomTile "Lavori Domestici"
-        True
-        False
+        Available
         1
         "assets/img/rounds/lavori_domestici.jpg"
         priceFree
@@ -113,8 +126,7 @@ tileLavoriDomestici actionClick =
 tileColtivare : Events msg -> RoomTile Resources msg
 tileColtivare actionClick =
     RoomTile "Coltivare"
-        True
-        False
+        Available
         1
         "assets/img/rounds/coltivare.jpg"
         priceFree
@@ -125,8 +137,7 @@ tileColtivare actionClick =
 tileSottobosco : Events msg -> RoomTile Resources msg
 tileSottobosco actionClick =
     RoomTile "Sottobosco"
-        True
-        False
+        Available
         1
         "assets/img/rounds/sottobosco.jpg"
         priceFree
@@ -137,8 +148,7 @@ tileSottobosco actionClick =
 tileScavare : Events msg -> Events msg -> RoomTile Resources msg
 tileScavare actionClick escavate =
     RoomTile "Scavare"
-        True
-        False
+        Available
         1
         "assets/img/rounds/scavare.jpg"
         priceFree
@@ -152,8 +162,7 @@ tileScavare actionClick escavate =
 tileArredare : Events msg -> RoomTile Resources msg
 tileArredare actionClick =
     RoomTile "Arredare"
-        False
-        False
+        Rock
         2
         "assets/img/rounds/arredare.jpg"
         priceFree
@@ -164,8 +173,7 @@ tileArredare actionClick =
 tileCostruireUnMuro : Events msg -> RoomTile Resources msg
 tileCostruireUnMuro actionClick =
     RoomTile "Costrurire un Muro"
-        False
-        False
+        Rock
         2
         "assets/img/rounds/costruire_un_muro.jpg"
         priceFree
@@ -176,8 +184,7 @@ tileCostruireUnMuro actionClick =
 tileMinare : Events msg -> RoomTile Resources msg
 tileMinare actionClick =
     RoomTile "Minare"
-        False
-        False
+        Rock
         2
         "assets/img/rounds/minare.jpg"
         priceFree
@@ -188,8 +195,7 @@ tileMinare actionClick =
 tileDemolireUnMuro : Events msg -> RoomTile Resources msg
 tileDemolireUnMuro actionClick =
     RoomTile "Demolire un Muro"
-        False
-        False
+        Rock
         3
         "assets/img/rounds/demolire_un_muro.jpg"
         priceFree
@@ -200,8 +206,7 @@ tileDemolireUnMuro actionClick =
 tileEspansione : Events msg -> RoomTile Resources msg
 tileEspansione actionClick =
     RoomTile "Espansione"
-        False
-        False
+        Rock
         3
         "assets/img/rounds/espansione.jpg"
         priceFree
@@ -212,8 +217,7 @@ tileEspansione actionClick =
 tileSpedizione : Events msg -> RoomTile Resources msg
 tileSpedizione actionClick =
     RoomTile "Spedizione"
-        False
-        False
+        Rock
         3
         "assets/img/rounds/spedizione.jpg"
         priceFree
@@ -224,8 +228,7 @@ tileSpedizione actionClick =
 tilePerforare : Events msg -> RoomTile Resources msg
 tilePerforare actionClick =
     RoomTile "Perforare"
-        False
-        False
+        Rock
         3
         "assets/img/rounds/perforare.jpg"
         priceFree
@@ -236,8 +239,7 @@ tilePerforare actionClick =
 tileRinnovare : Events msg -> RoomTile Resources msg
 tileRinnovare actionClick =
     RoomTile "Rinnovare"
-        False
-        False
+        Rock
         4
         "assets/img/rounds/rinnovare.jpg"
         priceFree
@@ -255,8 +257,7 @@ tileRinnovare actionClick =
 tileSotterraneo : Events msg -> RoomTile Resources msg
 tileSotterraneo actionClick =
     RoomTile "Sotterraneo"
-        False
-        False
+        Rock
         11
         "assets/img/sotterraneo.jpg"
         (priceFree |> priceGold 4 |> priceStone 3)
@@ -267,8 +268,7 @@ tileSotterraneo actionClick =
 tileLavorareIlLino : Events msg -> RoomTile Resources msg
 tileLavorareIlLino actionClick =
     RoomTile "Lavorare il Lino"
-        False
-        False
+        Rock
         3
         "assets/img/lavorare_il_lino.jpg"
         (priceFree |> priceStone 1)
@@ -279,8 +279,7 @@ tileLavorareIlLino actionClick =
 tileEquipaggiamenti : Events msg -> RoomTile Resources msg
 tileEquipaggiamenti actionClick =
     RoomTile "Equipaggiamenti"
-        False
-        False
+        Rock
         3
         "assets/img/equipaggiamenti.jpg"
         (priceFree |> priceWood 2)
@@ -291,8 +290,7 @@ tileEquipaggiamenti actionClick =
 tileDepositoDiLegna : Events msg -> RoomTile Resources msg
 tileDepositoDiLegna actionClick =
     RoomTile "Deposito di Legna"
-        False
-        False
+        Rock
         2
         "assets/img/deposito_di_legna.jpg"
         (priceFree |> priceStone 1)
@@ -303,8 +301,7 @@ tileDepositoDiLegna actionClick =
 tileAnalisiTerritoriale : Events msg -> RoomTile Resources msg
 tileAnalisiTerritoriale actionClick =
     RoomTile "Analisi Territoriale"
-        False
-        False
+        Rock
         5
         "assets/img/deposito_di_legna.jpg"
         priceFree
@@ -321,8 +318,7 @@ tileAnalisiTerritoriale actionClick =
 tileCaveEntrance : Events msg -> RoomTile Resources msg
 tileCaveEntrance actionClick =
     RoomTile "Entrata della Cava"
-        False
-        False
+        Rock
         0
         "assets/img/entrata_della_cava.jpg"
         priceFree
@@ -337,8 +333,7 @@ tileCaveEntrance actionClick =
 tileWarehouse : Events msg -> RoomTile Resources msg
 tileWarehouse actionClick =
     RoomTile "Magazzino"
-        False
-        False
+        Rock
         2
         "assets/img/magazzino.jpg"
         (priceFree |> priceWood 2)
@@ -359,8 +354,7 @@ tileWarehouse actionClick =
 tileShelf : Events msg -> RoomTile Resources msg
 tileShelf actionClick =
     RoomTile "Shelf"
-        True
-        False
+        Available
         3
         "assets/img/scaffale.jpg"
         (priceFree |> priceWood 1)
@@ -375,8 +369,7 @@ tileShelf actionClick =
 tileFoodCorner : Events msg -> RoomTile Resources msg
 tileFoodCorner actionClick =
     RoomTile "Angolo del Cibo"
-        True
-        False
+        Available
         3
         "assets/img/angolo_del_cibo.jpg"
         (priceFree |> priceStone 1)
@@ -387,8 +380,7 @@ tileFoodCorner actionClick =
 tileSpinningWheel : Events msg -> RoomTile Resources msg
 tileSpinningWheel actionClick =
     RoomTile "Filatoio"
-        True
-        False
+        Available
         4
         "assets/img/filatoio.jpg"
         (priceFree |> priceWood 1)
@@ -405,8 +397,7 @@ tileSpinningWheel actionClick =
 tileTunnel : Events msg -> RoomTile Resources msg
 tileTunnel actionClick =
     RoomTile "Tunnel"
-        True
-        False
+        Available
         3
         "assets/img/tunnel.jpg"
         (priceFree |> priceWood 1)
@@ -419,8 +410,7 @@ tileTunnel actionClick =
 tileAltareSacrificale : Events msg -> RoomTile Resources msg
 tileAltareSacrificale actionClick =
     RoomTile "Altare Sacrificale"
-        False
-        False
+        Rock
         7
         "assets/img/altare_sacrificale.jpg"
         (priceFree |> priceStone 4)
@@ -440,8 +430,7 @@ tileAltareSacrificale actionClick =
 tileBancarella : Events msg -> RoomTile Resources msg
 tileBancarella actionClick =
     RoomTile "Bancarella"
-        False
-        False
+        Rock
         6
         "assets/img/bancarella.jpg"
         (priceFree |> priceWood 1 |> priceGold 1)
@@ -454,8 +443,7 @@ tileBancarella actionClick =
 tileCameraSegreta : Events msg -> RoomTile Resources msg
 tileCameraSegreta actionClick =
     RoomTile "Camera Segreta"
-        False
-        False
+        Rock
         8
         "assets/img/camera_segreta.jpg"
         (priceFree |> priceWood 2 |> priceStone 1)
@@ -468,8 +456,7 @@ tileCameraSegreta actionClick =
 tileCavaInEspansione : Events msg -> RoomTile Resources msg
 tileCavaInEspansione actionClick =
     RoomTile "Cava in Espansione"
-        False
-        False
+        Rock
         8
         "assets/img/cava_in_espansione.jpg"
         (priceFree |> priceWood 1 |> priceStone 3)
@@ -480,8 +467,7 @@ tileCavaInEspansione actionClick =
 tileDeposito : Events msg -> RoomTile Resources msg
 tileDeposito actionClick =
     RoomTile "Deposito"
-        False
-        False
+        Rock
         6
         "assets/img/deposito.jpg"
         (priceFree |> priceWood 2 |> priceGold 1)
@@ -492,8 +478,7 @@ tileDeposito actionClick =
 tileFiliera : Events msg -> RoomTile Resources msg
 tileFiliera actionClick =
     RoomTile "Filiera"
-        False
-        False
+        Rock
         5
         "assets/img/filiera.jpg"
         (priceFree |> priceWood 2)
@@ -504,8 +489,7 @@ tileFiliera actionClick =
 tileForno : Events msg -> RoomTile Resources msg
 tileForno actionClick =
     RoomTile "Forno"
-        False
-        False
+        Rock
         6
         "assets/img/forno.jpg"
         (priceFree |> priceWood 1 |> priceStone 2)
@@ -518,8 +502,7 @@ tileForno actionClick =
 tileMacina : Events msg -> RoomTile Resources msg
 tileMacina actionClick =
     RoomTile "Macina"
-        True
-        False
+        Available
         4
         "assets/img/macina.jpg"
         (priceFree |> priceStone 1)
@@ -532,8 +515,7 @@ tileMacina actionClick =
 tileGoldMine : Events msg -> RoomTile Resources msg
 tileGoldMine actionClick =
     RoomTile "Miniera d'Oro"
-        False
-        False
+        Rock
         9
         "assets/img/miniera_d_oro.jpg"
         (priceFree |> priceGold 5)
@@ -544,8 +526,7 @@ tileGoldMine actionClick =
 tileOfficina : Events msg -> RoomTile Resources msg
 tileOfficina actionClick =
     RoomTile "Officina"
-        False
-        False
+        Rock
         5
         "assets/img/officina.jpg"
         (priceFree |> priceWood 1 |> priceStone 2)
@@ -563,8 +544,7 @@ tileOfficina actionClick =
 tileSalotto : Events msg -> RoomTile Resources msg
 tileSalotto actionClick =
     RoomTile "Salotto"
-        True
-        False
+        Available
         6
         "assets/img/salotto.jpg"
         (priceFree |> priceStone 1 |> priceGold 1)
@@ -575,8 +555,7 @@ tileSalotto actionClick =
 tileLuxuryRoom : Events msg -> RoomTile Resources msg
 tileLuxuryRoom actionClick =
     RoomTile "Stanza di Lusso"
-        False
-        False
+        Rock
         12
         "assets/img/stanza_di_lusso.jpg"
         (priceFree |> priceGold 7)
@@ -591,8 +570,7 @@ tileLuxuryRoom actionClick =
 tileStanzaDiSnodo : Events msg -> RoomTile Resources msg
 tileStanzaDiSnodo actionClick =
     RoomTile "Stanza di Snodo"
-        False
-        False
+        Rock
         6
         "assets/img/stanza_di_snodo.jpg"
         (priceFree |> priceWood 2)
@@ -603,8 +581,7 @@ tileStanzaDiSnodo actionClick =
 tileTesoreria : Events msg -> RoomTile Resources msg
 tileTesoreria actionClick =
     RoomTile "Tesoreria"
-        False
-        False
+        Rock
         10
         "assets/img/tesoreria.jpg"
         (priceFree |> priceGold 3)
@@ -615,8 +592,7 @@ tileTesoreria actionClick =
 tilePlaceholder : Events msg -> RoomTile Resources msg
 tilePlaceholder actionClick =
     RoomTile "Placeholder"
-        False
-        False
+        Rock
         10
         "assets/img/tesoreria.jpg"
         priceFree

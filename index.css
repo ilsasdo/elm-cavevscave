@@ -27,6 +27,20 @@
   cursor: pointer;
 }
 
+.tile .action.topLeft {
+  aspect-ratio: 1;
+  width: 25%;
+  left: 5%;
+  top: 33%;
+}
+
+.tile .action.topRight {
+  aspect-ratio: 2/1;
+  width: 55%;
+  left: 35%;
+  top: 33%;
+}
+
 .tile .action.full {
   aspect-ratio: 2/1;
   width: 90%;
