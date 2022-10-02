@@ -9,7 +9,7 @@ import PlayerBoard exposing (PlayerBoard, Subphase(..), viewBoard)
 import Random
 import Random.List
 import Resources exposing (Resources)
-import Tiles exposing (Action, Event(..), Events(..), RoomTile, TileStatus(..), tileAltareSacrificale, tileAnalisiTerritoriale, tileArredare, tileBancarella, tileCameraSegreta, tileCavaInEspansione, tileColtivare, tileCostruireUnMuro, tileDemolireUnMuro, tileDeposito, tileDepositoDiLegna, tileEquipaggiamenti, tileEspansione, tileFiliera, tileFoodCorner, tileForno, tileGoldMine, tileLavorareIlLino, tileLavoriDomestici, tileLuxuryRoom, tileMacina, tileMinare, tileOfficina, tilePerforare, tilePlaceholder, tileRinnovare, tileSalotto, tileScavare, tileSetStatus, tileShelf, tileSotterraneo, tileSottobosco, tileSpedizione, tileSpinningWheel, tileStanzaDiSnodo, tileTesoreria, tileTunnel, tileWarehouse, viewTile)
+import Tiles exposing (Action, Event(..), RoomTile, TileStatus(..), tileAltareSacrificale, tileAnalisiTerritoriale, tileArredare, tileBancarella, tileCameraSegreta, tileCavaInEspansione, tileColtivare, tileCostruireUnMuro, tileDemolireUnMuro, tileDeposito, tileDepositoDiLegna, tileEquipaggiamenti, tileEspansione, tileFiliera, tileFoodCorner, tileForno, tileGoldMine, tileLavorareIlLino, tileLavoriDomestici, tileLuxuryRoom, tileMacina, tileMinare, tileOfficina, tilePerforare, tileRinnovare, tileSalotto, tileScavare, tileSetStatus, tileShelf, tileSotterraneo, tileSottobosco, tileSpedizione, tileSpinningWheel, tileStanzaDiSnodo, tileTesoreria, tileTunnel, tileWarehouse, viewTile)
 import Walls
 
 
@@ -32,7 +32,7 @@ type Msg
     | Pass
     | DoAction (RoomTile Resources Msg) (Action Resources Msg)
     | PickActionTile (RoomTile Resources Msg)
-    | SelectRoom (Maybe Subphase) (RoomTile Resources Msg) (Action Resources Msg)
+    | ActivateTile (Maybe Subphase) (RoomTile Resources Msg) (Action Resources Msg)
     | SelectRoomTile (RoomTile Resources Msg)
     | DoNothing
 
@@ -51,31 +51,31 @@ init _ =
     ( Game newBoard newBoard 1 2 1 NewActionPhase Nothing [] newAvailableRooms
     , setupRandomTiles
         [ tileWarehouse (OnClick DoAction)
-        , tileAltareSacrificale (DoAction)
-        , tileBancarella (DoAction)
-        , tileCameraSegreta (DoAction)
-        , tileCavaInEspansione (DoAction)
-        , tileDeposito (DoAction)
-        , tileFiliera (DoAction)
-        , tileForno (DoAction)
-        , tileGoldMine (DoAction)
-        , tileOfficina (DoAction)
-        , tileLuxuryRoom (DoAction)
-        , tileStanzaDiSnodo (DoAction)
-        , tileTesoreria (DoAction)
-        , tileAnalisiTerritoriale (DoAction)
-        , tileSotterraneo (DoAction)
-        , tileEquipaggiamenti (DoAction)
-        , tileLavorareIlLino (DoAction)
-        , tileDepositoDiLegna (DoAction)
+        , tileAltareSacrificale (OnClick DoAction)
+        , tileBancarella (OnClick DoAction)
+        , tileCameraSegreta (OnClick DoAction)
+        , tileCavaInEspansione (OnClick DoAction)
+        , tileDeposito (OnClick DoAction)
+        , tileFiliera (OnClick DoAction)
+        , tileForno (OnClick DoAction)
+        , tileGoldMine (OnClick DoAction)
+        , tileOfficina (OnClick DoAction)
+        , tileLuxuryRoom (OnClick DoAction)
+        , tileStanzaDiSnodo (OnClick DoAction)
+        , tileTesoreria (OnClick DoAction)
+        , tileAnalisiTerritoriale (OnClick DoAction)
+        , tileSotterraneo (OnClick DoAction)
+        , tileEquipaggiamenti (OnClick DoAction)
+        , tileLavorareIlLino (OnClick DoAction)
+        , tileDepositoDiLegna (OnClick DoAction)
         ]
-        [ tileLavoriDomestici (DoAction)
-        , tileColtivare (DoAction) (SelectRoom (Just Activate1))
-        , tileSottobosco (DoAction)
-        , tileScavare (DoAction) (SelectRoom (Just ChooseRoomToEscavate)) (SelectRoom (Just ChooseSecondRoomToEscavate)) ]
-        [ tileArredare (DoAction), tileCostruireUnMuro (DoAction), tileMinare (DoAction) ]
-        [ tileDemolireUnMuro (DoAction), tileEspansione (DoAction), tileSpedizione (DoAction), tilePerforare (DoAction) ]
-        [ tileRinnovare (DoAction) ]
+        [ tileLavoriDomestici (OnClick DoAction)
+        , tileColtivare (OnClick DoAction) (OnClick (ActivateTile (Just Activate1)))
+        , tileSottobosco (OnClick DoAction)
+        , tileScavare (OnClick DoAction) (OnClick (ActivateTile (Just ChooseRoomToEscavate))) (OnClick (ActivateTile (Just ChooseSecondRoomToEscavate))) ]
+        [ tileArredare (OnClick DoAction), tileCostruireUnMuro (OnClick DoAction), tileMinare (OnClick DoAction) ]
+        [ tileDemolireUnMuro (OnClick DoAction), tileEspansione (OnClick DoAction), tileSpedizione (OnClick DoAction), tilePerforare (OnClick DoAction) ]
+        [ tileRinnovare (OnClick DoAction) ]
     )
 
 
@@ -97,12 +97,12 @@ newBoard =
 
 newAvailableRooms : List (RoomTile Resources Msg)
 newAvailableRooms =
-    [ tileShelf (DoAction)
-    , tileSpinningWheel (DoAction)
-    , tileMacina (DoAction)
-    , tileSalotto (DoAction)
-    , tileTunnel (DoAction)
-    , tileFoodCorner (DoAction)
+    [ tileShelf (OnClick DoAction)
+    , tileSpinningWheel (OnClick DoAction)
+    , tileMacina (OnClick DoAction)
+    , tileSalotto (OnClick DoAction)
+    , tileTunnel (OnClick DoAction)
+    , tileFoodCorner (OnClick DoAction)
     ]
 
 
@@ -149,7 +149,7 @@ update msg ({ player1, player2 } as game) =
             , Cmd.none
             )
 
-        SelectRoom subphase tile action ->
+        ActivateTile subphase tile action ->
             ( { game | subphase = subphase }
                 |> updateCurrentPlayer
                     { activePlayer

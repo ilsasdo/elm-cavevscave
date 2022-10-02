@@ -79,10 +79,17 @@ viewAction tile resources action index =
             { tile | actions = consumeAction tile.actions index }
     in
     if action.available && action.isDoable resources then
-        div [ class ("action doable " ++ action.classes), onClick (action.actionClick newTile action) ] []
+        div [ class ("action doable " ++ action.classes), onClick (trigger newTile action) ] []
 
     else
         div [ class ("action notdoable " ++ action.classes) ] []
+
+
+trigger: RoomTile Resources msg -> Action Resources msg -> msg
+trigger tile action =
+    case action.actionClick of
+        OnClick msg ->
+            msg tile action
 
 
 consumeAction actions index =

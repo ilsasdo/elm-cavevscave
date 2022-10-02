@@ -34,7 +34,7 @@ type Subphase
 
 viewBoard : PlayerBoard msg -> Maybe Subphase -> (RoomTile Resources msg -> msg) -> Html msg
 viewBoard board subphase select =
-    div [class "playerboard"]
+    div [ class "playerboard" ]
         [ viewActionTiles board.resources board.actionTiles
         , div [ class "board" ]
             ([ viewResources board.resources ]
@@ -77,7 +77,7 @@ viewRoom resources subphase select index room =
     case subphase of
         Just something ->
             div [ class ("room room-" ++ toString index) ]
-                [ viewTile [class "pick", onClick (select room) ] resources room ]
+                [ viewTile [ class "pick", onClick (select room) ] resources room ]
 
         Nothing ->
             div [ class ("room room-" ++ toString index) ]
