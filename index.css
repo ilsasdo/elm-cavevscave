@@ -3,7 +3,6 @@
   border-radius: 10px;
   border-style: groove;
   position: relative;
-  /*aspect-ratio: 1;*/
   height: 100%;
   width: 100%;
 }
@@ -104,13 +103,18 @@
   left: 73%;
 }
 
+.playerboard {
+  position: relative;
+  float: left;
+  width: 33%;
+}
+
 .board {
   background-image: url("assets/img/board.jpg");
   background-size: contain;
   background-repeat: no-repeat;
   position: relative;
-  float: left;
-  width: 32%;
+  width: 100%;
   aspect-ratio: 2348/3838;
 }
 
@@ -340,11 +344,17 @@
   background-color: gray;
   display: flex;
   flex-wrap: wrap;
+  min-height: 20%;
 }
 
 .actiontile {
   display: inline-block;
   width: 8.3%;
+  aspect-ratio: 1;
+}
+
+.playerboard > .actiontiles > .actiontile {
+  width: 25%;
   aspect-ratio: 1;
 }
 

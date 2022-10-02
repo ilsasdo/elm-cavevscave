@@ -24,17 +24,21 @@ type alias Cave state msg =
     }
 
 
-type Choices
-    = ChooseWhichRoomToEscavate
+type Subphase
+    = ChooseRoomToEscavate
+    | ChooseSecondRoomToEscavate
+    | Activate1
+    | Activate2
+    | Activate3
 
 
-viewBoard : PlayerBoard msg -> Maybe Choices -> (RoomTile Resources msg -> msg) -> Html msg
-viewBoard board subphase message =
-    div []
+viewBoard : PlayerBoard msg -> Maybe Subphase -> (RoomTile Resources msg -> msg) -> Html msg
+viewBoard board subphase select =
+    div [class "playerboard"]
         [ viewActionTiles board.resources board.actionTiles
         , div [ class "board" ]
             ([ viewResources board.resources ]
-                ++ viewRooms board.resources board.rooms subphase message
+                ++ viewRooms board.resources board.rooms subphase select
                 ++ viewWalls board.walls
             )
         ]
@@ -63,23 +67,21 @@ viewWall index wall =
             div [ class ("wall available wall-" ++ toString index) ] []
 
 
-viewRooms : Resources -> List (RoomTile Resources msg) -> Maybe Choices -> (RoomTile Resources msg -> msg) -> List (Html msg)
-viewRooms resources rooms subphase message =
-    List.indexedMap (viewRoom resources subphase message) rooms
+viewRooms : Resources -> List (RoomTile Resources msg) -> Maybe Subphase -> (RoomTile Resources msg -> msg) -> List (Html msg)
+viewRooms resources rooms subphase select =
+    List.indexedMap (viewRoom resources subphase select) rooms
 
 
-viewRoom : Resources -> Maybe Choices -> (RoomTile Resources msg -> msg) -> Int -> RoomTile Resources msg -> Html msg
-viewRoom resources subphase message index room =
-    let
-        className = case subphase of
-            Just ChooseWhichRoomToEscavate ->
-                "pick"
+viewRoom : Resources -> Maybe Subphase -> (RoomTile Resources msg -> msg) -> Int -> RoomTile Resources msg -> Html msg
+viewRoom resources subphase select index room =
+    case subphase of
+        Just something ->
+            div [ class ("room room-" ++ toString index) ]
+                [ viewTile [class "pick", onClick (select room) ] resources room ]
 
-            Nothing ->
-                ""
-    in
-    div [ class ("room room-" ++ toString index) ]
-        [ viewTile [class className, onClick (message room) ] resources room ]
+        Nothing ->
+            div [ class ("room room-" ++ toString index) ]
+                [ viewTile [] resources room ]
 
 
 viewResources resources =

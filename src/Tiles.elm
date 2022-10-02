@@ -7,10 +7,6 @@ import Resources exposing (Resources, noWalls, priceFood, priceFree, priceGold, 
 import Walls exposing (Wall(..), Walls)
 
 
-type Events msg
-    = OnActionClick (RoomTile Resources msg -> Action Resources msg -> msg)
-
-
 type TileStatus =
       Available
     | Active
@@ -34,8 +30,11 @@ type alias Action state msg =
     , available : Bool
     , isDoable : state -> Bool
     , do : state -> state
-    , actionClick : Events msg
+    , actionClick : Event msg
     }
+
+type Event msg =
+    OnClick (RoomTile Resources msg -> Action Resources msg -> msg)
 
 tileSetStatus tile status tiles =
     List.map (\t ->
@@ -80,17 +79,10 @@ viewAction tile resources action index =
             { tile | actions = consumeAction tile.actions index }
     in
     if action.available && action.isDoable resources then
-        div [ class ("action doable " ++ action.classes), onClick (triggerActionEvent action newTile) ] []
+        div [ class ("action doable " ++ action.classes), onClick (action.actionClick newTile action) ] []
 
     else
         div [ class ("action notdoable " ++ action.classes) ] []
-
-
-triggerActionEvent : Action Resources msg -> RoomTile Resources msg -> msg
-triggerActionEvent action tile =
-    case action.actionClick of
-        OnActionClick msg ->
-            msg tile action
 
 
 consumeAction actions index =
@@ -112,7 +104,7 @@ consumeAction actions index =
 ---------------------------------------------
 
 
-tileLavoriDomestici : Events msg -> RoomTile Resources msg
+tileLavoriDomestici : Event msg -> RoomTile Resources msg
 tileLavoriDomestici actionClick =
     RoomTile "Lavori Domestici"
         Available
@@ -123,18 +115,19 @@ tileLavoriDomestici actionClick =
         []
 
 
-tileColtivare : Events msg -> RoomTile Resources msg
-tileColtivare actionClick =
+tileColtivare :Event msg -> Event msg -> RoomTile Resources msg
+tileColtivare actionClick activate1 =
     RoomTile "Coltivare"
         Available
         1
         "assets/img/rounds/coltivare.jpg"
         priceFree
         noWalls
-        []
+        [topAction alwaysDoable (\r -> r) activate1,
+        bottomAction alwaysDoable (\r -> r |> addEmmer 2 |> addFlax 1) actionClick]
 
 
-tileSottobosco : Events msg -> RoomTile Resources msg
+tileSottobosco : Event msg -> RoomTile Resources msg
 tileSottobosco actionClick =
     RoomTile "Sottobosco"
         Available
@@ -142,11 +135,11 @@ tileSottobosco actionClick =
         "assets/img/rounds/sottobosco.jpg"
         priceFree
         noWalls
-        []
+        [bottomAction alwaysDoable (addWood 2) actionClick]
 
 
-tileScavare : Events msg -> Events msg -> RoomTile Resources msg
-tileScavare actionClick escavate =
+tileScavare : Event msg -> Event msg -> Event msg -> RoomTile Resources msg
+tileScavare actionClick escavate escavateTwice =
     RoomTile "Scavare"
         Available
         1
@@ -154,12 +147,12 @@ tileScavare actionClick escavate =
         priceFree
         noWalls
         [ topLeftAction alwaysDoable (\r -> r) escavate
-        , topRightAction (require ((<=) 2) .food) (addFood -2) escavate
+        , topRightAction (require ((<=) 2) .food) (addFood -2) escavateTwice
         , bottomAction alwaysDoable (addStone 1) actionClick
         ]
 
 
-tileArredare : Events msg -> RoomTile Resources msg
+tileArredare : Event msg -> RoomTile Resources msg
 tileArredare actionClick =
     RoomTile "Arredare"
         Rock
@@ -167,10 +160,10 @@ tileArredare actionClick =
         "assets/img/rounds/arredare.jpg"
         priceFree
         noWalls
-        []
+        [topAction alwaysDoable (addFood 1) actionClick]
 
 
-tileCostruireUnMuro : Events msg -> RoomTile Resources msg
+tileCostruireUnMuro : Event msg -> RoomTile Resources msg
 tileCostruireUnMuro actionClick =
     RoomTile "Costrurire un Muro"
         Rock
@@ -181,7 +174,7 @@ tileCostruireUnMuro actionClick =
         []
 
 
-tileMinare : Events msg -> RoomTile Resources msg
+tileMinare : Event msg -> RoomTile Resources msg
 tileMinare actionClick =
     RoomTile "Minare"
         Rock
@@ -192,7 +185,7 @@ tileMinare actionClick =
         []
 
 
-tileDemolireUnMuro : Events msg -> RoomTile Resources msg
+tileDemolireUnMuro : Event msg -> RoomTile Resources msg
 tileDemolireUnMuro actionClick =
     RoomTile "Demolire un Muro"
         Rock
@@ -203,7 +196,7 @@ tileDemolireUnMuro actionClick =
         []
 
 
-tileEspansione : Events msg -> RoomTile Resources msg
+tileEspansione : Event msg -> RoomTile Resources msg
 tileEspansione actionClick =
     RoomTile "Espansione"
         Rock
@@ -214,7 +207,7 @@ tileEspansione actionClick =
         []
 
 
-tileSpedizione : Events msg -> RoomTile Resources msg
+tileSpedizione : Event msg -> RoomTile Resources msg
 tileSpedizione actionClick =
     RoomTile "Spedizione"
         Rock
@@ -225,7 +218,7 @@ tileSpedizione actionClick =
         []
 
 
-tilePerforare : Events msg -> RoomTile Resources msg
+tilePerforare : Event msg -> RoomTile Resources msg
 tilePerforare actionClick =
     RoomTile "Perforare"
         Rock
@@ -236,7 +229,7 @@ tilePerforare actionClick =
         []
 
 
-tileRinnovare : Events msg -> RoomTile Resources msg
+tileRinnovare : Event msg -> RoomTile Resources msg
 tileRinnovare actionClick =
     RoomTile "Rinnovare"
         Rock
@@ -254,7 +247,7 @@ tileRinnovare actionClick =
 -- TODO: Handle Equipment Events
 
 
-tileSotterraneo : Events msg -> RoomTile Resources msg
+tileSotterraneo : Event msg -> RoomTile Resources msg
 tileSotterraneo actionClick =
     RoomTile "Sotterraneo"
         Rock
@@ -265,7 +258,7 @@ tileSotterraneo actionClick =
         []
 
 
-tileLavorareIlLino : Events msg -> RoomTile Resources msg
+tileLavorareIlLino : Event msg -> RoomTile Resources msg
 tileLavorareIlLino actionClick =
     RoomTile "Lavorare il Lino"
         Rock
@@ -276,7 +269,7 @@ tileLavorareIlLino actionClick =
         []
 
 
-tileEquipaggiamenti : Events msg -> RoomTile Resources msg
+tileEquipaggiamenti : Event msg -> RoomTile Resources msg
 tileEquipaggiamenti actionClick =
     RoomTile "Equipaggiamenti"
         Rock
@@ -287,7 +280,7 @@ tileEquipaggiamenti actionClick =
         []
 
 
-tileDepositoDiLegna : Events msg -> RoomTile Resources msg
+tileDepositoDiLegna : Event msg -> RoomTile Resources msg
 tileDepositoDiLegna actionClick =
     RoomTile "Deposito di Legna"
         Rock
@@ -298,7 +291,7 @@ tileDepositoDiLegna actionClick =
         []
 
 
-tileAnalisiTerritoriale : Events msg -> RoomTile Resources msg
+tileAnalisiTerritoriale : Event msg -> RoomTile Resources msg
 tileAnalisiTerritoriale actionClick =
     RoomTile "Analisi Territoriale"
         Rock
@@ -315,7 +308,7 @@ tileAnalisiTerritoriale actionClick =
 -------------------------------------------
 
 
-tileCaveEntrance : Events msg -> RoomTile Resources msg
+tileCaveEntrance : Event msg -> RoomTile Resources msg
 tileCaveEntrance actionClick =
     RoomTile "Entrata della Cava"
         Rock
@@ -330,7 +323,7 @@ tileCaveEntrance actionClick =
         ]
 
 
-tileWarehouse : Events msg -> RoomTile Resources msg
+tileWarehouse : Event msg -> RoomTile Resources msg
 tileWarehouse actionClick =
     RoomTile "Magazzino"
         Rock
@@ -351,7 +344,7 @@ tileWarehouse actionClick =
         ]
 
 
-tileShelf : Events msg -> RoomTile Resources msg
+tileShelf : Event msg -> RoomTile Resources msg
 tileShelf actionClick =
     RoomTile "Shelf"
         Available
@@ -366,7 +359,7 @@ tileShelf actionClick =
         ]
 
 
-tileFoodCorner : Events msg -> RoomTile Resources msg
+tileFoodCorner : Event msg -> RoomTile Resources msg
 tileFoodCorner actionClick =
     RoomTile "Angolo del Cibo"
         Available
@@ -377,7 +370,7 @@ tileFoodCorner actionClick =
         [ fullAction (require ((>) 3) .food) (topFood 3) actionClick ]
 
 
-tileSpinningWheel : Events msg -> RoomTile Resources msg
+tileSpinningWheel : Event msg -> RoomTile Resources msg
 tileSpinningWheel actionClick =
     RoomTile "Filatoio"
         Available
@@ -394,7 +387,7 @@ tileSpinningWheel actionClick =
 -- TODO: these two actions are not mutually exclusive
 
 
-tileTunnel : Events msg -> RoomTile Resources msg
+tileTunnel : Event msg -> RoomTile Resources msg
 tileTunnel actionClick =
     RoomTile "Tunnel"
         Available
@@ -407,7 +400,7 @@ tileTunnel actionClick =
         ]
 
 
-tileAltareSacrificale : Events msg -> RoomTile Resources msg
+tileAltareSacrificale : Event msg -> RoomTile Resources msg
 tileAltareSacrificale actionClick =
     RoomTile "Altare Sacrificale"
         Rock
@@ -427,7 +420,7 @@ tileAltareSacrificale actionClick =
         ]
 
 
-tileBancarella : Events msg -> RoomTile Resources msg
+tileBancarella : Event msg -> RoomTile Resources msg
 tileBancarella actionClick =
     RoomTile "Bancarella"
         Rock
@@ -440,7 +433,7 @@ tileBancarella actionClick =
         ]
 
 
-tileCameraSegreta : Events msg -> RoomTile Resources msg
+tileCameraSegreta : Event msg -> RoomTile Resources msg
 tileCameraSegreta actionClick =
     RoomTile "Camera Segreta"
         Rock
@@ -453,7 +446,7 @@ tileCameraSegreta actionClick =
         ]
 
 
-tileCavaInEspansione : Events msg -> RoomTile Resources msg
+tileCavaInEspansione : Event msg -> RoomTile Resources msg
 tileCavaInEspansione actionClick =
     RoomTile "Cava in Espansione"
         Rock
@@ -464,7 +457,7 @@ tileCavaInEspansione actionClick =
         [ fullAction (require ((<=) 1) .gold) (\res -> res) actionClick ]
 
 
-tileDeposito : Events msg -> RoomTile Resources msg
+tileDeposito : Event msg -> RoomTile Resources msg
 tileDeposito actionClick =
     RoomTile "Deposito"
         Rock
@@ -475,7 +468,7 @@ tileDeposito actionClick =
         [ fullAction alwaysDoable (\res -> res |> addEmmer 1 |> addFlax 1 |> addFood 1) actionClick ]
 
 
-tileFiliera : Events msg -> RoomTile Resources msg
+tileFiliera : Event msg -> RoomTile Resources msg
 tileFiliera actionClick =
     RoomTile "Filiera"
         Rock
@@ -486,7 +479,7 @@ tileFiliera actionClick =
         [ fullAction (require ((<=) 2) .flax) (\res -> res |> addFlax -2 |> addGold 2 |> addFood 2) actionClick ]
 
 
-tileForno : Events msg -> RoomTile Resources msg
+tileForno : Event msg -> RoomTile Resources msg
 tileForno actionClick =
     RoomTile "Forno"
         Rock
@@ -499,7 +492,7 @@ tileForno actionClick =
         ]
 
 
-tileMacina : Events msg -> RoomTile Resources msg
+tileMacina : Event msg -> RoomTile Resources msg
 tileMacina actionClick =
     RoomTile "Macina"
         Available
@@ -512,7 +505,7 @@ tileMacina actionClick =
         ]
 
 
-tileGoldMine : Events msg -> RoomTile Resources msg
+tileGoldMine : Event msg -> RoomTile Resources msg
 tileGoldMine actionClick =
     RoomTile "Miniera d'Oro"
         Rock
@@ -523,7 +516,7 @@ tileGoldMine actionClick =
         [ fullAction alwaysDoable (\res -> res |> addGold 1 |> addStone 1) actionClick ]
 
 
-tileOfficina : Events msg -> RoomTile Resources msg
+tileOfficina : Event msg -> RoomTile Resources msg
 tileOfficina actionClick =
     RoomTile "Officina"
         Rock
@@ -541,7 +534,7 @@ tileOfficina actionClick =
         ]
 
 
-tileSalotto : Events msg -> RoomTile Resources msg
+tileSalotto : Event msg -> RoomTile Resources msg
 tileSalotto actionClick =
     RoomTile "Salotto"
         Available
@@ -552,7 +545,7 @@ tileSalotto actionClick =
         [ fullAction alwaysDoable (\res -> res |> topWood 1 |> topWood 1 |> topEmmer 1 |> topFlax 1 |> topFood 1 |> topGold 1) actionClick ]
 
 
-tileLuxuryRoom : Events msg -> RoomTile Resources msg
+tileLuxuryRoom : Event msg -> RoomTile Resources msg
 tileLuxuryRoom actionClick =
     RoomTile "Stanza di Lusso"
         Rock
@@ -567,7 +560,7 @@ tileLuxuryRoom actionClick =
 -- TODO: the user should choose three resources to spend
 
 
-tileStanzaDiSnodo : Events msg -> RoomTile Resources msg
+tileStanzaDiSnodo : Event msg -> RoomTile Resources msg
 tileStanzaDiSnodo actionClick =
     RoomTile "Stanza di Snodo"
         Rock
@@ -578,7 +571,7 @@ tileStanzaDiSnodo actionClick =
         [ fullAction alwaysDoable (\res -> res |> addGold 2) actionClick ]
 
 
-tileTesoreria : Events msg -> RoomTile Resources msg
+tileTesoreria : Event msg -> RoomTile Resources msg
 tileTesoreria actionClick =
     RoomTile "Tesoreria"
         Rock
@@ -587,17 +580,6 @@ tileTesoreria actionClick =
         (priceFree |> priceGold 3)
         (Walls Placed Placed Placed Placed)
         [ fullAction (require ((<=) 3) .gold) (\res -> res |> addGold -3 |> addGold 4 |> addFood 1) actionClick ]
-
-
-tilePlaceholder : Events msg -> RoomTile Resources msg
-tilePlaceholder actionClick =
-    RoomTile "Placeholder"
-        Rock
-        10
-        "assets/img/tesoreria.jpg"
-        priceFree
-        (Walls Placed Placed Placed Placed)
-        []
 
 
 require : (Int -> Bool) -> (Resources -> Int) -> Resources -> Bool
@@ -675,54 +657,54 @@ alwaysDoable board =
     True
 
 
-firstAction : (state -> Bool) -> (state -> state) -> Events msg -> Action state msg
+firstAction : (state -> Bool) -> (state -> state) -> Event msg -> Action state msg
 firstAction isDoable do events =
     Action "first" True isDoable do events
 
 
-secondAction : (state -> Bool) -> (state -> state) -> Events msg -> Action state msg
+secondAction : (state -> Bool) -> (state -> state) -> Event msg -> Action state msg
 secondAction isDoable do events =
     Action "second" True isDoable do events
 
 
-thirdAction : (state -> Bool) -> (state -> state) -> Events msg -> Action state msg
+thirdAction : (state -> Bool) -> (state -> state) -> Event msg -> Action state msg
 thirdAction isDoable do events =
     Action "third" True isDoable do events
 
 
-fourthAction : (state -> Bool) -> (state -> state) -> Events msg -> Action state msg
+fourthAction : (state -> Bool) -> (state -> state) -> Event msg -> Action state msg
 fourthAction isDoable do events =
     Action "fourth" True isDoable do events
 
 
-leftAction : (state -> Bool) -> (state -> state) -> Events msg -> Action state msg
+leftAction : (state -> Bool) -> (state -> state) -> Event msg -> Action state msg
 leftAction isDoable do events =
     Action "left" True isDoable do events
 
 
-rightAction : (state -> Bool) -> (state -> state) -> Events msg -> Action state msg
+rightAction : (state -> Bool) -> (state -> state) -> Event msg -> Action state msg
 rightAction isDoable do events =
     Action "right" True isDoable do events
 
 
-topAction : (state -> Bool) -> (state -> state) -> Events msg -> Action state msg
+topAction : (state -> Bool) -> (state -> state) -> Event msg -> Action state msg
 topAction isDoable do events =
     Action "top" True isDoable do events
 
-topLeftAction : (state -> Bool) -> (state -> state) -> Events msg -> Action state msg
+topLeftAction : (state -> Bool) -> (state -> state) -> Event msg -> Action state msg
 topLeftAction isDoable do events =
     Action "topleft" True isDoable do events
 
-topRightAction : (state -> Bool) -> (state -> state) -> Events msg -> Action state msg
+topRightAction : (state -> Bool) -> (state -> state) -> Event msg -> Action state msg
 topRightAction isDoable do events =
     Action "topright" True isDoable do events
 
 
-bottomAction : (state -> Bool) -> (state -> state) -> Events msg -> Action state msg
+bottomAction : (state -> Bool) -> (state -> state) -> Event msg -> Action state msg
 bottomAction isDoable do events =
     Action "bottom" True isDoable do events
 
 
-fullAction : (state -> Bool) -> (state -> state) -> Events msg -> Action state msg
+fullAction : (state -> Bool) -> (state -> state) -> Event msg -> Action state msg
 fullAction isDoable do events =
     Action "full" True isDoable do events
