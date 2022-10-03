@@ -105,28 +105,29 @@ consumeAction actions index =
         actions
 
 
-
 ---------------------------------------------
 -------------Action Tiles--------------------
 ---------------------------------------------
 
 
 tileLavoriDomestici : Event msg -> RoomTile Resources msg
-tileLavoriDomestici actionClick =
+tileLavoriDomestici furnishCavern =
     RoomTile "Lavori Domestici"
         Available
-        1
+        0
         "assets/img/rounds/lavori_domestici.jpg"
         priceFree
         noWalls
-        []
+        [ topAction alwaysDoable (\r -> r) furnishCavern
+        , bottomLeftAction alwaysDoable (addFood -5) furnishCavern
+        , bottomRightAction alwaysDoable (addGold -1) furnishCavern]
 
 
 tileColtivare :Event msg -> Event msg -> RoomTile Resources msg
 tileColtivare actionClick activate1 =
     RoomTile "Coltivare"
         Available
-        1
+        0
         "assets/img/rounds/coltivare.jpg"
         priceFree
         noWalls
@@ -138,7 +139,7 @@ tileSottobosco : Event msg -> RoomTile Resources msg
 tileSottobosco actionClick =
     RoomTile "Sottobosco"
         Available
-        1
+        0
         "assets/img/rounds/sottobosco.jpg"
         priceFree
         noWalls
@@ -149,7 +150,7 @@ tileScavare : Event msg -> Event msg -> Event msg -> RoomTile Resources msg
 tileScavare actionClick escavate escavateTwice =
     RoomTile "Scavare"
         Available
-        1
+        0
         "assets/img/rounds/scavare.jpg"
         priceFree
         noWalls
@@ -163,7 +164,7 @@ tileArredare : Event msg -> RoomTile Resources msg
 tileArredare actionClick =
     RoomTile "Arredare"
         Rock
-        2
+        0
         "assets/img/rounds/arredare.jpg"
         priceFree
         noWalls
@@ -174,7 +175,7 @@ tileCostruireUnMuro : Event msg -> RoomTile Resources msg
 tileCostruireUnMuro actionClick =
     RoomTile "Costrurire un Muro"
         Rock
-        2
+        0
         "assets/img/rounds/costruire_un_muro.jpg"
         priceFree
         noWalls
@@ -185,7 +186,7 @@ tileMinare : Event msg -> RoomTile Resources msg
 tileMinare actionClick =
     RoomTile "Minare"
         Rock
-        2
+        0
         "assets/img/rounds/minare.jpg"
         priceFree
         noWalls
@@ -196,7 +197,7 @@ tileDemolireUnMuro : Event msg -> RoomTile Resources msg
 tileDemolireUnMuro actionClick =
     RoomTile "Demolire un Muro"
         Rock
-        3
+        0
         "assets/img/rounds/demolire_un_muro.jpg"
         priceFree
         noWalls
@@ -207,7 +208,7 @@ tileEspansione : Event msg -> RoomTile Resources msg
 tileEspansione actionClick =
     RoomTile "Espansione"
         Rock
-        3
+        0
         "assets/img/rounds/espansione.jpg"
         priceFree
         noWalls
@@ -218,7 +219,7 @@ tileSpedizione : Event msg -> RoomTile Resources msg
 tileSpedizione actionClick =
     RoomTile "Spedizione"
         Rock
-        3
+        0
         "assets/img/rounds/spedizione.jpg"
         priceFree
         noWalls
@@ -229,7 +230,7 @@ tilePerforare : Event msg -> RoomTile Resources msg
 tilePerforare actionClick =
     RoomTile "Perforare"
         Rock
-        3
+        0
         "assets/img/rounds/perforare.jpg"
         priceFree
         noWalls
@@ -240,7 +241,7 @@ tileRinnovare : Event msg -> RoomTile Resources msg
 tileRinnovare actionClick =
     RoomTile "Rinnovare"
         Rock
-        4
+        0
         "assets/img/rounds/rinnovare.jpg"
         priceFree
         noWalls
@@ -251,6 +252,17 @@ tileRinnovare actionClick =
 -------------------------------------------
 -------------EQUIPMENTS--------------------
 -------------------------------------------
+tileEmpty : RoomTile Resources msg
+tileEmpty =
+    RoomTile "Empty Tile"
+            Empty
+            0
+            ""
+            priceFree
+            (Walls None None None None)
+            []
+
+
 -- TODO: Handle Equipment Events
 
 
@@ -318,7 +330,7 @@ tileAnalisiTerritoriale actionClick =
 tileCaveEntrance : Event msg -> RoomTile Resources msg
 tileCaveEntrance actionClick =
     RoomTile "Entrata della Cava"
-        Rock
+        Available
         0
         "assets/img/entrata_della_cava.jpg"
         priceFree
@@ -705,6 +717,14 @@ topLeftAction isDoable do events =
 topRightAction : (state -> Bool) -> (state -> state) -> Event msg -> Action state msg
 topRightAction isDoable do events =
     Action "topright" True isDoable do events
+
+bottomLeftAction : (state -> Bool) -> (state -> state) -> Event msg -> Action state msg
+bottomLeftAction isDoable do events =
+    Action "bottomleft" True isDoable do events
+
+bottomRightAction : (state -> Bool) -> (state -> state) -> Event msg -> Action state msg
+bottomRightAction isDoable do events =
+    Action "bottomright" True isDoable do events
 
 
 bottomAction : (state -> Bool) -> (state -> state) -> Event msg -> Action state msg

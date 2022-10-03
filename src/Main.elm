@@ -9,7 +9,7 @@ import PlayerBoard exposing (PlayerBoard, Subphase(..), viewBoard)
 import Random
 import Random.List
 import Resources exposing (Resources)
-import Tiles exposing (Action, Event(..), RoomTile, TileStatus(..), tileAltareSacrificale, tileAnalisiTerritoriale, tileArredare, tileBancarella, tileCameraSegreta, tileCavaInEspansione, tileColtivare, tileCostruireUnMuro, tileDemolireUnMuro, tileDeposito, tileDepositoDiLegna, tileEquipaggiamenti, tileEspansione, tileFiliera, tileFoodCorner, tileForno, tileGoldMine, tileLavorareIlLino, tileLavoriDomestici, tileLuxuryRoom, tileMacina, tileMinare, tileOfficina, tilePerforare, tileRinnovare, tileSalotto, tileScavare, tileSetStatus, tileShelf, tileSotterraneo, tileSottobosco, tileSpedizione, tileSpinningWheel, tileStanzaDiSnodo, tileTesoreria, tileTunnel, tileWarehouse, viewTile)
+import Tiles exposing (Action, Event(..), RoomTile, TileStatus(..), tileAltareSacrificale, tileAnalisiTerritoriale, tileArredare, tileBancarella, tileCameraSegreta, tileCavaInEspansione, tileCaveEntrance, tileColtivare, tileCostruireUnMuro, tileDemolireUnMuro, tileDeposito, tileDepositoDiLegna, tileEmpty, tileEquipaggiamenti, tileEspansione, tileFiliera, tileFoodCorner, tileForno, tileGoldMine, tileLavorareIlLino, tileLavoriDomestici, tileLuxuryRoom, tileMacina, tileMinare, tileOfficina, tilePerforare, tileRinnovare, tileSalotto, tileScavare, tileSetStatus, tileShelf, tileSotterraneo, tileSottobosco, tileSpedizione, tileSpinningWheel, tileStanzaDiSnodo, tileTesoreria, tileTunnel, tileWarehouse, viewTile)
 import Walls
 
 
@@ -132,8 +132,8 @@ update msg ({ player1, player2 } as game) =
 
         InitPlayerBoard rooms ->
             ( { game
-                | player1 = { player1 | rooms = List.take 9 rooms }
-                , player2 = { player2 | rooms = List.drop 9 rooms |> List.take 9 }
+                | player1 = { player1 | rooms = List.take 9 rooms |> initPlayerBoardRooms }
+                , player2 = { player2 | rooms = List.drop 9 rooms |> List.take 9 |> initPlayerBoardRooms }
               }
             , Cmd.none
             )
@@ -195,6 +195,9 @@ update msg ({ player1, player2 } as game) =
         DoNothing ->
             ( game, Cmd.none )
 
+
+initPlayerBoardRooms rooms =
+    (List.take 4 rooms) ++ [tileEmpty] ++ (rooms |> List.drop 4 |> List.take 1) ++ [tileCaveEntrance (OnClick DoAction)] ++ (List.drop 5 rooms)
 
 activateRoom game activePlayer tile subphase =
     { game

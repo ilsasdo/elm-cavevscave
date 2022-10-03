@@ -5,7 +5,7 @@ import Html exposing (Html, div)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import Resources exposing (Resources)
-import Tiles exposing (Action, RoomTile, viewTile)
+import Tiles exposing (Action, RoomTile, TileStatus(..), viewTile)
 import Walls exposing (Wall(..), Walls)
 
 
@@ -73,16 +73,49 @@ viewRooms resources rooms subphase select =
 
 
 viewRoom : Resources -> Maybe Subphase -> (RoomTile Resources msg -> msg) -> Int -> RoomTile Resources msg -> Html msg
-viewRoom resources subphase select index room =
+viewRoom resources subphase select index tile =
     case subphase of
-        Just something ->
-            div [ class ("room room-" ++ toString index) ]
-                [ viewTile [ class "pick", onClick (select room) ] resources room ]
+        Just ChooseRoomToEscavate ->
+            if tile.status == Rock then
+                viewSelectableTile resources select index tile
+            else
+                viewNonSelectableTile resources index tile
+
+        Just ChooseSecondRoomToEscavate ->
+            if tile.status == Rock then
+                viewSelectableTile resources select index tile
+            else
+                viewNonSelectableTile resources index tile
+
+        Just Activate1 ->
+            if tile.status == Available then
+                viewSelectableTile resources select index tile
+            else
+                viewNonSelectableTile resources index tile
+
+        Just Activate2 ->
+            if tile.status == Available then
+                viewSelectableTile resources select index tile
+            else
+                viewNonSelectableTile resources index tile
+
+        Just Activate3 ->
+            if tile.status == Available then
+                viewSelectableTile resources select index tile
+            else
+                viewNonSelectableTile resources index tile
 
         Nothing ->
-            div [ class ("room room-" ++ toString index) ]
-                [ viewTile [] resources room ]
+            viewNonSelectableTile resources index tile
 
+
+viewSelectableTile resources select index tile =
+    div [ class ("room room-" ++ toString index) ]
+        [ viewTile [ class "pick", onClick (select tile) ] resources tile ]
+
+viewNonSelectableTile resources index tile =
+    div [ class ("room room-" ++ toString index) ]
+        [ viewTile [] resources tile ]
 
 viewResources resources =
     div [ class "resources" ]
