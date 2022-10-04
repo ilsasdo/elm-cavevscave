@@ -24,15 +24,20 @@ type alias Cave state msg =
     }
 
 
-type Subphase
+type Subphase msg
     = ChooseRoomToEscavate
     | ChooseSecondRoomToEscavate
+    | Furnish
+    | PlaceRoom (RoomTile Resources msg)
+    | BuildWall
+    | EscavateThroughWall
+    | DestroyWall
     | Activate1
     | Activate2
     | Activate3
 
 
-viewBoard : PlayerBoard msg -> Maybe Subphase -> (RoomTile Resources msg -> msg) -> Html msg
+viewBoard : PlayerBoard msg -> Maybe (Subphase msg) -> (RoomTile Resources msg -> msg) -> Html msg
 viewBoard board subphase select =
     div [ class "playerboard" ]
         [ viewActionTiles board.resources board.actionTiles
@@ -67,12 +72,12 @@ viewWall index wall =
             div [ class ("wall available wall-" ++ toString index) ] []
 
 
-viewRooms : Resources -> List (RoomTile Resources msg) -> Maybe Subphase -> (RoomTile Resources msg -> msg) -> List (Html msg)
+viewRooms : Resources -> List (RoomTile Resources msg) -> Maybe (Subphase msg) -> (RoomTile Resources msg -> msg) -> List (Html msg)
 viewRooms resources rooms subphase select =
     List.indexedMap (viewRoom resources subphase select) rooms
 
 
-viewRoom : Resources -> Maybe Subphase -> (RoomTile Resources msg -> msg) -> Int -> RoomTile Resources msg -> Html msg
+viewRoom : Resources -> Maybe (Subphase msg) -> (RoomTile Resources msg -> msg) -> Int -> RoomTile Resources msg -> Html msg
 viewRoom resources subphase select index tile =
     case subphase of
         Just ChooseRoomToEscavate ->
@@ -83,6 +88,12 @@ viewRoom resources subphase select index tile =
 
         Just ChooseSecondRoomToEscavate ->
             if tile.status == Rock then
+                viewSelectableTile resources select index tile
+            else
+                viewNonSelectableTile resources index tile
+
+        Just (PlaceRoom t) ->
+            if tile.status == Empty then
                 viewSelectableTile resources select index tile
             else
                 viewNonSelectableTile resources index tile
@@ -105,7 +116,7 @@ viewRoom resources subphase select index tile =
             else
                 viewNonSelectableTile resources index tile
 
-        Nothing ->
+        _ ->
             viewNonSelectableTile resources index tile
 
 

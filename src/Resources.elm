@@ -10,6 +10,8 @@ type alias Resources =
     , emmer : Int
     , flax : Int
     , gold : Int
+    , actions : Int -- actions available in current round are not a proper resource
+                    -- but are used to pay some actions
     }
 
 
@@ -40,4 +42,4 @@ priceGold qty resources =
 
 priceFree : Resources
 priceFree =
-    Resources 0 0 0 0 0 0
+    Resources 0 0 0 0 0 0 0

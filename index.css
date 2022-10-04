@@ -26,18 +26,32 @@
   cursor: pointer;
 }
 
-.tile .action.topLeft {
+.tile .action.topleft {
   aspect-ratio: 1;
   width: 25%;
   left: 5%;
   top: 33%;
 }
 
-.tile .action.topRight {
+.tile .action.topright {
   aspect-ratio: 2/1;
   width: 55%;
   left: 35%;
   top: 33%;
+}
+
+.tile .action.bottomleft {
+  aspect-ratio: 1;
+  width: 25%;
+  left: 5%;
+  top: 66%;
+}
+
+.tile .action.bottomright {
+  aspect-ratio: 2/1;
+  width: 55%;
+  left: 35%;
+  top: 66%;
 }
 
 .tile .action.full {

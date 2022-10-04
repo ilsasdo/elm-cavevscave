@@ -7,8 +7,8 @@ import Resources exposing (Resources, noWalls, priceFood, priceFree, priceGold, 
 import Walls exposing (Wall(..), Walls)
 
 
-type TileStatus =
-      Available
+type TileStatus
+    = Available
     | Active
     | Rock
     | Empty
@@ -33,18 +33,22 @@ type alias Action state msg =
     , actionClick : Event msg
     }
 
-type Event msg =
-    OnClick (RoomTile Resources msg -> Action Resources msg -> msg)
+
+type Event msg
+    = OnClick (RoomTile Resources msg -> Action Resources msg -> msg)
+
 
 tileSetStatus tile status tiles =
-    List.map (\t ->
-                if t.title == tile.title then
-                    { t | status = status }
+    List.map
+        (\t ->
+            if t.title == tile.title then
+                { t | status = status }
 
-                else
-                    t
-            )
-            tiles
+            else
+                t
+        )
+        tiles
+
 
 viewTile : List (Attribute msg) -> Resources -> RoomTile Resources msg -> Html msg
 viewTile attributes resources tile =
@@ -85,7 +89,7 @@ viewAction tile resources action index =
         div [ class ("action notdoable " ++ action.classes) ] []
 
 
-trigger: RoomTile Resources msg -> Action Resources msg -> msg
+trigger : RoomTile Resources msg -> Action Resources msg -> msg
 trigger tile action =
     case action.actionClick of
         OnClick msg ->
@@ -105,6 +109,7 @@ consumeAction actions index =
         actions
 
 
+
 ---------------------------------------------
 -------------Action Tiles--------------------
 ---------------------------------------------
@@ -118,12 +123,15 @@ tileLavoriDomestici furnishCavern =
         "assets/img/rounds/lavori_domestici.jpg"
         priceFree
         noWalls
-        [ topAction alwaysDoable (\r -> r) furnishCavern
-        , bottomLeftAction alwaysDoable (addFood -5) furnishCavern
-        , bottomRightAction alwaysDoable (addGold -1) furnishCavern]
+        [ topAction (\r -> r.food > r.actions) (\r -> r |> addFood r.actions) furnishCavern
+
+        -- TODO: left and right action are mutually exclusives
+        , bottomLeftAction (require ((<=) 5) .food) (addFood -5) furnishCavern
+        , bottomRightAction (require ((<=) 1) .gold) (addGold -1) furnishCavern
+        ]
 
 
-tileColtivare :Event msg -> Event msg -> RoomTile Resources msg
+tileColtivare : Event msg -> Event msg -> RoomTile Resources msg
 tileColtivare actionClick activate1 =
     RoomTile "Coltivare"
         Available
@@ -131,19 +139,22 @@ tileColtivare actionClick activate1 =
         "assets/img/rounds/coltivare.jpg"
         priceFree
         noWalls
-        [topAction alwaysDoable (\r -> r) activate1,
-        bottomAction alwaysDoable (\r -> r |> addEmmer 2 |> addFlax 1) actionClick]
+        [ topAction alwaysDoable (\r -> r) activate1
+        , bottomAction alwaysDoable (\r -> r |> addEmmer 2 |> addFlax 1) actionClick
+        ]
 
 
-tileSottobosco : Event msg -> RoomTile Resources msg
-tileSottobosco actionClick =
+tileSottobosco : Event msg -> Event msg -> RoomTile Resources msg
+tileSottobosco actionClick activate1 =
     RoomTile "Sottobosco"
         Available
         0
         "assets/img/rounds/sottobosco.jpg"
         priceFree
         noWalls
-        [bottomAction alwaysDoable (addWood 2) actionClick]
+        [ topAction alwaysDoable (\r -> r) activate1
+        , bottomAction alwaysDoable (addWood 2) actionClick
+        ]
 
 
 tileScavare : Event msg -> Event msg -> Event msg -> RoomTile Resources msg
@@ -160,107 +171,141 @@ tileScavare actionClick escavate escavateTwice =
         ]
 
 
-tileArredare : Event msg -> RoomTile Resources msg
-tileArredare actionClick =
+tileArredare : Event msg -> Event msg -> RoomTile Resources msg
+tileArredare actionClick furnishCavern =
     RoomTile "Arredare"
         Rock
         0
         "assets/img/rounds/arredare.jpg"
         priceFree
         noWalls
-        [topAction alwaysDoable (addFood 1) actionClick]
+        [ topAction alwaysDoable (addFood 1) actionClick
+        , bottomAction (\r -> r.food > r.actions) (\r -> r |> addFood r.actions) furnishCavern
+        ]
 
 
-tileCostruireUnMuro : Event msg -> RoomTile Resources msg
-tileCostruireUnMuro actionClick =
+tileCostruireUnMuro : Event msg -> Event msg -> Event msg -> RoomTile Resources msg
+tileCostruireUnMuro actionClick activate1 buildWall =
     RoomTile "Costrurire un Muro"
         Rock
         0
         "assets/img/rounds/costruire_un_muro.jpg"
         priceFree
         noWalls
-        []
+        -- TODO: third and fourth action are mutually exclusives
+        [ topLeftAction alwaysDoable (\r -> r) activate1
+        , thirdAction alwaysDoable (addWood 1) actionClick
+        , fourthAction alwaysDoable (addStone 1) actionClick
+        , bottomAction alwaysDoable (\r -> r) buildWall -- TODO: available only if there are walls to build
+        ]
 
 
-tileMinare : Event msg -> RoomTile Resources msg
-tileMinare actionClick =
+tileMinare : Event msg -> Event msg -> RoomTile Resources msg
+tileMinare activate2 escavateThroughWalls =
     RoomTile "Minare"
         Rock
         0
         "assets/img/rounds/minare.jpg"
         priceFree
         noWalls
-        []
+        [ leftAction alwaysDoable (\r -> r) activate2
+        , rightAction alwaysDoable (\r -> r) escavateThroughWalls
+        ]
+
+
+
+--TODO: available only if there are walls to destroy
 
 
 tileDemolireUnMuro : Event msg -> RoomTile Resources msg
-tileDemolireUnMuro actionClick =
+tileDemolireUnMuro destroyWall =
     RoomTile "Demolire un Muro"
         Rock
         0
         "assets/img/rounds/demolire_un_muro.jpg"
         priceFree
         noWalls
-        []
+        -- TODO: resources should be update after wall choice
+        [ fullAction alwaysDoable (\r -> r |> addStone 2 |> addFood 3 |> addGold 1) destroyWall ]
 
 
-tileEspansione : Event msg -> RoomTile Resources msg
-tileEspansione actionClick =
+tileEspansione : Event msg -> Event msg -> RoomTile Resources msg
+tileEspansione escavate furnish =
     RoomTile "Espansione"
         Rock
         0
         "assets/img/rounds/espansione.jpg"
         priceFree
         noWalls
-        []
+        [ topAction alwaysDoable (\r -> r) escavate
+
+        -- TODO: left and right action are mutually exclusives
+        , bottomLeftAction (require ((<=) 5) .food) (addFood -5) furnish
+        , bottomRightAction (require ((<=) 1) .gold) (addGold -1) furnish
+        ]
 
 
-tileSpedizione : Event msg -> RoomTile Resources msg
-tileSpedizione actionClick =
+tileSpedizione : Event msg -> Event msg -> RoomTile Resources msg
+tileSpedizione actionClick activate3 =
     RoomTile "Spedizione"
         Rock
         0
         "assets/img/rounds/spedizione.jpg"
         priceFree
         noWalls
-        []
+        -- TODO: all these actions are mutually exclusive.
+        [ firstAction (require ((<=) 5) .wood) (\r -> r |> addWood -5 |> addGold 5) actionClick
+        , secondAction (require ((<=) 5) .stone) (\r -> r |> addStone -5 |> addGold 5) actionClick
+        , rightAction alwaysDoable (\r -> r) activate3
+        ]
 
 
-tilePerforare : Event msg -> RoomTile Resources msg
-tilePerforare actionClick =
+tilePerforare : Event msg -> Event msg -> RoomTile Resources msg
+tilePerforare activate1 escavate =
     RoomTile "Perforare"
         Rock
         0
         "assets/img/rounds/perforare.jpg"
         priceFree
         noWalls
-        []
+        [ topAction alwaysDoable (\r -> r) activate1
+        , bottomAction alwaysDoable (\r -> r) escavate
+        ]
 
 
-tileRinnovare : Event msg -> RoomTile Resources msg
-tileRinnovare actionClick =
+
+-- TODO: available only if player has more gold than opponent.
+
+
+tileRinnovare : Event msg -> Event msg -> RoomTile Resources msg
+tileRinnovare buildWall furnish =
     RoomTile "Rinnovare"
         Rock
         0
         "assets/img/rounds/rinnovare.jpg"
         priceFree
         noWalls
-        []
+        [ topAction alwaysDoable (\r -> r) buildWall
+        , bottomAction alwaysDoable (\r -> r) furnish
+        ]
 
 
 
 -------------------------------------------
 -------------EQUIPMENTS--------------------
 -------------------------------------------
+
+
 tileEmpty : RoomTile Resources msg
 tileEmpty =
     RoomTile "Empty Tile"
-            Empty
-            0
-            ""
-            priceFree
-            (Walls None None None None)
-            []
+        Empty
+        0
+        ""
+        priceFree
+        (Walls None None None None)
+        []
+
 
 
 -- TODO: Handle Equipment Events
@@ -672,7 +717,7 @@ addGold qty resources =
 
 
 alwaysDoable : Resources -> Bool
-alwaysDoable board =
+alwaysDoable resources =
     True
 
 
@@ -710,17 +755,21 @@ topAction : (state -> Bool) -> (state -> state) -> Event msg -> Action state msg
 topAction isDoable do events =
     Action "top" True isDoable do events
 
+
 topLeftAction : (state -> Bool) -> (state -> state) -> Event msg -> Action state msg
 topLeftAction isDoable do events =
     Action "topleft" True isDoable do events
+
 
 topRightAction : (state -> Bool) -> (state -> state) -> Event msg -> Action state msg
 topRightAction isDoable do events =
     Action "topright" True isDoable do events
 
+
 bottomLeftAction : (state -> Bool) -> (state -> state) -> Event msg -> Action state msg
 bottomLeftAction isDoable do events =
     Action "bottomleft" True isDoable do events
+
 
 bottomRightAction : (state -> Bool) -> (state -> state) -> Event msg -> Action state msg
 bottomRightAction isDoable do events =
