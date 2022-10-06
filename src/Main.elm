@@ -322,11 +322,17 @@ viewActionTiles game =
 viewActionTile : Game -> Tile -> Html Msg
 viewActionTile game tile =
     if game.phase == NewActionPhase && tile.status == Available then
-        Html.map PlayerMsg (viewTile [ class "actiontile pick", onClick (SelectRoomTile tile) ] (currentPlayer game).resources tile)
+        Html.map mapToPickRoundTile (viewTile [ class "actiontile pick", onClick (SelectRoomTile tile) ] (currentPlayer game).resources tile)
 
     else
         Html.map PlayerMsg (viewTile [ class "actiontile" ] game.player1.resources tile)
 
+mapToPickRoundTile msg =
+    case msg of
+        Tiles.SelectRoomTile tile ->
+            PickRoundTile tile
+        _ ->
+            PlayerMsg msg
 
 viewMain : Game -> Html Msg
 viewMain game =

@@ -30,6 +30,7 @@ update msg player =
         Tiles.DoAction tile action ->
             { player
                 | resources = action.do player.resources
+                , subphase = action.subphase
                 , rooms = updateTile tile player.rooms
                 , actionTiles = updateTile tile player.actionTiles
             }
@@ -107,11 +108,11 @@ furnishCave player tile tileToPlace =
 
 
 activateRoom player tile subphase =
-    { player | rooms = tileSetStatus tile Tiles.Active player.rooms }
+    { player | subphase = subphase, rooms = tileSetStatus tile Tiles.Active player.rooms }
 
 
 escavateRoom player tile subphase =
-    { player | rooms = tileSetStatus tile Tiles.Empty player.rooms }
+    { player | subphase = subphase, rooms = tileSetStatus tile Tiles.Empty player.rooms }
 
 
 viewBoard : PlayerBoard -> Maybe Subphase -> (Tile -> Tiles.Msg) -> Html Tiles.Msg
