@@ -5,36 +5,32 @@ import Debug exposing (toString)
 import Html exposing (Html, div, p, text)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
-import PlayerBoard exposing (PlayerBoard, Subphase(..), viewBoard)
+import PlayerBoard exposing (PlayerBoard, viewBoard)
 import Random
 import Random.List
 import Resources exposing (Resources)
-import Tiles exposing (Action, Event(..), RoomTile, TileStatus(..), tileAltareSacrificale, tileAnalisiTerritoriale, tileArredare, tileBancarella, tileCameraSegreta, tileCavaInEspansione, tileCaveEntrance, tileColtivare, tileCostruireUnMuro, tileDemolireUnMuro, tileDeposito, tileDepositoDiLegna, tileEmpty, tileEquipaggiamenti, tileEspansione, tileFiliera, tileFoodCorner, tileForno, tileGoldMine, tileLavorareIlLino, tileLavoriDomestici, tileLuxuryRoom, tileMacina, tileMinare, tileOfficina, tilePerforare, tileRinnovare, tileSalotto, tileScavare, tileSetStatus, tileShelf, tileSotterraneo, tileSottobosco, tileSpedizione, tileSpinningWheel, tileStanzaDiSnodo, tileTesoreria, tileTunnel, tileWarehouse, viewTile)
+import Tiles exposing (Action, Msg(..), Subphase(..), Tile, TileStatus(..), tileAltareSacrificale, tileAnalisiTerritoriale, tileArredare, tileBancarella, tileCameraSegreta, tileCavaInEspansione, tileCaveEntrance, tileColtivare, tileCostruireUnMuro, tileDemolireUnMuro, tileDeposito, tileDepositoDiLegna, tileEmpty, tileEquipaggiamenti, tileEspansione, tileFiliera, tileFoodCorner, tileForno, tileGoldMine, tileLavorareIlLino, tileLavoriDomestici, tileLuxuryRoom, tileMacina, tileMinare, tileOfficina, tilePerforare, tileRinnovare, tileSalotto, tileScavare, tileSetStatus, tileShelf, tileSotterraneo, tileSottobosco, tileSpedizione, tileSpinningWheel, tileStanzaDiSnodo, tileTesoreria, tileTunnel, tileWarehouse, viewTile)
 import Walls
 
 
 type alias Game =
-    { player1 : PlayerBoard Msg
-    , player2 : PlayerBoard Msg
+    { player1 : PlayerBoard
+    , player2 : PlayerBoard
     , round : Int -- starts with 1 ends with 8
     , actions : Int -- 2 actions for rounds 1,2,3. 3 actions for rounds 4,5,6,7. 4 actions for round 8
     , currentPlayer : Int -- 1 or 2
     , phase : RoundPhase
-    , subphase : Maybe (Subphase Msg)
-    , actionTiles : List (RoomTile Msg)
-    , availableRooms : List (RoomTile Msg)
+    , actionTiles : List Tile
+    , availableRooms : List Tile
     }
 
 
 type Msg
-    = InitPlayerBoard (List (RoomTile Msg))
-    | InitRoundTiles (List (RoomTile Msg))
+    = InitPlayerBoard (List Tile)
+    | InitRoundTiles (List Tile)
+    | PlayerMsg Tiles.Msg
+    | PickRoundTile Tile
     | Pass
-    | DoAction (RoomTile Msg) (Action Msg)
-    | PickActionTile (RoomTile Msg)
-    | ActivateTile (Maybe (Subphase Msg)) (RoomTile Msg) (Action Msg)
-    | SelectRoomTile (RoomTile Msg)
-    | DoNothing
 
 
 type RoundPhase
@@ -48,45 +44,46 @@ main =
 
 init : () -> ( Game, Cmd Msg )
 init _ =
-    ( Game newBoard newBoard 1 2 1 NewActionPhase Nothing [] newAvailableRooms
+    ( Game newBoard newBoard 1 2 1 NewActionPhase [] newAvailableRooms
     , setupRandomTiles
-        [ tileWarehouse (OnClick DoAction)
-        , tileAltareSacrificale (OnClick DoAction)
-        , tileBancarella (OnClick DoAction)
-        , tileCameraSegreta (OnClick DoAction)
-        , tileCavaInEspansione (OnClick DoAction)
-        , tileDeposito (OnClick DoAction)
-        , tileFiliera (OnClick DoAction)
-        , tileForno (OnClick DoAction)
-        , tileGoldMine (OnClick DoAction)
-        , tileOfficina (OnClick DoAction)
-        , tileLuxuryRoom (OnClick DoAction)
-        , tileStanzaDiSnodo (OnClick DoAction)
-        , tileTesoreria (OnClick DoAction)
-        , tileAnalisiTerritoriale (OnClick DoAction)
-        , tileSotterraneo (OnClick DoAction)
-        , tileEquipaggiamenti (OnClick DoAction)
-        , tileLavorareIlLino (OnClick DoAction)
-        , tileDepositoDiLegna (OnClick DoAction)
+        [ tileWarehouse
+        , tileAltareSacrificale
+        , tileBancarella
+        , tileCameraSegreta
+        , tileCavaInEspansione
+        , tileDeposito
+        , tileFiliera
+        , tileForno
+        , tileGoldMine
+        , tileOfficina
+        , tileLuxuryRoom
+        , tileStanzaDiSnodo
+        , tileTesoreria
+        , tileAnalisiTerritoriale
+        , tileSotterraneo
+        , tileEquipaggiamenti
+        , tileLavorareIlLino
+        , tileDepositoDiLegna
         ]
-        [ tileLavoriDomestici (OnClick (ActivateTile (Just Furnish)))
-        , tileColtivare (OnClick DoAction) (OnClick (ActivateTile (Just Activate1)))
-        , tileSottobosco (OnClick DoAction) (OnClick (ActivateTile (Just Activate1)))
-        , tileScavare (OnClick DoAction) (OnClick (ActivateTile (Just ChooseRoomToEscavate))) (OnClick (ActivateTile (Just ChooseSecondRoomToEscavate)))
+        [ tileLavoriDomestici
+        , tileColtivare
+        , tileSottobosco
+        , tileScavare
         ]
-        [ tileArredare (OnClick DoAction) (OnClick (ActivateTile (Just Furnish)))
-        , tileCostruireUnMuro (OnClick DoAction) (OnClick (ActivateTile (Just Activate1))) (OnClick (ActivateTile (Just BuildWall)))
-        , tileMinare (OnClick (ActivateTile (Just Activate2))) (OnClick (ActivateTile (Just EscavateThroughWall)))
+        [ tileArredare
+        , tileCostruireUnMuro
+        , tileMinare
         ]
-        [ tileDemolireUnMuro (OnClick DoAction)
-        , tileEspansione (OnClick (ActivateTile (Just ChooseRoomToEscavate))) (OnClick (ActivateTile (Just Furnish)))
-        , tileSpedizione (OnClick DoAction) (OnClick (ActivateTile (Just Activate3)))
-        , tilePerforare (OnClick (ActivateTile (Just Activate1))) (OnClick (ActivateTile (Just ChooseRoomToEscavate))) ]
-        [ tileRinnovare (OnClick (ActivateTile (Just BuildWall))) (OnClick (ActivateTile (Just Furnish))) ]
+        [ tileDemolireUnMuro
+        , tileEspansione
+        , tileSpedizione
+        , tilePerforare
+        ]
+        [ tileRinnovare ]
     )
 
 
-setupRandomTiles : List (RoomTile Msg) -> List (RoomTile Msg) -> List (RoomTile Msg) -> List (RoomTile Msg) -> List (RoomTile Msg) -> Cmd Msg
+setupRandomTiles : List Tile -> List Tile -> List Tile -> List Tile -> List Tile -> Cmd Msg
 setupRandomTiles rooms round1Tiles round2Tiles round3Tiles round4Tiles =
     Cmd.batch
         [ Random.generate InitPlayerBoard (Random.List.shuffle rooms)
@@ -97,19 +94,19 @@ setupRandomTiles rooms round1Tiles round2Tiles round3Tiles round4Tiles =
         ]
 
 
-newBoard : PlayerBoard Msg
+newBoard : PlayerBoard
 newBoard =
-    PlayerBoard (Resources 1 1 1 1 1 1 1) [] (List.repeat 14 Walls.None) []
+    PlayerBoard (Resources 1 1 1 1 1 1 1) [] (List.repeat 14 Walls.None) [] Nothing
 
 
-newAvailableRooms : List (RoomTile Msg)
+newAvailableRooms : List Tile
 newAvailableRooms =
-    [ tileShelf (OnClick DoAction)
-    , tileSpinningWheel (OnClick DoAction)
-    , tileMacina (OnClick DoAction)
-    , tileSalotto (OnClick DoAction)
-    , tileTunnel (OnClick DoAction)
-    , tileFoodCorner (OnClick DoAction)
+    [ tileShelf
+    , tileSpinningWheel
+    , tileMacina
+    , tileSalotto
+    , tileTunnel
+    , tileFoodCorner
     ]
 
 
@@ -119,7 +116,7 @@ update msg ({ player1, player2 } as game) =
         activePlayer =
             currentPlayer game
     in
-    case (Debug.log "msg" msg) of
+    case msg of
         InitRoundTiles tiles ->
             ( { game
                 | actionTiles =
@@ -145,67 +142,15 @@ update msg ({ player1, player2 } as game) =
             , Cmd.none
             )
 
-        DoAction tile action ->
-            ( game
-                |> updateCurrentPlayer
-                    { activePlayer
-                        | resources = action.do activePlayer.resources
-                        , rooms = updateTile tile activePlayer.rooms
-                        , actionTiles = updateTile tile activePlayer.actionTiles
-                    }
+        PlayerMsg tileMsg ->
+            ( updateCurrentPlayer (PlayerBoard.update tileMsg activePlayer) game
             , Cmd.none
             )
-
-        ActivateTile subphase tile action ->
-            ( { game | subphase = (Debug.log "activate-tile" subphase) }
-                |> updateCurrentPlayer
-                    { activePlayer
-                        | resources = action.do activePlayer.resources
-                        , rooms = updateTile tile activePlayer.rooms
-                        , actionTiles = updateTile tile activePlayer.actionTiles
-                    }
-            , Cmd.none
-            )
-
-        SelectRoomTile tile ->
-            case game.subphase of
-                Just Furnish ->
-                    ( {game | subphase = Just (PlaceRoom tile)}, Cmd.none)
-
-                Just (PlaceRoom tileToPlace) ->
-                    ( furnishCave game activePlayer tile tileToPlace, Cmd.none)
-
-                Just DestroyWall ->
-                    ( game, Cmd.none )
-
-                Just BuildWall ->
-                    ( game, Cmd.none )
-
-                Just EscavateThroughWall ->
-                    ( escavateRoom game activePlayer tile Nothing, Cmd.none )
-
-                Just ChooseRoomToEscavate ->
-                    ( escavateRoom game activePlayer tile Nothing, Cmd.none )
-
-                Just ChooseSecondRoomToEscavate ->
-                    ( escavateRoom game activePlayer tile (Just ChooseRoomToEscavate), Cmd.none )
-
-                Just Activate1 ->
-                    ( activateRoom game activePlayer tile Nothing, Cmd.none )
-
-                Just Activate2 ->
-                    ( activateRoom game activePlayer tile (Just Activate1), Cmd.none )
-
-                Just Activate3 ->
-                    ( activateRoom game activePlayer tile (Just Activate2), Cmd.none )
-
-                Nothing ->
-                    ( game, Cmd.none )
 
         Pass ->
             ( pass game, Cmd.none )
 
-        PickActionTile tile ->
+        PickRoundTile tile ->
             ( { game
                 | phase = ActionPhase
                 , actionTiles = tileSetStatus tile Tiles.Empty game.actionTiles
@@ -214,26 +159,32 @@ update msg ({ player1, player2 } as game) =
             , Cmd.none
             )
 
-        DoNothing ->
-            ( game, Cmd.none )
-
 
 initPlayerBoardRooms rooms =
-    List.take 4 rooms ++ [ tileEmpty ] ++ (rooms |> List.drop 4 |> List.take 1) ++ [ tileCaveEntrance (OnClick DoAction) ] ++ List.drop 5 rooms
+    List.take 4 rooms ++ [ tileEmpty ] ++ (rooms |> List.drop 4 |> List.take 1) ++ [ tileCaveEntrance ] ++ List.drop 5 rooms
 
 
 furnishCave game activePlayer tile tileToPlace =
     { game
-        | subphase = Nothing
-        , availableRooms = List.filter (\t -> t.title /= tileToPlace.title) game.availableRooms
-    } |> updateCurrentPlayer { activePlayer | rooms = List.map (\r -> if r.title == tile.title then tileToPlace else r ) activePlayer.rooms }
+        | availableRooms = List.filter (\t -> t.title /= tileToPlace.title) game.availableRooms
+    }
+        |> updateCurrentPlayer
+            { activePlayer
+                | rooms =
+                    List.map
+                        (\r ->
+                            if r.title == tile.title then
+                                tileToPlace
+
+                            else
+                                r
+                        )
+                        activePlayer.rooms
+            }
 
 
 activateRoom game activePlayer tile subphase =
-    { game
-        | subphase = subphase
-    }
-        |> updateCurrentPlayer { activePlayer | rooms = tileSetStatus tile Tiles.Active activePlayer.rooms }
+    updateCurrentPlayer { activePlayer | rooms = tileSetStatus tile Tiles.Active activePlayer.rooms } game
 
 
 escavateRoom game activePlayer tile subphase =
@@ -242,8 +193,7 @@ escavateRoom game activePlayer tile subphase =
             { tile | status = Tiles.Available }
     in
     { game
-        | subphase = subphase
-        , availableRooms = availableRoom :: game.availableRooms
+        | availableRooms = availableRoom :: game.availableRooms
     }
         |> updateCurrentPlayer { activePlayer | rooms = tileSetStatus tile Tiles.Empty activePlayer.rooms }
 
@@ -289,7 +239,6 @@ nextRound game =
     in
     { game
         | phase = NewActionPhase
-        , subphase = Nothing
         , round = round
         , actions = actions
         , actionTiles = actionTiles
@@ -298,7 +247,7 @@ nextRound game =
     }
 
 
-restorePlayer : PlayerBoard Msg -> Int -> PlayerBoard Msg
+restorePlayer : PlayerBoard -> Int -> PlayerBoard
 restorePlayer ({ resources } as player) round =
     { player
         | actionTiles = []
@@ -307,7 +256,7 @@ restorePlayer ({ resources } as player) round =
     }
 
 
-restoreRoom : RoomTile Msg -> RoomTile Msg
+restoreRoom : Tile -> Tile
 restoreRoom room =
     if room.status == Active then
         { room | status = Available }
@@ -320,7 +269,6 @@ nextPlayer : Game -> Game
 nextPlayer game =
     { game
         | phase = NewActionPhase
-        , subphase = Nothing
         , currentPlayer =
             if game.currentPlayer == 1 then
                 2
@@ -328,19 +276,6 @@ nextPlayer game =
             else
                 1
     }
-
-
-updateTile : RoomTile Msg -> List (RoomTile Msg) -> List (RoomTile Msg)
-updateTile tile tiles =
-    List.map
-        (\r ->
-            if r.title == tile.title then
-                tile
-
-            else
-                r
-        )
-        tiles
 
 
 view : Game -> Html Msg
@@ -355,12 +290,12 @@ viewStatusBar game =
         [ p [] [ text ("Status Bar: Player " ++ toString game.currentPlayer ++ " Actions: " ++ (game |> currentPlayer |> .actionTiles |> List.length |> toString) ++ "/" ++ toString game.actions) ]
         , p [] [ text ("Round: " ++ toString game.round) ]
         , p [] [ text ("Phase: " ++ toString game.phase) ]
-        , p [] [ text ("Subphase: " ++ toString game.subphase) ]
+        , p [] [ text ("Subphase: " ++ (game |> currentPlayer |> .subphase |> toString)) ]
         , Html.button [ onClick Pass ] [ text "Pass" ]
         ]
 
 
-currentPlayer : Game -> PlayerBoard Msg
+currentPlayer : Game -> PlayerBoard
 currentPlayer game =
     if game.currentPlayer == 1 then
         game.player1
@@ -369,7 +304,7 @@ currentPlayer game =
         game.player2
 
 
-updateCurrentPlayer : PlayerBoard Msg -> Game -> Game
+updateCurrentPlayer : PlayerBoard -> Game -> Game
 updateCurrentPlayer player game =
     if game.currentPlayer == 1 then
         { game | player1 = player }
@@ -384,31 +319,35 @@ viewActionTiles game =
         (List.map (viewActionTile game) game.actionTiles)
 
 
-viewActionTile : Game -> RoomTile Msg -> Html Msg
+viewActionTile : Game -> Tile -> Html Msg
 viewActionTile game tile =
     if game.phase == NewActionPhase && tile.status == Available then
-        viewTile [ class "actiontile pick", onClick (PickActionTile tile) ] (currentPlayer game).resources tile
+        Html.map PlayerMsg (viewTile [ class "actiontile pick", onClick (SelectRoomTile tile) ] (currentPlayer game).resources tile)
 
     else
-        viewTile [ class "actiontile" ] game.player1.resources tile
+        Html.map PlayerMsg (viewTile [ class "actiontile" ] game.player1.resources tile)
 
 
 viewMain : Game -> Html Msg
 viewMain game =
-    div [ class "mainboard" ]
-        [ viewBoard game.player1 game.subphase SelectRoomTile
-        , viewAvailableRooms (currentPlayer game).resources game.subphase game.availableRooms
-        , viewBoard game.player2 game.subphase SelectRoomTile
-        ]
+    Html.map PlayerMsg
+        (div [ class "mainboard" ]
+            [ viewBoard game.player1 game.player1.subphase SelectRoomTile
+            , viewAvailableRooms (currentPlayer game).resources (game |> currentPlayer |> .subphase) game.availableRooms
+            , viewBoard game.player2 game.player2.subphase SelectRoomTile
+            ]
+        )
 
 
-viewAvailableRooms : Resources -> Maybe (Subphase Msg) -> List (RoomTile Msg) -> Html Msg
+viewAvailableRooms : Resources -> Maybe Subphase -> List Tile -> Html Tiles.Msg
 viewAvailableRooms resources subphase rooms =
     div [ class "availablerooms" ] (List.map (viewAvailableRoom resources subphase) rooms)
 
-viewAvailableRoom: Resources -> Maybe (Subphase Msg) -> RoomTile Msg -> Html Msg
+
+viewAvailableRoom : Resources -> Maybe Subphase -> Tile -> Html Tiles.Msg
 viewAvailableRoom resources subphase room =
     if subphase == Just Furnish then
         viewTile [ class "availableroom pick", onClick (SelectRoomTile room) ] resources room
+
     else
-        viewTile [ class "availableroom"] resources room
+        viewTile [ class "availableroom" ] resources room

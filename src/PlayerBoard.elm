@@ -5,39 +5,116 @@ import Html exposing (Html, div)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import Resources exposing (Resources)
-import Tiles exposing (Action, RoomTile, TileStatus(..), viewTile)
+import Tiles exposing (Action, Subphase(..), Tile, TileStatus(..), tileSetStatus, viewTile)
 import Walls exposing (Wall(..), Walls)
 
 
-type alias PlayerBoard msg =
+type alias PlayerBoard =
     { resources : Resources
-    , rooms : List (RoomTile msg)
+    , rooms : List Tile
     , walls : List Wall
-    , actionTiles : List (RoomTile msg)
+    , actionTiles : List Tile
+    , subphase : Maybe Subphase
     }
 
 
-type alias Cave msg =
+type alias Cave =
     { bonus : Bool
-    , tile : RoomTile msg
+    , tile : Tile
     , walls : Walls
     }
 
 
-type Subphase msg
-    = ChooseRoomToEscavate
-    | ChooseSecondRoomToEscavate
-    | Furnish
-    | PlaceRoom (RoomTile msg)
-    | BuildWall
-    | EscavateThroughWall
-    | DestroyWall
-    | Activate1
-    | Activate2
-    | Activate3
+update msg player =
+    case msg of
+        Tiles.DoAction tile action ->
+            { player
+                | resources = action.do player.resources
+                , rooms = updateTile tile player.rooms
+                , actionTiles = updateTile tile player.actionTiles
+            }
+
+        Tiles.ActivateTile subphase tile action ->
+            { player
+                | subphase = subphase
+                , resources = action.do player.resources
+                , rooms = updateTile tile player.rooms
+                , actionTiles = updateTile tile player.actionTiles
+            }
+
+        Tiles.SelectRoomTile tile ->
+            case player.subphase of
+                Just Furnish ->
+                    { player | subphase = Just (PlaceRoom tile) }
+
+                Just (PlaceRoom tileToPlace) ->
+                    furnishCave player tile tileToPlace
+
+                Just DestroyWall ->
+                    player
+
+                Just BuildWall ->
+                    player
+
+                Just EscavateThroughWall ->
+                    escavateRoom player tile Nothing
+
+                Just Escavate1 ->
+                    escavateRoom player tile Nothing
+
+                Just Escavate2 ->
+                    escavateRoom player tile (Just Escavate1)
+
+                Just Activate1 ->
+                    activateRoom player tile Nothing
+
+                Just Activate2 ->
+                    activateRoom player tile (Just Activate1)
+
+                Just Activate3 ->
+                    activateRoom player tile (Just Activate2)
+
+                Nothing ->
+                    player
 
 
-viewBoard : PlayerBoard msg -> Maybe (Subphase msg) -> (RoomTile msg -> msg) -> Html msg
+updateTile : Tile -> List Tile -> List Tile
+updateTile tile tiles =
+    List.map
+        (\r ->
+            if r.title == tile.title then
+                tile
+
+            else
+                r
+        )
+        tiles
+
+
+furnishCave player tile tileToPlace =
+    { player
+        | rooms =
+            List.map
+                (\r ->
+                    if r.title == tile.title then
+                        tileToPlace
+
+                    else
+                        r
+                )
+                player.rooms
+    }
+
+
+activateRoom player tile subphase =
+    { player | rooms = tileSetStatus tile Tiles.Active player.rooms }
+
+
+escavateRoom player tile subphase =
+    { player | rooms = tileSetStatus tile Tiles.Empty player.rooms }
+
+
+viewBoard : PlayerBoard -> Maybe Subphase -> (Tile -> Tiles.Msg) -> Html Tiles.Msg
 viewBoard board subphase select =
     div [ class "playerboard" ]
         [ viewActionTiles board.resources board.actionTiles
@@ -49,7 +126,7 @@ viewBoard board subphase select =
         ]
 
 
-viewActionTiles : Resources -> List (RoomTile msg) -> Html msg
+viewActionTiles : Resources -> List Tile -> Html Tiles.Msg
 viewActionTiles resources actionTiles =
     div [ class "actiontiles" ] (List.map (viewTile [ class "actiontile" ] resources) actionTiles)
 
@@ -72,47 +149,53 @@ viewWall index wall =
             div [ class ("wall available wall-" ++ toString index) ] []
 
 
-viewRooms : Resources -> List (RoomTile msg) -> Maybe (Subphase msg) -> (RoomTile msg -> msg) -> List (Html msg)
+viewRooms : Resources -> List Tile -> Maybe Subphase -> (Tile -> Tiles.Msg) -> List (Html Tiles.Msg)
 viewRooms resources rooms subphase select =
     List.indexedMap (viewRoom resources subphase select) rooms
 
 
-viewRoom : Resources -> Maybe (Subphase msg) -> (RoomTile msg -> msg) -> Int -> RoomTile msg -> Html msg
+viewRoom : Resources -> Maybe Subphase -> (Tile -> Tiles.Msg) -> Int -> Tile -> Html Tiles.Msg
 viewRoom resources subphase select index tile =
     case subphase of
-        Just ChooseRoomToEscavate ->
+        Just Escavate1 ->
             if tile.status == Rock then
                 viewSelectableTile resources select index tile
+
             else
                 viewNonSelectableTile resources index tile
 
-        Just ChooseSecondRoomToEscavate ->
+        Just Escavate2 ->
             if tile.status == Rock then
                 viewSelectableTile resources select index tile
+
             else
                 viewNonSelectableTile resources index tile
 
         Just (PlaceRoom t) ->
             if tile.status == Empty then
                 viewSelectableTile resources select index tile
+
             else
                 viewNonSelectableTile resources index tile
 
         Just Activate1 ->
             if tile.status == Available then
                 viewSelectableTile resources select index tile
+
             else
                 viewNonSelectableTile resources index tile
 
         Just Activate2 ->
             if tile.status == Available then
                 viewSelectableTile resources select index tile
+
             else
                 viewNonSelectableTile resources index tile
 
         Just Activate3 ->
             if tile.status == Available then
                 viewSelectableTile resources select index tile
+
             else
                 viewNonSelectableTile resources index tile
 
@@ -124,9 +207,11 @@ viewSelectableTile resources select index tile =
     div [ class ("room room-" ++ toString index) ]
         [ viewTile [ class "pick", onClick (select tile) ] resources tile ]
 
+
 viewNonSelectableTile resources index tile =
     div [ class ("room room-" ++ toString index) ]
         [ viewTile [] resources tile ]
+
 
 viewResources resources =
     div [ class "resources" ]
