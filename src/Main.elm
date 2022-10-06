@@ -21,19 +21,19 @@ type alias Game =
     , currentPlayer : Int -- 1 or 2
     , phase : RoundPhase
     , subphase : Maybe (Subphase Msg)
-    , actionTiles : List (RoomTile Resources Msg)
-    , availableRooms : List (RoomTile Resources Msg)
+    , actionTiles : List (RoomTile Msg)
+    , availableRooms : List (RoomTile Msg)
     }
 
 
 type Msg
-    = InitPlayerBoard (List (RoomTile Resources Msg))
-    | InitRoundTiles (List (RoomTile Resources Msg))
+    = InitPlayerBoard (List (RoomTile Msg))
+    | InitRoundTiles (List (RoomTile Msg))
     | Pass
-    | DoAction (RoomTile Resources Msg) (Action Resources Msg)
-    | PickActionTile (RoomTile Resources Msg)
-    | ActivateTile (Maybe (Subphase Msg)) (RoomTile Resources Msg) (Action Resources Msg)
-    | SelectRoomTile (RoomTile Resources Msg)
+    | DoAction (RoomTile Msg) (Action Msg)
+    | PickActionTile (RoomTile Msg)
+    | ActivateTile (Maybe (Subphase Msg)) (RoomTile Msg) (Action Msg)
+    | SelectRoomTile (RoomTile Msg)
     | DoNothing
 
 
@@ -86,7 +86,7 @@ init _ =
     )
 
 
-setupRandomTiles : List (RoomTile Resources Msg) -> List (RoomTile Resources Msg) -> List (RoomTile Resources Msg) -> List (RoomTile Resources Msg) -> List (RoomTile Resources Msg) -> Cmd Msg
+setupRandomTiles : List (RoomTile Msg) -> List (RoomTile Msg) -> List (RoomTile Msg) -> List (RoomTile Msg) -> List (RoomTile Msg) -> Cmd Msg
 setupRandomTiles rooms round1Tiles round2Tiles round3Tiles round4Tiles =
     Cmd.batch
         [ Random.generate InitPlayerBoard (Random.List.shuffle rooms)
@@ -102,7 +102,7 @@ newBoard =
     PlayerBoard (Resources 1 1 1 1 1 1 1) [] (List.repeat 14 Walls.None) []
 
 
-newAvailableRooms : List (RoomTile Resources Msg)
+newAvailableRooms : List (RoomTile Msg)
 newAvailableRooms =
     [ tileShelf (OnClick DoAction)
     , tileSpinningWheel (OnClick DoAction)
@@ -307,7 +307,7 @@ restorePlayer ({ resources } as player) round =
     }
 
 
-restoreRoom : RoomTile Resources Msg -> RoomTile Resources Msg
+restoreRoom : RoomTile Msg -> RoomTile Msg
 restoreRoom room =
     if room.status == Active then
         { room | status = Available }
@@ -330,7 +330,7 @@ nextPlayer game =
     }
 
 
-updateTile : RoomTile Resources Msg -> List (RoomTile Resources Msg) -> List (RoomTile Resources Msg)
+updateTile : RoomTile Msg -> List (RoomTile Msg) -> List (RoomTile Msg)
 updateTile tile tiles =
     List.map
         (\r ->
@@ -384,7 +384,7 @@ viewActionTiles game =
         (List.map (viewActionTile game) game.actionTiles)
 
 
-viewActionTile : Game -> RoomTile Resources Msg -> Html Msg
+viewActionTile : Game -> RoomTile Msg -> Html Msg
 viewActionTile game tile =
     if game.phase == NewActionPhase && tile.status == Available then
         viewTile [ class "actiontile pick", onClick (PickActionTile tile) ] (currentPlayer game).resources tile
@@ -402,11 +402,11 @@ viewMain game =
         ]
 
 
-viewAvailableRooms : Resources -> Maybe (Subphase Msg) -> List (RoomTile Resources Msg) -> Html Msg
+viewAvailableRooms : Resources -> Maybe (Subphase Msg) -> List (RoomTile Msg) -> Html Msg
 viewAvailableRooms resources subphase rooms =
     div [ class "availablerooms" ] (List.map (viewAvailableRoom resources subphase) rooms)
 
-viewAvailableRoom: Resources -> Maybe (Subphase Msg) -> RoomTile Resources Msg -> Html Msg
+viewAvailableRoom: Resources -> Maybe (Subphase Msg) -> RoomTile Msg -> Html Msg
 viewAvailableRoom resources subphase room =
     if subphase == Just Furnish then
         viewTile [ class "availableroom pick", onClick (SelectRoomTile room) ] resources room

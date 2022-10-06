@@ -11,15 +11,15 @@ import Walls exposing (Wall(..), Walls)
 
 type alias PlayerBoard msg =
     { resources : Resources
-    , rooms : List (RoomTile Resources msg)
+    , rooms : List (RoomTile msg)
     , walls : List Wall
-    , actionTiles : List (RoomTile Resources msg)
+    , actionTiles : List (RoomTile msg)
     }
 
 
-type alias Cave state msg =
+type alias Cave msg =
     { bonus : Bool
-    , tile : RoomTile state msg
+    , tile : RoomTile msg
     , walls : Walls
     }
 
@@ -28,7 +28,7 @@ type Subphase msg
     = ChooseRoomToEscavate
     | ChooseSecondRoomToEscavate
     | Furnish
-    | PlaceRoom (RoomTile Resources msg)
+    | PlaceRoom (RoomTile msg)
     | BuildWall
     | EscavateThroughWall
     | DestroyWall
@@ -37,7 +37,7 @@ type Subphase msg
     | Activate3
 
 
-viewBoard : PlayerBoard msg -> Maybe (Subphase msg) -> (RoomTile Resources msg -> msg) -> Html msg
+viewBoard : PlayerBoard msg -> Maybe (Subphase msg) -> (RoomTile msg -> msg) -> Html msg
 viewBoard board subphase select =
     div [ class "playerboard" ]
         [ viewActionTiles board.resources board.actionTiles
@@ -49,7 +49,7 @@ viewBoard board subphase select =
         ]
 
 
-viewActionTiles : Resources -> List (RoomTile Resources msg) -> Html msg
+viewActionTiles : Resources -> List (RoomTile msg) -> Html msg
 viewActionTiles resources actionTiles =
     div [ class "actiontiles" ] (List.map (viewTile [ class "actiontile" ] resources) actionTiles)
 
@@ -72,12 +72,12 @@ viewWall index wall =
             div [ class ("wall available wall-" ++ toString index) ] []
 
 
-viewRooms : Resources -> List (RoomTile Resources msg) -> Maybe (Subphase msg) -> (RoomTile Resources msg -> msg) -> List (Html msg)
+viewRooms : Resources -> List (RoomTile msg) -> Maybe (Subphase msg) -> (RoomTile msg -> msg) -> List (Html msg)
 viewRooms resources rooms subphase select =
     List.indexedMap (viewRoom resources subphase select) rooms
 
 
-viewRoom : Resources -> Maybe (Subphase msg) -> (RoomTile Resources msg -> msg) -> Int -> RoomTile Resources msg -> Html msg
+viewRoom : Resources -> Maybe (Subphase msg) -> (RoomTile msg -> msg) -> Int -> RoomTile msg -> Html msg
 viewRoom resources subphase select index tile =
     case subphase of
         Just ChooseRoomToEscavate ->
