@@ -25,58 +25,59 @@ type alias Cave =
     }
 
 
+update: Tiles.Msg -> PlayerBoard -> (PlayerBoard, Maybe Tile)
 update msg player =
     case msg of
         Tiles.DoAction tile action ->
-            { player
+            ({ player
                 | resources = action.do player.resources
                 , subphase = action.subphase
                 , rooms = updateTile tile player.rooms
                 , actionTiles = updateTile tile player.actionTiles
-            }
+            }, Nothing)
 
         Tiles.ActivateTile subphase tile action ->
-            { player
+            ({ player
                 | subphase = subphase
                 , resources = action.do player.resources
                 , rooms = updateTile tile player.rooms
                 , actionTiles = updateTile tile player.actionTiles
-            }
+            }, Nothing)
 
         Tiles.SelectRoomTile tile ->
             case player.subphase of
                 Just Furnish ->
-                    { player | subphase = Just (PlaceRoom tile) }
+                    ({ player | subphase = Just (PlaceRoom tile) }, Nothing)
 
                 Just (PlaceRoom tileToPlace) ->
-                    furnishCave player tile tileToPlace
+                    (placeRoom player tile tileToPlace, Nothing)
 
                 Just DestroyWall ->
-                    player
+                    (player, Nothing)
 
                 Just BuildWall ->
-                    player
+                    (player, Nothing)
 
                 Just EscavateThroughWall ->
-                    escavateRoom player tile Nothing
+                    (escavateRoom player tile Nothing, Just tile)
 
                 Just Escavate1 ->
-                    escavateRoom player tile Nothing
+                    (escavateRoom player tile Nothing, Just tile)
 
                 Just Escavate2 ->
-                    escavateRoom player tile (Just Escavate1)
+                    (escavateRoom player tile (Just Escavate1), Just tile)
 
                 Just Activate1 ->
-                    activateRoom player tile Nothing
+                    (activateRoom player tile Nothing, Nothing)
 
                 Just Activate2 ->
-                    activateRoom player tile (Just Activate1)
+                    (activateRoom player tile (Just Activate1), Nothing)
 
                 Just Activate3 ->
-                    activateRoom player tile (Just Activate2)
+                    (activateRoom player tile (Just Activate2), Nothing)
 
                 Nothing ->
-                    player
+                    (player, Nothing)
 
 
 updateTile : Tile -> List Tile -> List Tile
@@ -92,9 +93,12 @@ updateTile tile tiles =
         tiles
 
 
-furnishCave player tile tileToPlace =
+placeRoom: PlayerBoard -> Tile -> Tile -> PlayerBoard
+placeRoom player tile tileToPlace =
     { player
-        | rooms =
+        |  resources = payRoom tileToPlace.price player.resources
+         , subphase = Nothing
+         , rooms =
             List.map
                 (\r ->
                     if r.title == tile.title then
@@ -106,13 +110,36 @@ furnishCave player tile tileToPlace =
                 player.rooms
     }
 
+playerCanChooseRoom: PlayerBoard -> Tile -> Bool
+playerCanChooseRoom player tile =
+    playerHaveResources player tile.price
+
+
+playerHaveResources: PlayerBoard -> Resources -> Bool
+playerHaveResources player price =
+    payRoom price player.resources |> allResourcesAvailable
+
+allResourcesAvailable: Resources -> Bool
+allResourcesAvailable r =
+    r.gold >= 0 && r.food >= 0 && r.wood >= 0 && r.flax >= 0 && r.stone >= 0 && r.emmer >= 0
+
+payRoom: Resources -> Resources -> Resources
+payRoom price resources =
+    { resources | gold = resources.gold - price.gold
+                , food = resources.food - price.food
+                , wood = resources.wood - price.wood
+                , flax = resources.flax - price.flax
+                , stone = resources.stone - price.stone
+                , emmer = resources.emmer - price.emmer }
 
 activateRoom player tile subphase =
-    { player | subphase = subphase, rooms = tileSetStatus tile Tiles.Active player.rooms }
+    { player | subphase = subphase
+             , rooms = tileSetStatus tile Tiles.Active player.rooms }
 
 
 escavateRoom player tile subphase =
-    { player | subphase = subphase, rooms = tileSetStatus tile Tiles.Empty player.rooms }
+    { player | subphase = subphase
+             , rooms = tileSetStatus tile Tiles.Empty player.rooms }
 
 
 viewBoard : PlayerBoard -> Maybe Subphase -> (Tile -> Tiles.Msg) -> Html Tiles.Msg

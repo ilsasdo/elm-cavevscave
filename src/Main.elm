@@ -5,7 +5,7 @@ import Debug exposing (toString)
 import Html exposing (Html, div, p, text)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
-import PlayerBoard exposing (PlayerBoard, viewBoard)
+import PlayerBoard exposing (PlayerBoard, playerCanChooseRoom, viewBoard)
 import Random
 import Random.List
 import Resources exposing (Resources)
@@ -143,7 +143,10 @@ update msg ({ player1, player2 } as game) =
             )
 
         PlayerMsg tileMsg ->
-            ( updateCurrentPlayer (PlayerBoard.update tileMsg activePlayer) game
+            let
+                (player, newTile) = PlayerBoard.update tileMsg activePlayer
+            in
+            ( updateCurrentPlayer player game |> addNewTile newTile
             , Cmd.none
             )
 
@@ -164,40 +167,6 @@ initPlayerBoardRooms rooms =
     List.take 4 rooms ++ [ tileEmpty ] ++ (rooms |> List.drop 4 |> List.take 1) ++ [ tileCaveEntrance ] ++ List.drop 5 rooms
 
 
-furnishCave game activePlayer tile tileToPlace =
-    { game
-        | availableRooms = List.filter (\t -> t.title /= tileToPlace.title) game.availableRooms
-    }
-        |> updateCurrentPlayer
-            { activePlayer
-                | rooms =
-                    List.map
-                        (\r ->
-                            if r.title == tile.title then
-                                tileToPlace
-
-                            else
-                                r
-                        )
-                        activePlayer.rooms
-            }
-
-
-activateRoom game activePlayer tile subphase =
-    updateCurrentPlayer { activePlayer | rooms = tileSetStatus tile Tiles.Active activePlayer.rooms } game
-
-
-escavateRoom game activePlayer tile subphase =
-    let
-        availableRoom =
-            { tile | status = Tiles.Available }
-    in
-    { game
-        | availableRooms = availableRoom :: game.availableRooms
-    }
-        |> updateCurrentPlayer { activePlayer | rooms = tileSetStatus tile Tiles.Empty activePlayer.rooms }
-
-
 pass : Game -> Game
 pass game =
     if List.length game.player1.actionTiles == game.actions && List.length game.player2.actionTiles == game.actions then
@@ -206,6 +175,14 @@ pass game =
     else
         nextPlayer game
 
+
+addNewTile: Maybe Tile -> Game -> Game
+addNewTile tile game =
+    case tile of
+        Just t ->
+            { game | availableRooms = game.availableRooms ++ [{t | status = Available}] }
+        Nothing ->
+            game
 
 nextRound : Game -> Game
 nextRound game =
@@ -287,11 +264,12 @@ view game =
 viewStatusBar : Game -> Html Msg
 viewStatusBar game =
     div [ class "statusbar" ]
-        [ p [] [ text ("Status Bar: Player " ++ toString game.currentPlayer ++ " Actions: " ++ (game |> currentPlayer |> .actionTiles |> List.length |> toString) ++ "/" ++ toString game.actions) ]
-        , p [] [ text ("Round: " ++ toString game.round) ]
-        , p [] [ text ("Phase: " ++ toString game.phase) ]
-        , p [] [ text ("Subphase: " ++ (game |> currentPlayer |> .subphase |> toString)) ]
-        , Html.button [ onClick Pass ] [ text "Pass" ]
+        [ Html.button [ onClick Pass ] [ text "Pass" ],
+          div [] [ text ("Round: " ++ toString game.round ++
+                         " || Player " ++ toString game.currentPlayer ++
+                         " || Actions: " ++ (game |> currentPlayer |> .actionTiles |> List.length |> toString) ++ "/" ++ toString game.actions ++
+                         " || Phase: " ++ toString game.phase ++
+                         " || Subphase: " ++ (game |> currentPlayer |> .subphase |> toString)) ]
         ]
 
 
@@ -339,21 +317,21 @@ viewMain game =
     Html.map PlayerMsg
         (div [ class "mainboard" ]
             [ viewBoard game.player1 game.player1.subphase SelectRoomTile
-            , viewAvailableRooms (currentPlayer game).resources (game |> currentPlayer |> .subphase) game.availableRooms
+            , viewAvailableRooms (currentPlayer game) game.availableRooms
             , viewBoard game.player2 game.player2.subphase SelectRoomTile
             ]
         )
 
 
-viewAvailableRooms : Resources -> Maybe Subphase -> List Tile -> Html Tiles.Msg
-viewAvailableRooms resources subphase rooms =
-    div [ class "availablerooms" ] (List.map (viewAvailableRoom resources subphase) rooms)
+viewAvailableRooms : PlayerBoard -> List Tile -> Html Tiles.Msg
+viewAvailableRooms player rooms =
+    div [ class "availablerooms" ] (List.map (viewAvailableRoom player) rooms)
 
 
-viewAvailableRoom : Resources -> Maybe Subphase -> Tile -> Html Tiles.Msg
-viewAvailableRoom resources subphase room =
-    if subphase == Just Furnish then
-        viewTile [ class "availableroom pick", onClick (SelectRoomTile room) ] resources room
+viewAvailableRoom : PlayerBoard -> Tile -> Html Tiles.Msg
+viewAvailableRoom player room =
+    if player.subphase == Just Furnish && playerCanChooseRoom player room then
+        viewTile [ class "availableroom pick", onClick (SelectRoomTile room) ] player.resources room
 
     else
-        viewTile [ class "availableroom" ] resources room
+        viewTile [ class "availableroom" ] player.resources room
