@@ -1,15 +1,16 @@
 module Main exposing (main)
 
+import Array
 import Browser
 import Debug exposing (toString)
 import Html exposing (Html, div, p, text)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
-import PlayerBoard exposing (PlayerBoard, playerCanChooseRoom, viewBoard)
+import PlayerBoard exposing (PlayerBoard, isRoomSelectable, viewBoard)
 import Random
 import Random.List
 import Resources exposing (Resources)
-import Tiles exposing (Action, Msg(..), Subphase(..), Tile, TileStatus(..), tileAltareSacrificale, tileAnalisiTerritoriale, tileArredare, tileBancarella, tileCameraSegreta, tileCavaInEspansione, tileCaveEntrance, tileColtivare, tileCostruireUnMuro, tileDemolireUnMuro, tileDeposito, tileDepositoDiLegna, tileEmpty, tileEquipaggiamenti, tileEspansione, tileFiliera, tileFoodCorner, tileForno, tileGoldMine, tileLavorareIlLino, tileLavoriDomestici, tileLuxuryRoom, tileMacina, tileMinare, tileOfficina, tilePerforare, tileRinnovare, tileSalotto, tileScavare, tileSetStatus, tileShelf, tileSotterraneo, tileSottobosco, tileSpedizione, tileSpinningWheel, tileStanzaDiSnodo, tileTesoreria, tileTunnel, tileWarehouse, viewTile)
+import Tiles exposing (Action, Msg(..), Subphase(..), Tile, TileStatus(..), tileAltareSacrificale, tileAnalisiTerritoriale, tileArredare, tileBancarella, tileCameraSegreta, tileCavaInEspansione, tileCaveEntrance, tileColtivare, tileCostruireUnMuro, tileDemolireUnMuro, tileDeposito, tileDepositoDiLegna, tileEmpty, tileEquipaggiamenti, tileEspansione, tileFiliera, tileFoodCorner, tileForno, tileGoldMine, tileLavorareIlLino, tileLavoriDomestici, tileLuxuryRoom, tileMacina, tileMinare, tileOfficina, tilePerforare, tileRinnovare, tileSalotto, tileScavare, updateStatus, tileShelf, tileSotterraneo, tileSottobosco, tileSpedizione, tileSpinningWheel, tileStanzaDiSnodo, tileTesoreria, tileTunnel, tileWarehouse, viewTile)
 import Walls
 
 
@@ -96,7 +97,7 @@ setupRandomTiles rooms round1Tiles round2Tiles round3Tiles round4Tiles =
 
 newBoard : PlayerBoard
 newBoard =
-    PlayerBoard (Resources 1 1 1 1 1 1 1) [] (List.repeat 14 Walls.None) [] Nothing
+    PlayerBoard (Resources 1 1 1 1 1 1 1) [] (Array.repeat 14 Walls.None) [] Nothing
 
 
 newAvailableRooms : List Tile
@@ -136,8 +137,8 @@ update msg ({ player1, player2 } as game) =
 
         InitPlayerBoard rooms ->
             ( { game
-                | player1 = { player1 | rooms = List.take 9 rooms |> initPlayerBoardRooms }
-                , player2 = { player2 | rooms = List.drop 9 rooms |> List.take 9 |> initPlayerBoardRooms }
+                | player1 = { player1 | rooms = List.take 9 rooms |> PlayerBoard.init }
+                , player2 = { player2 | rooms = List.drop 9 rooms |> List.take 9 |> PlayerBoard.init }
               }
             , Cmd.none
             )
@@ -146,7 +147,7 @@ update msg ({ player1, player2 } as game) =
             let
                 (player, newTile) = PlayerBoard.update tileMsg activePlayer
             in
-            ( updateCurrentPlayer player game |> addNewTile newTile
+            ( updateCurrentPlayer player game |> addNewAvailableRoom newTile
             , Cmd.none
             )
 
@@ -156,15 +157,11 @@ update msg ({ player1, player2 } as game) =
         PickRoundTile tile ->
             ( { game
                 | phase = ActionPhase
-                , actionTiles = tileSetStatus tile Tiles.Empty game.actionTiles
+                , actionTiles = Tiles.updateStatus tile Tiles.Empty game.actionTiles
               }
                 |> updateCurrentPlayer { activePlayer | actionTiles = { tile | status = Tiles.Active } :: activePlayer.actionTiles }
             , Cmd.none
             )
-
-
-initPlayerBoardRooms rooms =
-    List.take 4 rooms ++ [ tileEmpty ] ++ (rooms |> List.drop 4 |> List.take 1) ++ [ tileCaveEntrance ] ++ List.drop 5 rooms
 
 
 pass : Game -> Game
@@ -176,13 +173,14 @@ pass game =
         nextPlayer game
 
 
-addNewTile: Maybe Tile -> Game -> Game
-addNewTile tile game =
+addNewAvailableRoom: Maybe Tile -> Game -> Game
+addNewAvailableRoom tile game =
     case tile of
         Just t ->
             { game | availableRooms = game.availableRooms ++ [{t | status = Available}] }
         Nothing ->
             game
+
 
 nextRound : Game -> Game
 nextRound game =
@@ -330,7 +328,7 @@ viewAvailableRooms player rooms =
 
 viewAvailableRoom : PlayerBoard -> Tile -> Html Tiles.Msg
 viewAvailableRoom player room =
-    if player.subphase == Just Furnish && playerCanChooseRoom player room then
+    if player.subphase == Just Furnish && isRoomSelectable player room then
         viewTile [ class "availableroom pick", onClick (SelectRoomTile room) ] player.resources room
 
     else

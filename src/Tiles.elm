@@ -1,5 +1,6 @@
 module Tiles exposing (..)
 
+import Array exposing (Array)
 import Html exposing (Attribute, Html, div)
 import Html.Attributes exposing (class, style)
 import Html.Events exposing (onClick)
@@ -46,14 +47,14 @@ type Subphase
     | Furnish
     | PlaceRoom Tile
     | BuildWall
-    | EscavateThroughWall
     | DestroyWall
+    | EscavateThroughWall
     | Activate1
     | Activate2
     | Activate3
 
 
-tileSetStatus tile status tiles =
+updateStatus tile status tiles =
     List.map
         (\t ->
             if t.title == tile.title then
@@ -64,6 +65,59 @@ tileSetStatus tile status tiles =
         )
         tiles
 
+
+updateWalls: Array Wall -> List Tile -> List Tile
+updateWalls walls tiles =
+    List.indexedMap (updateTileWalls walls) tiles
+
+
+{-
+
+|Walls| and Tiles indexes
+
+|================|
+|  0   |0|   1   |
+|==|1|======|2|==|
+|  2   |3|   3   |
+|==|4|======|5|==|
+|  4   |6|   5   |
+|==|7|======|8|==|
+|  6   |9|   7   |
+|==|10|=====|11|============|
+|   8  |12|  9   |13|   10  |
+|===========================|
+-}
+updateTileWalls: Array Wall -> Int -> Tile -> Tile
+updateTileWalls walls index tile =
+    if tile.status /= Empty then
+        tile
+
+    else
+        case index of
+            0 ->
+                {tile | walls = Walls Placed (Walls.get 0 walls) (Walls.get 1 walls) Placed }
+            1 ->
+                {tile | walls = Walls Placed Placed (Walls.get 2 walls) (Walls.get 0 walls)}
+            2 ->
+                {tile | walls = Walls (Walls.get 1 walls) (Walls.get 3 walls) (Walls.get 4 walls) Placed}
+            3 ->
+                {tile | walls = Walls (Walls.get 2 walls) Placed (Walls.get 5 walls) (Walls.get 3 walls)}
+            4 ->
+                {tile | walls = Walls (Walls.get 4 walls) (Walls.get 6 walls) (Walls.get 7 walls) Placed}
+            5 ->
+                {tile | walls = Walls (Walls.get 5 walls) Placed (Walls.get 8 walls) (Walls.get 6 walls)}
+            6 ->
+                {tile | walls = Walls (Walls.get 7 walls) (Walls.get 9 walls) (Walls.get 10 walls) Placed}
+            7 ->
+                {tile | walls = Walls (Walls.get 8 walls) Placed (Walls.get 9 walls) (Walls.get 11 walls)}
+            8 ->
+                {tile | walls = Walls (Walls.get 10 walls) (Walls.get 12 walls) Placed Placed}
+            9 ->
+                {tile | walls = Walls (Walls.get 11 walls) (Walls.get 13 walls) Placed (Walls.get 12 walls)}
+            10 ->
+                {tile | walls = Walls Placed Placed Placed (Walls.get 13 walls)}
+            _ ->
+                tile
 
 viewTile : List (Attribute Msg) -> Resources -> Tile -> Html Msg
 viewTile attributes resources tile =
@@ -311,7 +365,7 @@ tileEmpty =
         0
         ""
         priceFree
-        (Walls None None None None)
+        (Walls None None None Placed)
         []
 
 
