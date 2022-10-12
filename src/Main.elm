@@ -182,8 +182,8 @@ pass game =
 
     else
         game
-        |> updateCurrentPlayer (restorePlayerPass (currentPlayer game))
-        |> nextPlayer
+            |> updateCurrentPlayer (restorePlayerPass (currentPlayer game))
+            |> nextPlayer
 
 
 addNewAvailableRoom : Tile -> Game -> Game
@@ -340,3 +340,119 @@ viewAvailableRoom player room =
 
     else
         viewTile [ class "availableroom" ] player.resources room
+
+
+type alias PlayerMove =
+    List Msg
+
+
+type alias Node =
+    { game : Game
+    , moves : List PlayerMove
+    , value : Int
+    }
+
+
+alphaBeta : Node -> Int -> Int -> Int -> Bool -> Node
+alphaBeta node depth a b maximizingPlayer =
+    if depth == 0 || isTerminalNode node then
+        node
+
+    else if maximizingPlayer then
+        eachNodeMax (List.head node.moves) (Node node.game (List.drop 1 node.moves) -9999999) (depth - 1) a b False
+
+    else
+        -- TODO: must implement the eachNodeMin!
+        eachNodeMax (List.head node.moves) (Node node.game (List.drop 1 node.moves) 9999999) (depth - 1) a b True
+
+
+eachNodeMax : Maybe PlayerMove -> Node -> Int -> Int -> Int -> Bool -> Node
+eachNodeMax move node depth a b maximizingPlayer =
+    case move of
+        Nothing ->
+            node
+
+        Just mv ->
+            let
+                updatedNode =
+                    updateWithMoves mv node.game
+
+                abNode =
+                    alphaBeta updatedNode depth a b maximizingPlayer
+
+                newValue =
+                    max node.value abNode.value
+            in
+            if newValue >= b then
+                abNode
+
+            else
+                eachNodeMax (List.head node.moves) (Node node.game (List.drop 1 node.moves) newValue) depth (max a newValue) b maximizingPlayer
+
+
+
+{-
+
+   value := +∞
+   for each child of node do
+       value := min(value, alphabeta(child, depth − 1, α, β, TRUE))
+       if value ≤ α then
+           break (* α cutoff *)
+       β := min(β, value)
+   return value
+
+-}
+
+
+eachNodeMin : Maybe PlayerMove -> Node -> Int -> Int -> Int -> Bool -> Node
+eachNodeMin move node depth a b maximizingPlayer =
+    case move of
+        Nothing ->
+            node
+
+        Just mv ->
+            let
+                updatedNode =
+                    updateWithMoves mv node.game
+
+                abNode =
+                    alphaBeta updatedNode depth a b maximizingPlayer
+
+                newValue =
+                    min node.value abNode.value
+            in
+            if newValue <= a then
+                abNode
+
+            else
+                eachNodeMin (List.head node.moves) (Node node.game (List.drop 1 node.moves) newValue) depth a (min b newValue) maximizingPlayer
+
+
+updateWithMoves : List Msg -> Game -> Node
+updateWithMoves moves game =
+    let
+        msg =
+            List.head moves
+    in
+    case msg of
+        Just m ->
+            updateWithMoves (List.drop 1 moves) (update m game |> Tuple.first)
+
+        Nothing ->
+            Node game (calculatePlayerMoves game) (calculateGameValue game)
+
+isTerminalNode: Node -> Bool
+isTerminalNode node =
+    if node.game.round > 8 then
+        True
+
+    else
+        False
+
+
+calculateGameValue game =
+    0
+
+
+calculatePlayerMoves game =
+    []
