@@ -8,3 +8,10 @@
 4. player board must have always more orange rooms than blue ones
 5. additional cave when all board is full
 6. Player must have more gold than opponent in order to play the last action tile
+
+## Feature Roadmap
+
+1. Implement All Rules
+2. fix & beautify layout
+3. A.I.
+4. Remote Play
