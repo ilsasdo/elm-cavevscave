@@ -277,6 +277,15 @@
   border: 1px solid red;
 }
 
+.wall.placed {
+  background-color: black;
+  cursor: pointer;
+}
+
+.wall.available {
+  background-color: transparent;
+}
+
 .wall-0 {
   top: 10%;
   left: 29%;

@@ -39,6 +39,7 @@ type Msg
     = SelectRoomTile Tile
     | ActivateTile (Maybe Subphase) Tile Action
     | DoAction Tile Action
+    | SelectWall Int
 
 
 type Subphase

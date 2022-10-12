@@ -6,8 +6,8 @@ import Html exposing (Html, div)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import Resources exposing (Resources)
-import Tiles exposing (Action, Subphase(..), Tile, TileStatus(..), tileCaveEntrance, tileEmpty, updateStatus, viewTile)
-import Walls exposing (Wall(..), Walls, viewWalls)
+import Tiles exposing (Action, Msg(..), Subphase(..), Tile, TileStatus(..), tileCaveEntrance, tileEmpty, viewTile)
+import Walls exposing (Wall(..), Walls)
 
 
 type alias PlayerBoard =
@@ -24,6 +24,29 @@ type Msg =
     | WallDestroyed
     | None
 
+
+restorePlayerPass: PlayerBoard -> PlayerBoard
+restorePlayerPass board =
+    { board | actionTiles = List.map (\t -> {t | status = Available }) board.actionTiles
+            , rooms = List.map restoreRoom board.rooms}
+
+
+restorePlayerNextRound : PlayerBoard -> Int -> PlayerBoard
+restorePlayerNextRound ({ resources } as player) round =
+    { player
+        | actionTiles = []
+        , rooms = List.map restoreRoom player.rooms
+        , resources = { resources | actions = round }
+    }
+
+
+restoreRoom : Tile -> Tile
+restoreRoom room =
+    if room.status == Active then
+        { room | status = Available }
+
+    else
+        room
 
 init: List Tile -> List Tile
 init rooms =
@@ -49,6 +72,17 @@ update msg player =
                 , actionTiles = updateTile tile player.actionTiles
             }, None)
 
+        Tiles.SelectWall index ->
+            case player.subphase of
+                Just BuildWall ->
+                    (buildWall player index, WallBuilt)
+
+                Just DestroyWall ->
+                    (destroyWall player index, WallDestroyed)
+
+                _ ->
+                    (player, None)
+
         Tiles.SelectRoomTile tile ->
             case player.subphase of
                 Just Furnish ->
@@ -56,15 +90,6 @@ update msg player =
 
                 Just (PlaceRoom tileToPlace) ->
                     (placeRoom player tile tileToPlace, None)
-
-                Just BuildWall ->
-                    ({ player | subphase = Just (PlaceRoom tile) }, None)
-
-                Just (DestroyWall index) ->
-                    (destroyWall player index, WallDestroyed)
-
-                Just (BuildWall index) ->
-                    (buildWall player index, WallBuilt)
 
                 Just EscavateThroughWall ->
                     (escavateRoom player tile Nothing, NewTileAvailable tile)
@@ -84,7 +109,7 @@ update msg player =
                 Just Activate3 ->
                     (activateRoom player tile (Just Activate2), None)
 
-                Nothing ->
+                _ ->
                     (player, None)
 
 
@@ -107,7 +132,8 @@ buildWall player wallIndex =
         walls = Array.set wallIndex Placed player.walls
     in
     { player | walls = walls
-             , rooms = Tiles.updateWalls walls player.rooms }
+             , rooms = Tiles.updateWalls walls player.rooms
+             , subphase = Nothing}
 
 
 destroyWall: PlayerBoard -> Int -> PlayerBoard
@@ -116,7 +142,8 @@ destroyWall player wallIndex =
         walls = Array.set wallIndex Walls.None player.walls
     in
     { player | walls = walls
-             , rooms = Tiles.updateWalls walls player.rooms }
+             , rooms = Tiles.updateWalls walls player.rooms
+             , subphase = Nothing}
 
 
 placeRoom: PlayerBoard -> Tile -> Tile -> PlayerBoard
@@ -181,16 +208,40 @@ escavateRoom player tile subphase =
                        |> Tiles.updateWalls player.walls }
 
 
-viewBoard : PlayerBoard -> Maybe Subphase -> (Tile -> Tiles.Msg) -> Html Tiles.Msg
-viewBoard board subphase select =
+viewBoard : PlayerBoard -> Html Tiles.Msg
+viewBoard board =
     div [ class "playerboard" ]
         [ viewActionTiles board.resources board.actionTiles
         , div [ class "board" ]
             ([ viewResources board.resources ]
-                ++ viewRooms board.resources board.rooms subphase select
-                ++ viewWalls board.walls
+                ++ viewRooms board.resources board.rooms board.subphase
+                ++ viewWalls board
             )
         ]
+
+
+viewWalls : PlayerBoard -> List (Html Tiles.Msg)
+viewWalls board =
+    board.walls
+    |> Array.indexedMap (viewWall board.subphase)
+    |> Array.toList
+
+
+viewWall : Maybe Subphase -> Int -> Wall -> Html Tiles.Msg
+viewWall subphase index wall =
+    case wall of
+        Walls.Placed ->
+            div [ class ("wall placed wall-" ++ toString index) ] []
+
+        Walls.Optional ->
+            div [ class ("wall placed wall-" ++ toString index) ] []
+
+        Walls.None ->
+            if subphase == (Just DestroyWall) || subphase == (Just BuildWall) then
+                div [ class ("wall available wall-" ++ toString index), onClick (SelectWall index) ] []
+
+            else
+                div [ class ("wall available wall-" ++ toString index) ] []
 
 
 viewActionTiles : Resources -> List Tile -> Html Tiles.Msg
@@ -198,52 +249,52 @@ viewActionTiles resources actionTiles =
     div [ class "actiontiles" ] (List.map (viewTile [ class "actiontile" ] resources) actionTiles)
 
 
-viewRooms : Resources -> List Tile -> Maybe Subphase -> (Tile -> Tiles.Msg) -> List (Html Tiles.Msg)
-viewRooms resources rooms subphase select =
-    List.indexedMap (viewRoom resources subphase select) rooms
+viewRooms : Resources -> List Tile -> Maybe Subphase -> List (Html Tiles.Msg)
+viewRooms resources rooms subphase =
+    List.indexedMap (viewRoom resources subphase) rooms
 
 
-viewRoom : Resources -> Maybe Subphase -> (Tile -> Tiles.Msg) -> Int -> Tile -> Html Tiles.Msg
-viewRoom resources subphase select index tile =
+viewRoom : Resources -> Maybe Subphase -> Int -> Tile -> Html Tiles.Msg
+viewRoom resources subphase index tile =
     case subphase of
         Just Escavate1 ->
             if tile.status == Rock then
-                viewSelectableTile resources select index tile
+                viewSelectableTile resources index tile
 
             else
                 viewNonSelectableTile resources index tile
 
         Just Escavate2 ->
             if tile.status == Rock then
-                viewSelectableTile resources select index tile
+                viewSelectableTile resources index tile
 
             else
                 viewNonSelectableTile resources index tile
 
         Just (PlaceRoom t) ->
-            if tile.status == Empty then
-                viewSelectableTile resources select index tile
+            if tile.status == Empty && Walls.matches t.walls tile.walls then
+                viewSelectableTile resources index tile
 
             else
                 viewNonSelectableTile resources index tile
 
         Just Activate1 ->
             if tile.status == Available then
-                viewSelectableTile resources select index tile
+                viewSelectableTile resources index tile
 
             else
                 viewNonSelectableTile resources index tile
 
         Just Activate2 ->
             if tile.status == Available then
-                viewSelectableTile resources select index tile
+                viewSelectableTile resources index tile
 
             else
                 viewNonSelectableTile resources index tile
 
         Just Activate3 ->
             if tile.status == Available then
-                viewSelectableTile resources select index tile
+                viewSelectableTile resources index tile
 
             else
                 viewNonSelectableTile resources index tile
@@ -252,9 +303,9 @@ viewRoom resources subphase select index tile =
             viewNonSelectableTile resources index tile
 
 
-viewSelectableTile resources select index tile =
+viewSelectableTile resources index tile =
     div [ class ("room room-" ++ toString index) ]
-        [ viewTile [ class "pick", onClick (select tile) ] resources tile ]
+        [ viewTile [ class "pick", onClick (SelectRoomTile tile) ] resources tile ]
 
 
 viewNonSelectableTile resources index tile =

@@ -2,13 +2,7 @@ module Walls exposing (..)
 
 
 import Array exposing (Array)
-import Debug exposing (toString)
-import Html exposing (Html, div)
-import Html.Attributes exposing (class)
 
-type Msg =
-    Destroy Int
-    | Build Int
 
 type Wall
     = Placed
@@ -81,23 +75,3 @@ matchSide cave side (room, match) =
 
             None ->
                 (room, (side cave) == None)
-
-
-viewWalls : Array Wall -> List (Html msg)
-viewWalls walls =
-    walls
-    |> Array.indexedMap viewWall
-    |> Array.toList
-
-
-viewWall : Int -> Wall -> Html msg
-viewWall index wall =
-    case wall of
-        Placed ->
-            div [ class ("wall placed wall-" ++ toString index) ] []
-
-        Optional ->
-            div [ class ("wall placed wall-" ++ toString index) ] []
-
-        None ->
-            div [ class ("wall available wall-" ++ toString index) ] []
