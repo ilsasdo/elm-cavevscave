@@ -182,7 +182,7 @@ tileLavoriDomestici : Tile
 tileLavoriDomestici =
     Tile "Lavori Domestici"
         Available
-        0
+        3
         "assets/img/rounds/lavori_domestici.jpg"
         priceFree
         noWalls
@@ -198,7 +198,7 @@ tileColtivare : Tile
 tileColtivare =
     Tile "Coltivare"
         Available
-        0
+        2
         "assets/img/rounds/coltivare.jpg"
         priceFree
         noWalls
@@ -211,7 +211,7 @@ tileSottobosco : Tile
 tileSottobosco =
     Tile "Sottobosco"
         Available
-        0
+        1
         "assets/img/rounds/sottobosco.jpg"
         priceFree
         noWalls
@@ -224,7 +224,7 @@ tileScavare : Tile
 tileScavare =
     Tile "Scavare"
         Available
-        0
+        4
         "assets/img/rounds/scavare.jpg"
         priceFree
         noWalls
@@ -238,7 +238,7 @@ tileArredare : Tile
 tileArredare =
     Tile "Arredare"
         Rock
-        0
+        6
         "assets/img/rounds/arredare.jpg"
         priceFree
         noWalls
@@ -251,7 +251,7 @@ tileCostruireUnMuro : Tile
 tileCostruireUnMuro =
     Tile "Costrurire un Muro"
         Rock
-        0
+        7
         "assets/img/rounds/costruire_un_muro.jpg"
         priceFree
         noWalls
@@ -267,7 +267,7 @@ tileMinare : Tile
 tileMinare =
     Tile "Minare"
         Rock
-        0
+        5
         "assets/img/rounds/minare.jpg"
         priceFree
         noWalls
@@ -296,7 +296,7 @@ tileEspansione : Tile
 tileEspansione =
     Tile "Espansione"
         Rock
-        0
+        10
         "assets/img/rounds/espansione.jpg"
         priceFree
         noWalls
@@ -312,7 +312,7 @@ tileSpedizione : Tile
 tileSpedizione =
     Tile "Spedizione"
         Rock
-        0
+        9
         "assets/img/rounds/spedizione.jpg"
         priceFree
         noWalls
@@ -327,7 +327,7 @@ tilePerforare : Tile
 tilePerforare =
     Tile "Perforare"
         Rock
-        0
+        8
         "assets/img/rounds/perforare.jpg"
         priceFree
         noWalls
@@ -344,7 +344,7 @@ tileRinnovare : Tile
 tileRinnovare =
     Tile "Rinnovare"
         Rock
-        0
+        11
         "assets/img/rounds/rinnovare.jpg"
         priceFree
         noWalls

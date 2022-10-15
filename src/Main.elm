@@ -362,8 +362,7 @@ alphaBeta node depth a b maximizingPlayer =
         eachNodeMax (List.head node.moves) (Node node.game (List.drop 1 node.moves) -9999999) (depth - 1) a b False
 
     else
-        -- TODO: must implement the eachNodeMin!
-        eachNodeMax (List.head node.moves) (Node node.game (List.drop 1 node.moves) 9999999) (depth - 1) a b True
+        eachNodeMin (List.head node.moves) (Node node.game (List.drop 1 node.moves) 9999999) (depth - 1) a b True
 
 
 eachNodeMax : Maybe PlayerMove -> Node -> Int -> Int -> Int -> Bool -> Node
@@ -439,7 +438,8 @@ updateWithMoves moves game =
             updateWithMoves (List.drop 1 moves) (update m game |> Tuple.first)
 
         Nothing ->
-            Node game (calculatePlayerMoves game) (calculateGameValue game)
+            Node game (calculatePlayerMoves game (currentPlayer game)) (calculateGameValue game)
+
 
 isTerminalNode: Node -> Bool
 isTerminalNode node =
@@ -454,5 +454,41 @@ calculateGameValue game =
     0
 
 
-calculatePlayerMoves game =
-    []
+calculatePlayerMoves: Game -> PlayerBoard -> List PlayerMove
+calculatePlayerMoves game player =
+    game.actionTiles
+        |> List.filter (\t -> t.status == Available)
+        |> List.sortBy (\t -> -t.score)
+        |> List.map (chooseActionTile game player)
+        |> List.foldl (++) []
+
+
+chooseActionTile: Game -> PlayerBoard -> Tile -> List PlayerMove
+chooseActionTile game player tile =
+    tile.actions
+    |> List.filter (\a -> a.isDoable player.resources)
+    |> List.map (playAction game player tile)
+
+
+playAction: Game -> PlayerBoard -> Tile -> Action -> PlayerMove
+playAction game player tile action =
+    [PickRoundTile tile] ++ (completeAction game player tile action)
+
+
+completeAction: Game -> PlayerBoard -> Tile -> Action -> PlayerMove
+completeAction game player tile action =
+    case action.subphase of
+        Nothing ->
+            []
+
+        Just Escavate1 ->
+        Just Escavate2 ->
+        Just Furnish ->
+        Just PlaceRoom r ->
+        Just BuildWall ->
+        Just DestroyWall ->
+        Just EscavateThroughWall ->
+        Just Activate1 ->
+        Just Activate2 ->
+        Just Activate3 ->
+
