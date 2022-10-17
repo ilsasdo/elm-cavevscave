@@ -196,6 +196,7 @@ payRoom price resources =
                 , stone = resources.stone - price.stone
                 , emmer = resources.emmer - price.emmer }
 
+
 activateRoom player tile subphase =
     { player | subphase = subphase
              , rooms = Tiles.updateStatus tile Tiles.Active player.rooms }
@@ -208,13 +209,22 @@ escavateRoom player tile subphase =
                        |> Tiles.updateWalls player.walls }
 
 
+isReachableRoom: PlayerBoard -> Tile -> Bool
+isReachableRoom board tile =
+     (board.rooms
+        |> List.indexedMap (\index -> \t -> (index, t) )
+        |> List.filter (\(i, t) -> if t.title == tile.title then isReachable i)
+        |> List.length)
+        > 0
+
+
 viewBoard : PlayerBoard -> Html Tiles.Msg
 viewBoard board =
     div [ class "playerboard" ]
         [ viewActionTiles board.resources board.actionTiles
         , div [ class "board" ]
             ([ viewResources board.resources ]
-                ++ viewRooms board.resources board.rooms board.subphase
+                ++ viewRooms board
                 ++ viewWalls board
             )
         ]
@@ -249,58 +259,58 @@ viewActionTiles resources actionTiles =
     div [ class "actiontiles" ] (List.map (viewTile [ class "actiontile" ] resources) actionTiles)
 
 
-viewRooms : Resources -> List Tile -> Maybe Subphase -> List (Html Tiles.Msg)
-viewRooms resources rooms subphase =
-    List.indexedMap (viewRoom resources subphase) rooms
+viewRooms : PlayerBoard -> List (Html Tiles.Msg)
+viewRooms board =
+    List.indexedMap (viewRoom board) board.rooms
 
 
-viewRoom : Resources -> Maybe Subphase -> Int -> Tile -> Html Tiles.Msg
-viewRoom resources subphase index tile =
-    case subphase of
+viewRoom : PlayerBoard -> Int -> Tile -> Html Tiles.Msg
+viewRoom board index tile =
+    case board.subphase of
         Just Escavate1 ->
-            if tile.status == Rock then
-                viewSelectableTile resources index tile
+            if tile.status == Rock && isReachableRoom board tile then
+                viewSelectableTile board.resources index tile
 
             else
-                viewNonSelectableTile resources index tile
+                viewNonSelectableTile board.resources index tile
 
         Just Escavate2 ->
             if tile.status == Rock then
-                viewSelectableTile resources index tile
+                viewSelectableTile board.resources index tile
 
             else
-                viewNonSelectableTile resources index tile
+                viewNonSelectableTile board.resources index tile
 
         Just (PlaceRoom t) ->
             if tile.status == Empty && Walls.matches t.walls tile.walls then
-                viewSelectableTile resources index tile
+                viewSelectableTile board.resources index tile
 
             else
-                viewNonSelectableTile resources index tile
+                viewNonSelectableTile board.resources index tile
 
         Just Activate1 ->
             if tile.status == Available then
-                viewSelectableTile resources index tile
+                viewSelectableTile board.resources index tile
 
             else
-                viewNonSelectableTile resources index tile
+                viewNonSelectableTile board.resources index tile
 
         Just Activate2 ->
             if tile.status == Available then
-                viewSelectableTile resources index tile
+                viewSelectableTile board.resources index tile
 
             else
-                viewNonSelectableTile resources index tile
+                viewNonSelectableTile board.resources index tile
 
         Just Activate3 ->
             if tile.status == Available then
-                viewSelectableTile resources index tile
+                viewSelectableTile board.resources index tile
 
             else
-                viewNonSelectableTile resources index tile
+                viewNonSelectableTile board.resources index tile
 
         _ ->
-            viewNonSelectableTile resources index tile
+            viewNonSelectableTile board.resources index tile
 
 
 viewSelectableTile resources index tile =

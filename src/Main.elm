@@ -467,28 +467,29 @@ chooseActionTile: Game -> PlayerBoard -> Tile -> List PlayerMove
 chooseActionTile game player tile =
     tile.actions
     |> List.filter (\a -> a.isDoable player.resources)
-    |> List.map (playAction game player tile)
+    |> List.map (playAction game player tile [PickRoundTile tile])
+    |> List.foldl (++) []
 
 
-playAction: Game -> PlayerBoard -> Tile -> Action -> PlayerMove
-playAction game player tile action =
-    [PickRoundTile tile] ++ (completeAction game player tile action)
-
-
-completeAction: Game -> PlayerBoard -> Tile -> Action -> PlayerMove
-completeAction game player tile action =
+playAction: Game -> PlayerBoard -> Tile -> PlayerMove -> Action -> List PlayerMove
+playAction game player tile moves action =
     case action.subphase of
-        Nothing ->
-            []
 
-        Just Escavate1 ->
-        Just Escavate2 ->
-        Just Furnish ->
-        Just PlaceRoom r ->
-        Just BuildWall ->
-        Just DestroyWall ->
-        Just EscavateThroughWall ->
-        Just Activate1 ->
-        Just Activate2 ->
-        Just Activate3 ->
+        Nothing ->
+            [moves]
+
+        _ ->
+            [moves]
+
+        --Just Escavate1 ->
+        --    List.filter (\t -> )
+        --Just Escavate2 ->
+        --Just Furnish ->
+        --Just PlaceRoom r ->
+        --Just BuildWall ->
+        --Just DestroyWall ->
+        --Just EscavateThroughWall ->
+        --Just Activate1 ->
+        --Just Activate2 ->
+        --Just Activate3 ->
 
