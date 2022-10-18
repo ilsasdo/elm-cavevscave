@@ -26,6 +26,11 @@ type alias Game =
     , availableWalls : Int
     }
 
+emptyGame =
+    Game emptyBoard emptyBoard 0 0 0 NewActionPhase [] [] 0
+
+emptyBoard =
+    PlayerBoard (Resources 0 0 0 0 0 0 0) [] (Array.fromList []) [] Nothing
 
 type Msg
     = InitPlayerBoard (List Tile)
@@ -366,7 +371,6 @@ type alias PlayerMove =
 
 type alias Node =
     { game : Game
-    , availableMoves : List PlayerMove
     , value : Int
     , move : PlayerMove
     }
@@ -398,65 +402,63 @@ playerMoveToString playerMove =
 alphaBeta : Node -> Int -> Int -> Int -> Bool -> Node
 alphaBeta node depth a b maximizingPlayer =
     let
-        availableMovesCount = Debug.log ("MaximizingPlayer: "++toString maximizingPlayer ++ ", Depth: "++toString depth ++", a: "++toString a ++", b: "++toString b++", count:") (List.length node.availableMoves)
+        availableMovesCount = Debug.log ("MaximizingPlayer: "++toString maximizingPlayer ++ ", Depth: "++toString depth ++", a: "++toString a ++", b: "++toString b)
         nodes = calculatePlayerMoves node.game (currentPlayer node.game)
     in
     if depth == 0 || isTerminalNode node then
         node
 
     else if maximizingPlayer then
-        eachNodeMax (List.head nodes) (Node node.game (List.drop 1 nodes) -9999999 node.move) (depth - 1) a b False
+        eachNodeMax nodes (depth - 1) a b False
 
     else
-        eachNodeMin (List.head nodes) (Node node.game (List.drop 1 nodes) 9999999 node.move) (depth - 1) a b True
+        eachNodeMin nodes (depth - 1) a b True
+
+emptyNode =
+    Node emptyGame 0 []
+
+eachNodeMax : List Node -> Int -> Int -> Int -> Bool -> Node
+eachNodeMax nodes depth a b maximizingPlayer =
+    let
+        node = List.head nodes |> Maybe.withDefault emptyNode
+    in
+    if List.length nodes == 1 then
+        node
+    else
+        let
+            abNode =
+                alphaBeta node depth a b maximizingPlayer
+
+            newValue =
+                max node.value abNode.value
+        in
+        if newValue >= b then
+            abNode
+
+        else
+            eachNodeMax (List.drop 1 nodes) depth (max a newValue) b maximizingPlayer
 
 
-eachNodeMax : Maybe PlayerMove -> Node -> Int -> Int -> Int -> Bool -> Node
-eachNodeMax move node depth a b maximizingPlayer =
-    case move of
-        Nothing ->
-            node
+eachNodeMin : List Node -> Int -> Int -> Int -> Bool -> Node
+eachNodeMin nodes depth a b maximizingPlayer =
+    let
+        node = List.head nodes |> Maybe.withDefault emptyNode
+    in
+    if List.length nodes == 1 then
+        node
+    else
+        let
+            abNode =
+                alphaBeta node depth a b maximizingPlayer
 
-        Just mv ->
-            let
-                updatedNode =
-                    updateWithMoves mv node.game
+            newValue =
+                max node.value abNode.value
+        in
+        if newValue <= a then
+            abNode
 
-                abNode =
-                    alphaBeta updatedNode depth a b maximizingPlayer
-
-                newValue =
-                    max node.value abNode.value
-            in
-            if newValue >= b then
-                abNode
-
-            else
-                eachNodeMax (List.head node.availableMoves) (Node node.game (List.drop 1 node.availableMoves) newValue mv) depth (max a newValue) b maximizingPlayer
-
-
-eachNodeMin : Maybe PlayerMove -> Node -> Int -> Int -> Int -> Bool -> Node
-eachNodeMin move node depth a b maximizingPlayer =
-    case move of
-        Nothing ->
-            node
-
-        Just mv ->
-            let
-                updatedNode =
-                    updateWithMoves mv node.game
-
-                abNode =
-                    alphaBeta updatedNode depth a b maximizingPlayer
-
-                newValue =
-                    min node.value abNode.value
-            in
-            if newValue <= a then
-                abNode
-
-            else
-                eachNodeMin (List.head node.availableMoves) (Node node.game (List.drop 1 node.availableMoves) newValue mv) depth a (min b newValue) maximizingPlayer
+        else
+            eachNodeMin (List.drop 1 nodes) depth a (min b newValue) maximizingPlayer
 
 
 playAIMoves : List Msg -> Game -> (Game, Cmd Msg)
@@ -483,7 +485,7 @@ updateWithMoves moves game =
             updateWithMoves (List.drop 1 moves) (update m game |> Tuple.first)
 
         Nothing ->
-            Node game (calculatePlayerMoves game (currentPlayer game)) (calculateGameValue game) moves
+            Node game (calculateGameValue game) moves
 
 
 isTerminalNode : Node -> Bool
@@ -526,7 +528,7 @@ calculateGameValue game =
           )
 
 
-calculatePlayerMoves : Game -> PlayerBoard -> List PlayerMove
+calculatePlayerMoves : Game -> PlayerBoard -> List Node
 calculatePlayerMoves game player =
     game.actionTiles
         |> List.filter (\t -> t.status == Available)
@@ -535,7 +537,7 @@ calculatePlayerMoves game player =
         |> List.foldl (++) []
 
 
-chooseActionTile : Game -> PlayerBoard -> Tile -> List PlayerMove
+chooseActionTile : Game -> PlayerBoard -> Tile -> List Node
 chooseActionTile game player actionTile =
     actionTile.actions
         |> List.filter (\a -> a.isDoable player.resources)
@@ -543,7 +545,7 @@ chooseActionTile game player actionTile =
         |> List.foldl (++) []
 
 
-playAction : Game -> PlayerBoard -> List Msg -> Action -> List PlayerMove
+playAction : Game -> PlayerBoard -> List Msg -> Action -> List Node
 playAction game player moves action =
     case action.subphase of
         Nothing ->
