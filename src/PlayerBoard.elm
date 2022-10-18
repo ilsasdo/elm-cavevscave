@@ -6,7 +6,7 @@ import Html exposing (Html, div)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import Resources exposing (Resources)
-import Tiles exposing (Action, Msg(..), Subphase(..), Tile, TileStatus(..), tileCaveEntrance, tileEmpty, viewTile)
+import Tiles exposing (Action, Msg(..), Subphase(..), Tile, TileStatus(..), tileCaveEntrance, tileEmpty, tileRock, viewTile)
 import Walls exposing (Wall(..), Walls)
 
 
@@ -60,14 +60,6 @@ update msg player =
             ({ player
                 | resources = action.do player.resources
                 , subphase = action.subphase
-                , rooms = updateTile tile player.rooms
-                , actionTiles = updateTile tile player.actionTiles
-            }, None)
-
-        Tiles.ActivateTile subphase tile action ->
-            ({ player
-                | subphase = subphase
-                , resources = action.do player.resources
                 , rooms = updateTile tile player.rooms
                 , actionTiles = updateTile tile player.actionTiles
             }, None)
@@ -172,8 +164,7 @@ isRoomSelectable player tile =
 playerCanPlaceRoom: PlayerBoard -> Tile -> Bool
 playerCanPlaceRoom player tile =
     player.rooms
-    |> List.filter (\t -> t.status == Empty)
-    |> List.map (\t -> Walls.matches t.walls tile.walls)
+    |> List.map (\t -> t.status == Empty && Walls.matches t.walls tile.walls)
     |> List.foldl (||) False
 
 
@@ -211,12 +202,72 @@ escavateRoom player tile subphase =
 
 isReachableRoom: PlayerBoard -> Tile -> Bool
 isReachableRoom board tile =
-     (board.rooms
-        |> List.indexedMap (\index -> \t -> (index, t) )
-        |> List.filter (\(i, t) -> if t.title == tile.title then isReachable i)
-        |> List.length)
-        > 0
+    let
+        roomArray = Array.fromList board.rooms
+        tileIndex = getTileIndex board.rooms tile
+    in
+        isReachable tileIndex roomArray
 
+
+isReachable tileIndex roomArray =
+    case tileIndex of
+        0 ->
+            isRoom 1 roomArray ||
+            isRoom 2 roomArray
+        1 ->
+            isRoom 0 roomArray ||
+            isRoom 3 roomArray
+        2 ->
+            isRoom 0 roomArray ||
+            isRoom 4 roomArray ||
+            isRoom 3 roomArray
+        3 ->
+            isRoom 1 roomArray ||
+            isRoom 5 roomArray ||
+            isRoom 2 roomArray
+        4 ->
+            isRoom 2 roomArray ||
+            isRoom 5 roomArray ||
+            isRoom 6 roomArray
+        5 ->
+            isRoom 3 roomArray ||
+            isRoom 4 roomArray ||
+            isRoom 7 roomArray
+        6 ->
+            isRoom 4 roomArray ||
+            isRoom 7 roomArray ||
+            isRoom 8 roomArray
+        7 ->
+            isRoom 5 roomArray ||
+            isRoom 6 roomArray ||
+            isRoom 9 roomArray
+        8 ->
+            isRoom 9 roomArray ||
+            isRoom 6 roomArray
+        9 ->
+            isRoom 7 roomArray ||
+            isRoom 10 roomArray ||
+            isRoom 8 roomArray
+        10 ->
+            isRoom 9 roomArray
+
+        _ ->
+            False
+
+isRoom: Int -> Array Tile -> Bool
+isRoom tileIndex roomArray =
+    Array.get tileIndex roomArray
+    |> Maybe.withDefault tileRock
+    |> (\t -> t.status /= Rock)
+
+
+getTileIndex tiles tile =
+    tiles
+    |> List.indexedMap (\i -> \t -> (i, t))
+    |> List.filter (\(i, t) -> tile.title == t.title )
+    |> List.head
+    |> Maybe.withDefault (0, tile)
+    |> Tuple.first
 
 viewBoard : PlayerBoard -> Html Tiles.Msg
 viewBoard board =
