@@ -190,8 +190,6 @@ update msg ({ player1, player2 } as game) =
 
                 node =
                     alphaBeta rootNode 4 -9999999 9999999 True
-                count = Debug.log "gamevalue" node.value
-                m1 = Debug.log "moves" (playerMoveToString node.move)
             in
             playAIMoves node.move game
 
@@ -384,6 +382,11 @@ type alias Node =
     }
 
 
+nodesToString : List Node -> String
+nodesToString nodes =
+    List.map (\n -> ("Node Value: "++ toString n.value ++ " Moves: "++(playerMoveToString n.move))) nodes
+    |> String.join " | "
+
 playerMoveToString : List Msg -> String
 playerMoveToString playerMove =
     case List.head playerMove of
@@ -415,6 +418,7 @@ alphaBeta node depth a b maximizingPlayer =
     let
         nodes =
             calculatePlayerMoves node
+        n1 = Debug.log ("ALPHA_BETA: "++toString depth) (nodesToString nodes)
     in
     if depth == 0 || isTerminalNode node then
         node
@@ -542,7 +546,7 @@ calculatePlayerMoves node =
         activePlayer =
             currentPlayer node.game
     in
-    case Debug.log "calculatePlayerMoves" (node.game.phase) of
+    case node.game.phase of
         NewActionPhase ->
             node.game.actionTiles
                 |> List.filter (\t -> t.status == Available)
@@ -551,7 +555,7 @@ calculatePlayerMoves node =
                 |> List.foldl (++) []
 
         ActionPhase ->
-            case Debug.log "subphase: " activePlayer.subphase of
+            case activePlayer.subphase of
                 Nothing ->
                     [ updateWithGameValue node ]
 
@@ -633,6 +637,8 @@ activateRoom node tile actions =
             in
             if action.isDoable player.resources then
                 calculatePlayerMoves (updateNode node (PlayerMsg (Tiles.DoAction tile action)))
+                |> List.map (\n -> activateRoom n tile (List.drop 1 actions))
+                |> List.foldl (++) []
             else
                 activateRoom node tile (List.drop 1 actions)
 
