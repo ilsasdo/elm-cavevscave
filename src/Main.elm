@@ -382,11 +382,6 @@ type alias Node =
     }
 
 
-nodesToString : List Node -> String
-nodesToString nodes =
-    List.map (\n -> ("Node Value: "++ toString n.value ++ " Moves: "++(playerMoveToString n.move))) nodes
-    |> String.join " | "
-
 playerMoveToString : List Msg -> String
 playerMoveToString playerMove =
     case List.head playerMove of
@@ -417,8 +412,7 @@ alphaBeta : Node -> Int -> Int -> Int -> Bool -> Node
 alphaBeta node depth a b maximizingPlayer =
     let
         nodes =
-            calculatePlayerMoves node
-        n1 = Debug.log ("ALPHA_BETA: "++toString depth) (nodesToString nodes)
+            chooseRoundTile node.game
     in
     if depth == 0 || isTerminalNode node then
         node
@@ -505,146 +499,181 @@ isTerminalNode node =
         False
 
 
-updateWithGameValue: Node -> Node
-updateWithGameValue node =
+chooseRoundTile : Game -> List Node
+chooseRoundTile game =
+    game.actionTiles
+        |> List.filter (\t -> t.status == Available)
+        |> List.sortBy (\t -> -t.score)
+        |> List.map (playRoundTile (Node game 0 []))
+        |> List.foldl (++) []
+
+
+playRoundTile : Node -> Tile -> List Node
+playRoundTile node roundTile =
     let
         player =
             currentPlayer node.game
-
-        gameScore = (player.resources.gold * 10)
-                            + (player.resources.emmer * 2)
-                            + (player.resources.flax * 2)
-                            + (player.resources.food * 3)
-                            + (player.resources.stone * 2)
-                            + (player.resources.wood * 2)
-                            + (player.rooms
-                                |> List.filter (\r -> r.status == Available)
-                                |> List.map .score
-                                |> List.foldl (+) 0
-                                |> (*) 10
-                              )
-                            + (player.rooms
-                                |> List.filter (\r -> r.status == Empty)
-                                |> List.map .score
-                                |> List.foldl (+) 0
-                                |> (*) 5
-                              )
-                            + (node.game.availableRooms
-                                |> List.filter (isRoomSelectable player)
-                                |> List.map .score
-                                |> List.foldl (+) 0
-                                |> (*) 6
-                              )
     in
-    Node node.game gameScore node.move
+    roundTile.actions
+        |> List.filter (\a -> a.isDoable player.resources)
+        |> List.map (\a -> playRoundTileAction (playMoves node [ PickRoundTile roundTile, PlayerMsg (DoAction roundTile a) ]))
+        |> List.foldl (++) []
 
 
-
-calculatePlayerMoves : Node -> List Node
-calculatePlayerMoves node =
+playMove : Node -> Msg -> Node
+playMove node msg =
     let
-        activePlayer =
+        updatedGame =
+            update msg node.game |> Tuple.first
+    in
+    Node updatedGame 0 (node.move ++ [ msg ])
+
+
+playMoves : Node -> PlayerMove -> Node
+playMoves node moves =
+    let
+        move =
+            List.head moves
+    in
+    case move of
+        Just msg ->
+            playMoves (playMove node msg) (List.drop 1 moves)
+
+        Nothing ->
+            node
+
+
+playRoundTileAction : Node -> List Node
+playRoundTileAction node =
+    let
+        player =
             currentPlayer node.game
     in
-    case node.game.phase of
-        NewActionPhase ->
-            node.game.actionTiles
-                |> List.filter (\t -> t.status == Available)
-                |> List.sortBy (\t -> -t.score) -- sort from highest to lowest score
-                |> List.map (\t -> activateRoom (updateNode node (PickRoundTile t)) t t.actions)
-                |> List.foldl (++) []
-
-        ActionPhase ->
-            case activePlayer.subphase of
-                Nothing ->
-                    [ updateWithGameValue node ]
-
-                Just Escavate1 ->
-                    activePlayer.rooms
-                        |> List.filter (\t -> t.status == Rock)
-                        |> List.filter (PlayerBoard.isReachableRoom activePlayer)
-                        |> List.map (\t -> updateNode node (PlayerMsg (SelectRoomTile t)))
-
-                Just Escavate2 ->
-                    activePlayer.rooms
-                        |> List.filter (\t -> t.status == Rock)
-                        |> List.filter (PlayerBoard.isReachableRoom activePlayer)
-                        |> List.map (\t -> updateNode node (PlayerMsg (SelectRoomTile t)))
-                        |> List.map (\n -> calculatePlayerMoves n)
-                        |> List.foldl (++) []
-
-                -- TODO: handle special case here
-                Just EscavateThroughWall ->
-                    activePlayer.rooms
-                        |> List.filter (\t -> t.status == Rock)
-                        |> List.filter (PlayerBoard.isReachableRoom activePlayer)
-                        |> List.map (\t -> updateNode node (PlayerMsg (SelectRoomTile t)))
-
-                Just Furnish ->
-                    node.game.availableRooms
-                        |> List.filter (PlayerBoard.isRoomSelectable activePlayer)
-                        |> List.map (\t -> updateNode node (PlayerMsg (SelectRoomTile t)))
-                        |> List.map (\n -> calculatePlayerMoves n)
-                        |> List.foldl (++) []
-
-                Just (PlaceRoom tileToPlace) ->
-                    activePlayer.rooms
-                        |> List.filter (\t -> t.status == Empty && Walls.matches t.walls tileToPlace.walls)
-                        |> List.map (\t -> updateNode node (PlayerMsg (SelectRoomTile t)))
-
-
-                Just BuildWall ->
-                    activePlayer.walls
-                        |> Array.toIndexedList
-                        |> List.filter (\( i, w ) -> w == Walls.None)
-                        |> List.map (\( i, w ) -> updateNode node (PlayerMsg (Tiles.SelectWall i)))
-
-                Just DestroyWall ->
-                    activePlayer.walls
-                        |> Array.toIndexedList
-                        |> List.filter (\( i, w ) -> w == Walls.Placed)
-                        |> List.map (\( i, w ) -> updateNode node (PlayerMsg (Tiles.SelectWall i)))
-
-                Just Activate1 ->
-                    activePlayer.rooms
-                        |> List.filter (\t -> t.status == Available)
-                        |> List.map (\t -> activateRoom (updateNode node (PlayerMsg (Tiles.SelectRoomTile t))) t t.actions)
-                        |> List.foldl (++) []
-
-                Just Activate2 ->
-                    activePlayer.rooms
-                        |> List.filter (\t -> t.status == Available)
-                        |> List.map (\t -> activateRoom (updateNode node (PlayerMsg (Tiles.SelectRoomTile t))) t t.actions)
-                        |> List.foldl (++) []
-
-                Just Activate3 ->
-                    activePlayer.rooms
-                        |> List.filter (\t -> t.status == Available)
-                        |> List.map (\t -> activateRoom (updateNode node (PlayerMsg (Tiles.SelectRoomTile t))) t t.actions)
-                        |> List.foldl (++) []
-
-
--- activating a room (or a round tile) can trigger other actions and nodes.
-activateRoom : Node -> Tile -> List Action -> List Node
-activateRoom node tile actions =
-    case List.head actions of
+    case player.subphase of
         Nothing ->
-            [node]
+            [ Node node.game (calculateGameValue node.game) node.move ]
 
-        Just action ->
-            let
-                player = currentPlayer node.game
-            in
-            if action.isDoable player.resources then
-                calculatePlayerMoves (updateNode node (PlayerMsg (Tiles.DoAction tile action)))
-                |> List.map (\n -> activateRoom n tile (List.drop 1 actions))
+        Just Escavate1 ->
+            player.rooms
+                |> List.filter (\t -> t.status == Rock)
+                |> List.filter (PlayerBoard.isReachableRoom player)
+                |> List.map (\t -> playMove node (PlayerMsg (SelectRoomTile t)))
+                |> List.map playRoundTileAction
                 |> List.foldl (++) []
-            else
-                activateRoom node tile (List.drop 1 actions)
+                |> List.sortBy (\n -> -n.value)
+
+        Just Escavate2 ->
+            player.rooms
+                |> List.filter (\t -> t.status == Rock)
+                |> List.filter (PlayerBoard.isReachableRoom player)
+                |> List.map (\t -> playMove node (PlayerMsg (SelectRoomTile t)))
+                |> List.map playRoundTileAction
+                |> List.foldl (++) []
+                |> List.sortBy (\n -> -n.value)
+
+        -- TODO: handle through wall special case here
+        Just EscavateThroughWall ->
+            player.rooms
+                |> List.filter (\t -> t.status == Rock)
+                |> List.filter (PlayerBoard.isReachableRoom player)
+                |> List.map (\t -> playMove node (PlayerMsg (SelectRoomTile t)))
+                |> List.map playRoundTileAction
+                |> List.foldl (++) []
+                |> List.sortBy (\n -> -n.value)
+
+        Just Furnish ->
+            node.game.availableRooms
+                |> List.filter (PlayerBoard.isRoomSelectable player)
+                |> List.map (\t -> playMove node (PlayerMsg (SelectRoomTile t)))
+                |> List.map playRoundTileAction
+                |> List.foldl (++) []
+                |> List.sortBy (\n -> -n.value)
+
+        Just (PlaceRoom tileToPlace) ->
+            node.game.availableRooms
+                |> List.filter (\t -> t.status == Empty && Walls.matches t.walls tileToPlace.walls)
+                |> List.map (\t -> playMove node (PlayerMsg (SelectRoomTile t)))
+                |> List.map playRoundTileAction
+                |> List.foldl (++) []
+                |> List.sortBy (\n -> -n.value)
+
+        Just BuildWall ->
+            player.walls
+                |> Array.toIndexedList
+                |> List.filter (\( i, w ) -> w == Walls.None)
+                |> List.map (\( i, w ) -> playMove node (PlayerMsg (Tiles.SelectWall i)))
+                |> List.map playRoundTileAction
+                |> List.foldl (++) []
+                |> List.sortBy (\n -> -n.value)
+
+        Just DestroyWall ->
+            player.walls
+                |> Array.toIndexedList
+                |> List.filter (\( i, w ) -> w == Walls.Placed)
+                |> List.map (\( i, w ) -> playMove node (PlayerMsg (Tiles.SelectWall i)))
+                |> List.map playRoundTileAction
+                |> List.foldl (++) []
+                |> List.sortBy (\n -> -n.value)
+
+        Just Activate1 ->
+            player.rooms
+                |> List.filter (\t -> t.status == Available)
+                |> List.map (\t -> playMoves node ([ PlayerMsg (Tiles.SelectRoomTile t) ] ++ activateRoom player t))
+                |> List.map playRoundTileAction
+                |> List.foldl (++) []
+                |> List.sortBy (\n -> -n.value)
+
+        Just Activate2 ->
+            player.rooms
+                |> List.filter (\t -> t.status == Available)
+                |> List.map (\t -> playMoves node ([ PlayerMsg (Tiles.SelectRoomTile t) ] ++ activateRoom player t))
+                |> List.map playRoundTileAction
+                |> List.foldl (++) []
+                |> List.sortBy (\n -> -n.value)
+
+        Just Activate3 ->
+            player.rooms
+                |> List.filter (\t -> t.status == Available)
+                |> List.map (\t -> playMoves node ([ PlayerMsg (Tiles.SelectRoomTile t) ] ++ activateRoom player t))
+                |> List.map playRoundTileAction
+                |> List.foldl (++) []
+                |> List.sortBy (\n -> -n.value)
 
 
-updateNode node msg =
+activateRoom : PlayerBoard -> Tile -> List Msg
+activateRoom player tile =
+    tile.actions
+        |> List.filter (\a -> a.isDoable player.resources)
+        |> List.map (\a -> PlayerMsg (Tiles.DoAction tile a))
+
+
+calculateGameValue : Game -> Int
+calculateGameValue game =
     let
-        updatedGame = update msg node.game |> Tuple.first
+        player =
+            currentPlayer game
     in
-        Node updatedGame 0 (node.move ++ [msg])
+    (player.resources.gold * 10)
+        + (player.resources.emmer * 2)
+        + (player.resources.flax * 2)
+        + (player.resources.food * 3)
+        + (player.resources.stone * 2)
+        + (player.resources.wood * 2)
+        + (player.rooms
+            |> List.filter (\r -> r.status == Available)
+            |> List.map .score
+            |> List.foldl (+) 0
+            |> (*) 10
+          )
+        + (player.rooms
+            |> List.filter (\r -> r.status == Empty)
+            |> List.map .score
+            |> List.foldl (+) 0
+            |> (*) 5
+          )
+        + (game.availableRooms
+            |> List.filter (isRoomSelectable player)
+            |> List.map .score
+            |> List.foldl (+) 0
+            |> (*) 6
+          )
