@@ -32,6 +32,7 @@ type alias Action =
     , isDoable : Resources -> Bool
     , do : Resources -> Resources
     , subphase : Maybe Subphase
+    , disableActions : List Int
     }
 
 
@@ -199,30 +200,28 @@ viewTile attributes resources tile =
 
 viewAction : Tile -> Resources -> Action -> Int -> Html Msg
 viewAction tile resources action index =
-    let
-        newTile =
-            { tile | actions = consumeAction tile.actions index }
-    in
     if action.available && action.isDoable resources then
-        div [ class ("action doable " ++ action.classes), onClick (DoAction newTile action) ] []
+        div [ class ("action doable " ++ action.classes), onClick (DoAction tile action) ] []
 
     else
         div [ class ("action notdoable " ++ action.classes) ] []
 
 
-consumeAction actions index =
-    List.indexedMap
-        (\i ->
-            \a ->
-                if i == index then
-                    { a | available = False }
+consumeAction : Tile -> Action -> Tile
+consumeAction tile action =
+    { tile
+        | actions =
+            tile.actions
+                |> List.indexedMap
+                    (\index ->
+                        \a ->
+                            if List.member index action.disableActions then
+                                { a | available = False }
 
-                else
-                    a
-        )
-        actions
-
-
+                            else
+                                a
+                    )
+    }
 
 ---------------------------------------------
 -------------Action Tiles--------------------
@@ -237,11 +236,11 @@ tileLavoriDomestici =
         "assets/img/rounds/lavori_domestici.jpg"
         priceFree
         noWalls
-        [ topAction (\r -> r.food > r.actions) (\r -> r |> addFood r.actions) (Just Furnish)
+        [ topAction (\r -> r.food > r.actions) (\r -> r |> addFood r.actions) (Just Furnish) [ 0 ]
 
         -- TODO: left and right action are mutually exclusives
-        , bottomLeftAction (require ((<=) 5) .food) (addFood -5) (Just Furnish)
-        , bottomRightAction (require ((<=) 1) .gold) (addGold -1) (Just Furnish)
+        , bottomLeftAction (require ((<=) 5) .food) (addFood -5) (Just Furnish) [ 1, 2 ]
+        , bottomRightAction (require ((<=) 1) .gold) (addGold -1) (Just Furnish) [ 1, 2 ]
         ]
 
 
@@ -253,8 +252,8 @@ tileColtivare =
         "assets/img/rounds/coltivare.jpg"
         priceFree
         noWalls
-        [ topAction alwaysDoable (\r -> r) (Just Activate1)
-        , bottomAction alwaysDoable (\r -> r |> addEmmer 2 |> addFlax 1) Nothing
+        [ topAction alwaysDoable (\r -> r) (Just Activate1) [ 0 ]
+        , bottomAction alwaysDoable (\r -> r |> addEmmer 2 |> addFlax 1) Nothing [ 1 ]
         ]
 
 
@@ -266,8 +265,8 @@ tileSottobosco =
         "assets/img/rounds/sottobosco.jpg"
         priceFree
         noWalls
-        [ topAction alwaysDoable (\r -> r) (Just Activate1)
-        , bottomAction alwaysDoable (addWood 2) Nothing
+        [ topAction alwaysDoable (\r -> r) (Just Activate1) [ 0 ]
+        , bottomAction alwaysDoable (addWood 2) Nothing [ 1 ]
         ]
 
 
@@ -279,9 +278,9 @@ tileScavare =
         "assets/img/rounds/scavare.jpg"
         priceFree
         noWalls
-        [ topLeftAction alwaysDoable (\r -> r) (Just Escavate1)
-        , topRightAction (require ((<=) 2) .food) (addFood -2) (Just Escavate2)
-        , bottomAction alwaysDoable (addStone 1) Nothing
+        [ topLeftAction alwaysDoable (\r -> r) (Just Escavate1) [ 0, 1 ]
+        , topRightAction (require ((<=) 2) .food) (addFood -2) (Just Escavate2) [ 0, 1 ]
+        , bottomAction alwaysDoable (addStone 1) Nothing [ 2 ]
         ]
 
 
@@ -293,8 +292,8 @@ tileArredare =
         "assets/img/rounds/arredare.jpg"
         priceFree
         noWalls
-        [ topAction alwaysDoable (addFood 1) Nothing
-        , bottomAction (\r -> r.food > r.actions) (\r -> r |> addFood r.actions) (Just Furnish)
+        [ topAction alwaysDoable (addFood 1) Nothing [ 0 ]
+        , bottomAction (\r -> r.food > r.actions) (\r -> r |> addFood r.actions) (Just Furnish) [ 1 ]
         ]
 
 
@@ -307,10 +306,10 @@ tileCostruireUnMuro =
         priceFree
         noWalls
         -- TODO: third and fourth action are mutually exclusives
-        [ topLeftAction alwaysDoable (\r -> r) (Just Activate1)
-        , thirdAction alwaysDoable (addWood 1) Nothing
-        , fourthAction alwaysDoable (addStone 1) Nothing
-        , bottomAction alwaysDoable (\r -> r) (Just BuildWall) -- TODO: available only if there are walls to build
+        [ topLeftAction alwaysDoable (\r -> r) (Just Activate1) [ 0 ]
+        , thirdAction alwaysDoable (addWood 1) Nothing [ 1, 2 ]
+        , fourthAction alwaysDoable (addStone 1) Nothing [ 1, 2 ]
+        , bottomAction alwaysDoable (\r -> r) (Just BuildWall) [ 3 ] -- TODO: available only if there are walls to build
         ]
 
 
@@ -322,8 +321,8 @@ tileMinare =
         "assets/img/rounds/minare.jpg"
         priceFree
         noWalls
-        [ leftAction alwaysDoable (\r -> r) (Just Activate2)
-        , rightAction alwaysDoable (\r -> r) (Just EscavateThroughWall)
+        [ leftAction alwaysDoable (\r -> r) (Just Activate2) [ 0, 1 ]
+        , rightAction alwaysDoable (\r -> r) (Just EscavateThroughWall) [ 0, 1 ]
         ]
 
 
@@ -340,7 +339,7 @@ tileDemolireUnMuro =
         priceFree
         noWalls
         -- TODO: resources should be update after wall choice
-        [ fullAction alwaysDoable (\r -> r |> addStone 2 |> addFood 3 |> addGold 1) (Just DestroyWall) ]
+        [ fullAction alwaysDoable (\r -> r |> addStone 2 |> addFood 3 |> addGold 1) (Just DestroyWall) [ 0 ] ]
 
 
 tileEspansione : Tile
@@ -351,11 +350,11 @@ tileEspansione =
         "assets/img/rounds/espansione.jpg"
         priceFree
         noWalls
-        [ topAction alwaysDoable (\r -> r) (Just Escavate1)
+        [ topAction alwaysDoable (\r -> r) (Just Escavate1) [ 0 ]
 
         -- TODO: left and right action are mutually exclusives
-        , bottomLeftAction (require ((<=) 5) .food) (addFood -5) (Just Furnish)
-        , bottomRightAction (require ((<=) 1) .gold) (addGold -1) (Just Furnish)
+        , bottomLeftAction (require ((<=) 5) .food) (addFood -5) (Just Furnish) [ 1, 2 ]
+        , bottomRightAction (require ((<=) 1) .gold) (addGold -1) (Just Furnish) [ 1, 2 ]
         ]
 
 
@@ -368,9 +367,9 @@ tileSpedizione =
         priceFree
         noWalls
         -- TODO: all these actions are mutually exclusive.
-        [ firstAction (require ((<=) 5) .wood) (\r -> r |> addWood -5 |> addGold 5) Nothing
-        , secondAction (require ((<=) 5) .stone) (\r -> r |> addStone -5 |> addGold 5) Nothing
-        , rightAction alwaysDoable (\r -> r) (Just Activate3)
+        [ firstAction (require ((<=) 5) .wood) (\r -> r |> addWood -5 |> addGold 5) Nothing [ 0, 1, 2 ]
+        , secondAction (require ((<=) 5) .stone) (\r -> r |> addStone -5 |> addGold 5) Nothing [ 0, 1, 2 ]
+        , rightAction alwaysDoable (\r -> r) (Just Activate3) [ 0, 1, 2 ]
         ]
 
 
@@ -382,8 +381,8 @@ tilePerforare =
         "assets/img/rounds/perforare.jpg"
         priceFree
         noWalls
-        [ topAction alwaysDoable (\r -> r) (Just Activate1)
-        , bottomAction alwaysDoable (\r -> r) (Just Escavate1)
+        [ topAction alwaysDoable (\r -> r) (Just Activate1) [ 0 ]
+        , bottomAction alwaysDoable (\r -> r) (Just Escavate1) [ 1 ]
         ]
 
 
@@ -399,8 +398,8 @@ tileRinnovare =
         "assets/img/rounds/rinnovare.jpg"
         priceFree
         noWalls
-        [ topAction alwaysDoable (\r -> r) (Just BuildWall)
-        , bottomAction alwaysDoable (\r -> r) (Just Furnish)
+        [ topAction alwaysDoable (\r -> r) (Just BuildWall) [ 0 ]
+        , bottomAction alwaysDoable (\r -> r) (Just Furnish) [ 1 ]
         ]
 
 
@@ -505,10 +504,10 @@ tileCaveEntrance =
         "assets/img/entrata_della_cava.jpg"
         priceFree
         noWalls
-        [ firstAction alwaysDoable (addWood 1) Nothing
-        , secondAction alwaysDoable (addStone 1) Nothing
-        , thirdAction alwaysDoable (addEmmer 1) Nothing
-        , fourthAction alwaysDoable (addFlax 1) Nothing
+        [ firstAction alwaysDoable (addWood 1) Nothing [ 0, 1, 2, 3 ]
+        , secondAction alwaysDoable (addStone 1) Nothing [ 0, 1, 2, 3 ]
+        , thirdAction alwaysDoable (addEmmer 1) Nothing [ 0, 1, 2, 3 ]
+        , fourthAction alwaysDoable (addFlax 1) Nothing [ 0, 1, 2, 3 ]
         ]
 
 
@@ -530,6 +529,7 @@ tileWarehouse =
                     |> addEmmer 1
             )
             Nothing
+            [ 0 ]
         ]
 
 
@@ -541,10 +541,10 @@ tileShelf =
         "assets/img/scaffale.jpg"
         (priceFree |> priceWood 1)
         (Walls Placed Walls.None Walls.None Walls.None)
-        [ firstAction (require ((>) 2) .wood) (topWood 2) Nothing
-        , secondAction (require ((>) 2) .stone) (topStone 2) Nothing
-        , thirdAction (require ((>) 2) .emmer) (topEmmer 2) Nothing
-        , fourthAction (require ((>) 2) .flax) (topFlax 2) Nothing
+        [ firstAction (require ((>) 2) .wood) (topWood 2) Nothing [ 0, 1, 2, 3 ]
+        , secondAction (require ((>) 2) .stone) (topStone 2) Nothing [ 0, 1, 2, 3 ]
+        , thirdAction (require ((>) 2) .emmer) (topEmmer 2) Nothing [ 0, 1, 2, 3 ]
+        , fourthAction (require ((>) 2) .flax) (topFlax 2) Nothing [ 0, 1, 2, 3 ]
         ]
 
 
@@ -556,7 +556,7 @@ tileFoodCorner =
         "assets/img/angolo_del_cibo.jpg"
         (priceFree |> priceStone 1)
         (Walls Placed Walls.None Walls.None Placed)
-        [ fullAction (require ((>) 3) .food) (topFood 3) Nothing ]
+        [ fullAction (require ((>) 3) .food) (topFood 3) Nothing [ 0 ] ]
 
 
 tileSpinningWheel : Tile
@@ -567,8 +567,8 @@ tileSpinningWheel =
         "assets/img/filatoio.jpg"
         (priceFree |> priceWood 1)
         (Walls Placed Walls.None Walls.None Walls.None)
-        [ leftAction (require ((<=) 1) .flax) (\res -> res |> addFlax -1 |> addGold 1) Nothing
-        , rightAction (require ((<=) 3) .flax) (\res -> res |> addFlax -3 |> addGold 2) Nothing
+        [ leftAction (require ((<=) 1) .flax) (\res -> res |> addFlax -1 |> addGold 1) Nothing [ 0, 1 ]
+        , rightAction (require ((<=) 3) .flax) (\res -> res |> addFlax -3 |> addGold 2) Nothing [ 0, 1 ]
         ]
 
 
@@ -584,8 +584,8 @@ tileTunnel =
         "assets/img/tunnel.jpg"
         (priceFree |> priceWood 1)
         (Walls Walls.None Placed Walls.None Placed)
-        [ topAction alwaysDoable (addFood 2) Nothing
-        , bottomAction (require ((>) 3) .stone) (\resources -> resources |> addStone 1 |> minStone 3) Nothing
+        [ topAction alwaysDoable (addFood 2) Nothing [ 0 ]
+        , bottomAction (require ((>) 3) .stone) (\resources -> resources |> addStone 1 |> minStone 3) Nothing [ 1 ]
         ]
 
 
@@ -606,6 +606,7 @@ tileAltareSacrificale =
             )
             (\res -> res |> addEmmer -1 |> addWood -1 |> addFlax -1 |> addFood -1 |> addGold 3)
             Nothing
+            [ 0 ]
         ]
 
 
@@ -617,8 +618,8 @@ tileBancarella =
         "assets/img/bancarella.jpg"
         (priceFree |> priceWood 1 |> priceGold 1)
         (Walls Placed Optional Walls.None Optional)
-        [ leftAction (require ((<=) 5) .emmer) (\res -> res |> addEmmer -5 |> addGold 4) Nothing
-        , rightAction (require ((<=) 5) .flax) (\res -> res |> addFlax -5 |> addGold 4) Nothing
+        [ leftAction (require ((<=) 5) .emmer) (\res -> res |> addEmmer -5 |> addGold 4) Nothing [ 0, 1 ]
+        , rightAction (require ((<=) 5) .flax) (\res -> res |> addFlax -5 |> addGold 4) Nothing [ 0, 1 ]
         ]
 
 
@@ -630,8 +631,8 @@ tileCameraSegreta =
         "assets/img/camera_segreta.jpg"
         (priceFree |> priceWood 2 |> priceStone 1)
         (Walls Placed Placed Placed Placed)
-        [ leftAction alwaysDoable (\res -> res |> addFlax 3) Nothing
-        , rightAction alwaysDoable (\res -> res |> addGold 1) Nothing
+        [ leftAction alwaysDoable (\res -> res |> addFlax 3) Nothing [ 0, 1 ]
+        , rightAction alwaysDoable (\res -> res |> addGold 1) Nothing [ 0, 1 ]
         ]
 
 
@@ -643,7 +644,7 @@ tileCavaInEspansione =
         "assets/img/cava_in_espansione.jpg"
         (priceFree |> priceWood 1 |> priceStone 3)
         (Walls Placed Placed Walls.None Placed)
-        [ fullAction (require ((<=) 1) .gold) (\res -> res) Nothing ]
+        [ fullAction (require ((<=) 1) .gold) (\res -> res) Nothing [ 0 ] ]
 
 
 tileDeposito : Tile
@@ -654,7 +655,7 @@ tileDeposito =
         "assets/img/deposito.jpg"
         (priceFree |> priceWood 2 |> priceGold 1)
         (Walls Placed Walls.None Walls.None Placed)
-        [ fullAction alwaysDoable (\res -> res |> addEmmer 1 |> addFlax 1 |> addFood 1) Nothing ]
+        [ fullAction alwaysDoable (\res -> res |> addEmmer 1 |> addFlax 1 |> addFood 1) Nothing [ 0 ] ]
 
 
 tileFiliera : Tile
@@ -665,7 +666,7 @@ tileFiliera =
         "assets/img/filiera.jpg"
         (priceFree |> priceWood 2)
         (Walls Placed Walls.None Walls.None Placed)
-        [ fullAction (require ((<=) 2) .flax) (\res -> res |> addFlax -2 |> addGold 2 |> addFood 2) Nothing ]
+        [ fullAction (require ((<=) 2) .flax) (\res -> res |> addFlax -2 |> addGold 2 |> addFood 2) Nothing [ 0 ] ]
 
 
 tileForno : Tile
@@ -676,8 +677,8 @@ tileForno =
         "assets/img/forno.jpg"
         (priceFree |> priceWood 1 |> priceStone 2)
         (Walls Placed Placed Walls.None Placed)
-        [ leftAction (require ((<=) 2) .emmer) (\res -> res |> addEmmer -2 |> addFood 4 |> addGold 1) Nothing
-        , rightAction (require ((<=) 3) .emmer) (\res -> res |> addEmmer -3 |> addFood 4 |> addGold 2) Nothing
+        [ leftAction (require ((<=) 2) .emmer) (\res -> res |> addEmmer -2 |> addFood 4 |> addGold 1) Nothing [ 0, 1 ]
+        , rightAction (require ((<=) 3) .emmer) (\res -> res |> addEmmer -3 |> addFood 4 |> addGold 2) Nothing [ 0, 1 ]
         ]
 
 
@@ -689,8 +690,8 @@ tileMacina =
         "assets/img/macina.jpg"
         (priceFree |> priceStone 1)
         (Walls Placed Walls.None Walls.None Optional)
-        [ leftAction (require ((<=) 2) .emmer) (\res -> res |> addEmmer -1 |> addFood 3) Nothing
-        , rightAction (require ((<=) 3) .emmer) (\res -> res |> addEmmer -4 |> addFood 7) Nothing
+        [ leftAction (require ((<=) 2) .emmer) (\res -> res |> addEmmer -1 |> addFood 3) Nothing [ 0, 1 ]
+        , rightAction (require ((<=) 3) .emmer) (\res -> res |> addEmmer -4 |> addFood 7) Nothing [ 0, 1 ]
         ]
 
 
@@ -702,7 +703,7 @@ tileGoldMine =
         "assets/img/miniera_d_oro.jpg"
         (priceFree |> priceGold 5)
         (Walls Placed Optional Walls.None Placed)
-        [ fullAction alwaysDoable (\res -> res |> addGold 1 |> addStone 1) Nothing ]
+        [ fullAction alwaysDoable (\res -> res |> addGold 1 |> addStone 1) Nothing [ 0 ] ]
 
 
 tileOfficina : Tile
@@ -720,6 +721,7 @@ tileOfficina =
             )
             (\res -> res |> addWood -2 |> addFlax -1 |> addGold 3)
             Nothing
+            [ 0 ]
         ]
 
 
@@ -731,7 +733,7 @@ tileSalotto =
         "assets/img/salotto.jpg"
         (priceFree |> priceStone 1 |> priceGold 1)
         (Walls Placed Placed Walls.None Placed)
-        [ fullAction alwaysDoable (\res -> res |> topWood 1 |> topWood 1 |> topEmmer 1 |> topFlax 1 |> topFood 1 |> topGold 1) Nothing ]
+        [ fullAction alwaysDoable (\res -> res |> topWood 1 |> topWood 1 |> topEmmer 1 |> topFlax 1 |> topFood 1 |> topGold 1) Nothing [ 0 ] ]
 
 
 tileLuxuryRoom : Tile
@@ -742,7 +744,7 @@ tileLuxuryRoom =
         "assets/img/stanza_di_lusso.jpg"
         (priceFree |> priceGold 7)
         (Walls Placed Placed Optional Placed)
-        [ fullAction alwaysDoable (\res -> res |> addGold 1 |> addFlax 1) Nothing ]
+        [ fullAction alwaysDoable (\res -> res |> addGold 1 |> addFlax 1) Nothing [ 0 ] ]
 
 
 
@@ -757,7 +759,7 @@ tileStanzaDiSnodo =
         "assets/img/stanza_di_snodo.jpg"
         (priceFree |> priceWood 2)
         (Walls Placed Placed Optional Placed)
-        [ fullAction alwaysDoable (\res -> res |> addGold 2) Nothing ]
+        [ fullAction alwaysDoable (\res -> res |> addGold 2) Nothing [ 0 ] ]
 
 
 tileTesoreria : Tile
@@ -768,7 +770,7 @@ tileTesoreria =
         "assets/img/tesoreria.jpg"
         (priceFree |> priceGold 3)
         (Walls Placed Placed Placed Placed)
-        [ fullAction (require ((<=) 3) .gold) (\res -> res |> addGold -3 |> addGold 4 |> addFood 1) Nothing ]
+        [ fullAction (require ((<=) 3) .gold) (\res -> res |> addGold -3 |> addGold 4 |> addFood 1) Nothing [ 0 ] ]
 
 
 require : (Int -> Bool) -> (Resources -> Int) -> Resources -> Bool
@@ -846,66 +848,66 @@ alwaysDoable resources =
     True
 
 
-firstAction : (Resources -> Bool) -> (Resources -> Resources) -> Maybe Subphase -> Action
-firstAction isDoable do events =
-    Action "first" True isDoable do events
+firstAction : (Resources -> Bool) -> (Resources -> Resources) -> Maybe Subphase -> List Int -> Action
+firstAction isDoable do subphase disableActions =
+    Action "first" True isDoable do subphase disableActions
 
 
-secondAction : (Resources -> Bool) -> (Resources -> Resources) -> Maybe Subphase -> Action
-secondAction isDoable do events =
-    Action "second" True isDoable do events
+secondAction : (Resources -> Bool) -> (Resources -> Resources) -> Maybe Subphase -> List Int -> Action
+secondAction isDoable do subphase disableActions =
+    Action "second" True isDoable do subphase disableActions
 
 
-thirdAction : (Resources -> Bool) -> (Resources -> Resources) -> Maybe Subphase -> Action
-thirdAction isDoable do events =
-    Action "third" True isDoable do events
+thirdAction : (Resources -> Bool) -> (Resources -> Resources) -> Maybe Subphase -> List Int -> Action
+thirdAction isDoable do subphase disableActions =
+    Action "third" True isDoable do subphase disableActions
 
 
-fourthAction : (Resources -> Bool) -> (Resources -> Resources) -> Maybe Subphase -> Action
-fourthAction isDoable do events =
-    Action "fourth" True isDoable do events
+fourthAction : (Resources -> Bool) -> (Resources -> Resources) -> Maybe Subphase -> List Int -> Action
+fourthAction isDoable do subphase disableActions =
+    Action "fourth" True isDoable do subphase disableActions
 
 
-leftAction : (Resources -> Bool) -> (Resources -> Resources) -> Maybe Subphase -> Action
-leftAction isDoable do events =
-    Action "left" True isDoable do events
+leftAction : (Resources -> Bool) -> (Resources -> Resources) -> Maybe Subphase -> List Int -> Action
+leftAction isDoable do subphase disableActions =
+    Action "left" True isDoable do subphase disableActions
 
 
-rightAction : (Resources -> Bool) -> (Resources -> Resources) -> Maybe Subphase -> Action
-rightAction isDoable do events =
-    Action "right" True isDoable do events
+rightAction : (Resources -> Bool) -> (Resources -> Resources) -> Maybe Subphase -> List Int -> Action
+rightAction isDoable do subphase disableActions =
+    Action "right" True isDoable do subphase disableActions
 
 
-topAction : (Resources -> Bool) -> (Resources -> Resources) -> Maybe Subphase -> Action
-topAction isDoable do events =
-    Action "top" True isDoable do events
+topAction : (Resources -> Bool) -> (Resources -> Resources) -> Maybe Subphase -> List Int -> Action
+topAction isDoable do subphase disableActions =
+    Action "top" True isDoable do subphase disableActions
 
 
-topLeftAction : (Resources -> Bool) -> (Resources -> Resources) -> Maybe Subphase -> Action
-topLeftAction isDoable do events =
-    Action "topleft" True isDoable do events
+topLeftAction : (Resources -> Bool) -> (Resources -> Resources) -> Maybe Subphase -> List Int -> Action
+topLeftAction isDoable do subphase disableActions =
+    Action "topleft" True isDoable do subphase disableActions
 
 
-topRightAction : (Resources -> Bool) -> (Resources -> Resources) -> Maybe Subphase -> Action
-topRightAction isDoable do events =
-    Action "topright" True isDoable do events
+topRightAction : (Resources -> Bool) -> (Resources -> Resources) -> Maybe Subphase -> List Int -> Action
+topRightAction isDoable do subphase disableActions =
+    Action "topright" True isDoable do subphase disableActions
 
 
-bottomLeftAction : (Resources -> Bool) -> (Resources -> Resources) -> Maybe Subphase -> Action
-bottomLeftAction isDoable do events =
-    Action "bottomleft" True isDoable do events
+bottomLeftAction : (Resources -> Bool) -> (Resources -> Resources) -> Maybe Subphase -> List Int -> Action
+bottomLeftAction isDoable do subphase disableActions =
+    Action "bottomleft" True isDoable do subphase disableActions
 
 
-bottomRightAction : (Resources -> Bool) -> (Resources -> Resources) -> Maybe Subphase -> Action
-bottomRightAction isDoable do events =
-    Action "bottomright" True isDoable do events
+bottomRightAction : (Resources -> Bool) -> (Resources -> Resources) -> Maybe Subphase -> List Int -> Action
+bottomRightAction isDoable do subphase disableActions =
+    Action "bottomright" True isDoable do subphase disableActions
 
 
-bottomAction : (Resources -> Bool) -> (Resources -> Resources) -> Maybe Subphase -> Action
-bottomAction isDoable do events =
-    Action "bottom" True isDoable do events
+bottomAction : (Resources -> Bool) -> (Resources -> Resources) -> Maybe Subphase -> List Int -> Action
+bottomAction isDoable do subphase disableActions =
+    Action "bottom" True isDoable do subphase disableActions
 
 
-fullAction : (Resources -> Bool) -> (Resources -> Resources) -> Maybe Subphase -> Action
-fullAction isDoable do events =
-    Action "full" True isDoable do events
+fullAction : (Resources -> Bool) -> (Resources -> Resources) -> Maybe Subphase -> List Int -> Action
+fullAction isDoable do subphase disableActions =
+    Action "full" True isDoable do subphase disableActions

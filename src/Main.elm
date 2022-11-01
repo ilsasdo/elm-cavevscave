@@ -168,8 +168,11 @@ update msg ({ player1, player2 } as game) =
                     PlayerBoard.update tileMsg activePlayer
             in
             case playerMsg of
-                PlayerBoard.NewTileAvailable newTile ->
-                    ( game |> updateCurrentPlayer player |> addNewAvailableRoom newTile, Cmd.none )
+                PlayerBoard.AddToAvailableRooms tile ->
+                    ( game |> updateCurrentPlayer player |> addToAvailableRooms tile, Cmd.none )
+
+                PlayerBoard.RemoveFromAvailableRooms tile ->
+                    ( game |> updateCurrentPlayer player |> removeFromAvailableRooms tile, Cmd.none )
 
                 PlayerBoard.WallBuilt ->
                     ( { game | availableWalls = game.availableWalls - 1 } |> updateCurrentPlayer player, Cmd.none )
@@ -217,9 +220,14 @@ pass game =
             |> nextPlayer
 
 
-addNewAvailableRoom : Tile -> Game -> Game
-addNewAvailableRoom tile game =
+addToAvailableRooms : Tile -> Game -> Game
+addToAvailableRooms tile game =
     { game | availableRooms = game.availableRooms ++ [ { tile | status = Available } ] }
+
+
+removeFromAvailableRooms : Tile -> Game -> Game
+removeFromAvailableRooms tile game =
+    { game | availableRooms = List.filter (\r -> r.title /= tile.title) game.availableRooms }
 
 
 nextRound : Game -> Game
@@ -417,7 +425,7 @@ msgToString msg =
                     "SelectRoomTile(" ++ t1.title ++ ")"
 
                 DoAction t1 action ->
-                    "DoAction(" ++ t1.title ++ ", "++toString action.subphase++")"
+                    "DoAction(" ++ t1.title ++ ", " ++ toString action.subphase ++ ")"
 
                 SelectWall w ->
                     "SelectWall(" ++ toString w ++ ")"
@@ -591,7 +599,7 @@ playTile node tile actions =
                 playTile node tile (List.drop 1 actions)
 
         Nothing ->
-            [node]
+            [ node ]
 
 
 playRoundTileAction : Node -> List Node
@@ -637,7 +645,7 @@ playRoundTileAction node =
                 |> List.foldl (++) []
 
         Just (PlaceRoom tileToPlace) ->
-            node.game.availableRooms
+            player.rooms
                 |> List.filter (\t -> t.status == Empty && Walls.matches t.walls tileToPlace.walls)
                 |> List.map (\t -> playMove node (PlayerMsg (SelectRoomTile t)))
                 |> List.map playRoundTileAction
@@ -662,30 +670,55 @@ playRoundTileAction node =
         Just Activate1 ->
             player.rooms
                 |> List.filter (\t -> t.status == Available)
-                |> List.map (\t -> playMoves node ([ PlayerMsg (Tiles.SelectRoomTile t) ] ++ activateRoom player t))
+                |> List.map (activateTile node)
+                |> List.foldl (++) []
                 |> List.map playRoundTileAction
                 |> List.foldl (++) []
 
         Just Activate2 ->
             player.rooms
                 |> List.filter (\t -> t.status == Available)
-                |> List.map (\t -> playMoves node ([ PlayerMsg (Tiles.SelectRoomTile t) ] ++ activateRoom player t))
+                |> List.map (activateTile node)
+                |> List.foldl (++) []
                 |> List.map playRoundTileAction
                 |> List.foldl (++) []
 
         Just Activate3 ->
             player.rooms
                 |> List.filter (\t -> t.status == Available)
-                |> List.map (\t -> playMoves node ([ PlayerMsg (Tiles.SelectRoomTile t) ] ++ activateRoom player t))
+                |> List.map (activateTile node)
+                |> List.foldl (++) []
                 |> List.map playRoundTileAction
                 |> List.foldl (++) []
 
 
-activateRoom : PlayerBoard -> Tile -> List Msg
-activateRoom player tile =
+activateTile : Node -> Tile -> List Node
+activateTile node tile =
+    let
+        n =
+            playMove node (PlayerMsg (Tiles.SelectRoomTile tile))
+    in
     tile.actions
-        |> List.filter (\a -> a.isDoable player.resources)
-        |> List.map (\a -> PlayerMsg (Tiles.DoAction tile a))
+        |> permutations
+        |> List.map (applyActions n tile)
+
+
+applyActions : Node -> Tile -> List Action -> Node
+applyActions node tile actions =
+    playMoves node (List.map (\a -> PlayerMsg (DoAction tile a)) actions)
+
+
+permutations : List Action -> List (List Action)
+permutations actions =
+    actions
+    |> List.map (\a -> [a] ++ (nonDisabledActions actions a.disableActions))
+
+nonDisabledActions: List Action -> List Int -> List Action
+nonDisabledActions actions disabledActions =
+    actions
+    |> List.indexedMap Tuple.pair
+    |> List.filter (\(i, a) -> not (List.member i disabledActions))
+    |> List.map Tuple.second
 
 
 calculateGameValue : Game -> Int
@@ -701,10 +734,10 @@ calculateGameValue game =
         + (player.resources.stone * 2)
         + (player.resources.wood * 2)
         + (player.rooms
-            |> List.filter (\r -> r.status == Available)
+            |> List.filter (\r -> (r.status == Available || r.status == Active))
             |> List.map .score
             |> List.foldl (+) 0
-            |> (*) 10
+            |> (*) 100
           )
         + (player.rooms
             |> List.filter (\r -> r.status == Empty)
