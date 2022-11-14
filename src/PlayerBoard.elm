@@ -376,7 +376,7 @@ viewRoom board index tile =
                 viewNonSelectableTile board.resources index tile
 
         Just (PlaceRoom t) ->
-            if tile.status == Empty && Walls.matches t.walls tile.walls then
+            if (Debug.log "(tile.status == Empty)" ((tile.status == Empty))) && Walls.matches (Debug.log "(t.walls)" ((t.walls))) (Debug.log "(tile.walls)" ((tile.walls))) then
                 viewSelectableTile board.resources index tile
 
             else

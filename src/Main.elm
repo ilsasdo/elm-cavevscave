@@ -713,6 +713,7 @@ permutations actions =
     actions
     |> List.map (\a -> [a] ++ (nonDisabledActions actions a.disableActions))
 
+
 nonDisabledActions: List Action -> List Int -> List Action
 nonDisabledActions actions disabledActions =
     actions

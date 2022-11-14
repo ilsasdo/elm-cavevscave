@@ -30,48 +30,42 @@ get index walls =
 
 matches: Walls -> Walls -> Bool
 matches caveWall roomWall =
-    (roomWall, False)
-    |> matchSides caveWall
-    |> rotateClockwise
-    |> matchSides caveWall
-    |> rotateClockwise
-    |> matchSides caveWall
-    |> rotateClockwise
-    |> matchSides caveWall
-    |> Tuple.second
+    matchesAux caveWall roomWall 4
 
 
-rotateClockwise: (Walls, Bool) -> (Walls, Bool)
-rotateClockwise (walls, match) =
-    (Walls walls.west walls.north walls.east walls.south, match)
-
-
-matchSides: Walls -> (Walls, Bool) -> (Walls, Bool)
-matchSides caveWall (roomWall, match) =
-    -- if I already found a configuration that matches, skip all the other configs.
-    if match == True then
-        (roomWall, True)
-
-    else -- otherwise check this configuration
-        (roomWall, True)
-            |> matchSide caveWall .north
-            |> matchSide caveWall .east
-            |> matchSide caveWall .south
-            |> matchSide caveWall .west
-
-matchSide: Walls -> (Walls -> Wall) -> (Walls, Bool) -> (Walls, Bool)
-matchSide cave side (room, match) =
-    -- if one side of the configuration doesn't match, return false for this configuration.
-    if match == False then
-        (room, False)
+matchesAux: Walls -> Walls -> Int -> Bool
+matchesAux caveWall roomWall rotation =
+    if rotation == 0 then
+        False
 
     else
-        case (side room) of
-            Placed ->
-                (room, (side cave) == Placed)
+        if matchSides caveWall roomWall then
+            True
 
-            Optional ->
-                (room, True)
+        else
+            matchesAux caveWall (rotateClockwise roomWall) (rotation - 1)
 
-            None ->
-                (room, (side cave) == None)
+
+rotateClockwise: Walls -> Walls
+rotateClockwise walls =
+    Walls walls.west walls.north walls.east walls.south
+
+
+matchSides: Walls -> Walls -> Bool
+matchSides caveWall roomWall =
+     matchSide caveWall .north roomWall &&
+     matchSide caveWall .east roomWall &&
+     matchSide caveWall .south roomWall &&
+     matchSide caveWall .west roomWall
+
+matchSide: Walls -> (Walls -> Wall) -> Walls -> Bool
+matchSide r1 side r2 =
+    case (side r2) of
+        Placed ->
+            (side r1) == Placed || (side r1) == Optional
+
+        Optional ->
+            True
+
+        None ->
+            (side r1) == None || (side r1) == Optional
