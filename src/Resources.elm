@@ -12,6 +12,7 @@ type alias Resources =
     , gold : Int
     , actions : Int -- actions available in current round are not a proper resource
                     -- but are used to pay some actions
+    , availableWalls : Int
     }
 
 
@@ -42,4 +43,4 @@ priceGold qty resources =
 
 priceFree : Resources
 priceFree =
-    Resources 0 0 0 0 0 0 0
+    Resources 0 0 0 0 0 0 0 7

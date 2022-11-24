@@ -32,7 +32,7 @@ emptyGame =
 
 
 emptyBoard =
-    PlayerBoard (Resources 0 0 0 0 0 0 0) [] (Array.fromList []) [] Nothing
+    PlayerBoard (Resources 0 0 0 0 0 0 0 7) [] (Array.fromList []) [] Nothing
 
 
 type Msg
@@ -116,7 +116,7 @@ setupRandomTiles rooms round1Tiles round2Tiles round3Tiles round4Tiles =
 
 newBoard : PlayerBoard
 newBoard =
-    PlayerBoard (Resources 1 1 1 1 1 1 1) [] (Array.repeat 14 Walls.None) [] Nothing
+    PlayerBoard (Resources 1 1 1 1 1 1 1 7) [] (Array.repeat 14 Walls.None) [] Nothing
 
 
 newAvailableRooms : List Tile
@@ -175,10 +175,10 @@ update msg ({ player1, player2 } as game) =
                     ( game |> updateCurrentPlayer player |> removeFromAvailableRooms tile, Cmd.none )
 
                 PlayerBoard.WallBuilt ->
-                    ( { game | availableWalls = game.availableWalls - 1 } |> updateCurrentPlayer player, Cmd.none )
+                    ( game |> updateCurrentPlayer player |> updateAvailableWalls -1, Cmd.none )
 
                 PlayerBoard.WallDestroyed ->
-                    ( { game | availableWalls = game.availableWalls + 1 } |> updateCurrentPlayer player, Cmd.none )
+                    ( game |> updateCurrentPlayer player |> updateAvailableWalls 1, Cmd.none )
 
                 PlayerBoard.None ->
                     ( game |> updateCurrentPlayer player, Cmd.none )
@@ -194,8 +194,6 @@ update msg ({ player1, player2 } as game) =
                 node =
                     alphaBeta rootNode 1 9999999 -9999999 True
 
-                print =
-                    Debug.log "choosen Node" (nodeToString node)
             in
             playAIMoves node.move game
 
@@ -218,6 +216,18 @@ pass game =
         game
             |> updateCurrentPlayer (restorePlayerPass (currentPlayer game))
             |> nextPlayer
+
+
+updateAvailableWalls: Int -> Game -> Game
+updateAvailableWalls qty ({ player1, player2 } as game) =
+    { game | availableWalls = game.availableWalls + qty
+           , player1 = updateAvailableWallsResource qty player1
+           , player2 = updateAvailableWallsResource qty player2
+           }
+
+updateAvailableWallsResource: Int -> PlayerBoard -> PlayerBoard
+updateAvailableWallsResource qty ({resources} as player) =
+    {player | resources = {resources | availableWalls = resources.availableWalls + qty}}
 
 
 addToAvailableRooms : Tile -> Game -> Game

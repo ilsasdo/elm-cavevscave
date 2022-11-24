@@ -237,8 +237,6 @@ tileLavoriDomestici =
         priceFree
         noWalls
         [ topAction (\r -> r.food > r.actions) (\r -> r |> addFood r.actions) (Just Furnish) [ 0 ]
-
-        -- TODO: left and right action are mutually exclusives
         , bottomLeftAction (require ((<=) 5) .food) (addFood -5) (Just Furnish) [ 1, 2 ]
         , bottomRightAction (require ((<=) 1) .gold) (addGold -1) (Just Furnish) [ 1, 2 ]
         ]
@@ -305,11 +303,10 @@ tileCostruireUnMuro =
         "assets/img/rounds/costruire_un_muro.jpg"
         priceFree
         noWalls
-        -- TODO: third and fourth action are mutually exclusives
         [ topLeftAction alwaysDoable (\r -> r) (Just Activate1) [ 0 ]
         , thirdAction alwaysDoable (addWood 1) Nothing [ 1, 2 ]
         , fourthAction alwaysDoable (addStone 1) Nothing [ 1, 2 ]
-        , bottomAction alwaysDoable (\r -> r) (Just BuildWall) [ 3 ] -- TODO: available only if there are walls to build
+        , bottomAction (require ((<) 0) .availableWalls) (\r -> r) (Just BuildWall) [ 3 ]
         ]
 
 
@@ -351,8 +348,6 @@ tileEspansione =
         priceFree
         noWalls
         [ topAction alwaysDoable (\r -> r) (Just Escavate1) [ 0 ]
-
-        -- TODO: left and right action are mutually exclusives
         , bottomLeftAction (require ((<=) 5) .food) (addFood -5) (Just Furnish) [ 1, 2 ]
         , bottomRightAction (require ((<=) 1) .gold) (addGold -1) (Just Furnish) [ 1, 2 ]
         ]
@@ -366,7 +361,6 @@ tileSpedizione =
         "assets/img/rounds/spedizione.jpg"
         priceFree
         noWalls
-        -- TODO: all these actions are mutually exclusive.
         [ firstAction (require ((<=) 5) .wood) (\r -> r |> addWood -5 |> addGold 5) Nothing [ 0, 1, 2 ]
         , secondAction (require ((<=) 5) .stone) (\r -> r |> addStone -5 |> addGold 5) Nothing [ 0, 1, 2 ]
         , rightAction alwaysDoable (\r -> r) (Just Activate3) [ 0, 1, 2 ]
@@ -398,7 +392,7 @@ tileRinnovare =
         "assets/img/rounds/rinnovare.jpg"
         priceFree
         noWalls
-        [ topAction alwaysDoable (\r -> r) (Just BuildWall) [ 0 ]
+        [ topAction (require ((<) 0) .availableWalls) (\r -> r) (Just BuildWall) [ 0 ]
         , bottomAction alwaysDoable (\r -> r) (Just Furnish) [ 1 ]
         ]
 
@@ -570,10 +564,6 @@ tileSpinningWheel =
         [ leftAction (require ((<=) 1) .flax) (\res -> res |> addFlax -1 |> addGold 1) Nothing [ 0, 1 ]
         , rightAction (require ((<=) 3) .flax) (\res -> res |> addFlax -3 |> addGold 2) Nothing [ 0, 1 ]
         ]
-
-
-
--- TODO: these two actions are not mutually exclusive
 
 
 tileTunnel : Tile
@@ -776,6 +766,11 @@ tileTesoreria =
 require : (Int -> Bool) -> (Resources -> Int) -> Resources -> Bool
 require condition getter resources =
     condition (getter resources)
+
+
+require2: Int -> (Int -> Int -> Bool) -> (Resources -> Int) -> Resources -> Bool
+require2 a condition getter resources =
+    condition a (getter resources)
 
 
 topWood : Int -> Resources -> Resources

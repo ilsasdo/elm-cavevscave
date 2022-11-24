@@ -58,6 +58,7 @@ matchSides caveWall roomWall =
      matchSide caveWall .south roomWall &&
      matchSide caveWall .west roomWall
 
+
 matchSide: Walls -> (Walls -> Wall) -> Walls -> Bool
 matchSide r1 side r2 =
     case (side r2) of
