@@ -132,6 +132,14 @@
   aspect-ratio: 2348/3838;
 }
 
+.freeaction {
+  border: 3px solid red;
+  width: 29%;
+  height: 5%;
+  position: relative;
+  left: 18%
+}
+
 .resources {
   border: 3px solid red;
   width: 29%;

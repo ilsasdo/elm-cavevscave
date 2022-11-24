@@ -227,6 +227,17 @@ consumeAction tile action =
 -------------Action Tiles--------------------
 ---------------------------------------------
 
+tileFreeAction : Tile
+tileFreeAction =
+    Tile "Free Action"
+        Available
+        0
+        "none"
+        priceFree
+        noWalls
+        [ firstAction (require ((<) 0) .emmer) (\r -> r |> addFood 1 |> addEmmer -1) Nothing []
+        , secondAction (require ((<) 0) .flax) (\r -> r |> addFood 1 |> addFlax -1) Nothing []
+        , thirdAction (require ((<) 0) .gold) (\r -> r |> addFood 1 |> addGold -1) Nothing []]
 
 tileLavoriDomestici : Tile
 tileLavoriDomestici =

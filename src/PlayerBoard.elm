@@ -12,6 +12,7 @@ import Walls exposing (Wall(..), Walls)
 
 type alias PlayerBoard =
     { resources : Resources
+    , freeAction: Tile
     , rooms : List Tile
     , walls : Array Wall
     , actionTiles : List Tile
@@ -317,7 +318,7 @@ viewBoard board =
     div [ class "playerboard" ]
         [ viewActionTiles board.resources board.actionTiles
         , div [ class "board" ]
-            ([ viewResources board.resources ]
+            ([ viewResources board.resources, viewFreeAction board ]
                 ++ viewRooms board
                 ++ viewWalls board
             )
@@ -346,6 +347,11 @@ viewWall subphase index wall =
 
             else
                 div [ class ("wall available wall-" ++ toString index) ] []
+
+
+viewFreeAction: PlayerBoard -> Html Tiles.Msg
+viewFreeAction board =
+    viewTile [ class "freeaction"] board.resources board.freeAction
 
 
 viewActionTiles : Resources -> List Tile -> Html Tiles.Msg
