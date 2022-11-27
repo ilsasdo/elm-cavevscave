@@ -32,7 +32,7 @@ emptyGame =
 
 
 emptyBoard =
-    PlayerBoard (Resources 0 0 0 0 0 0 0 7) (tileFreeAction) [] (Array.fromList []) [] Nothing
+    PlayerBoard (Resources 0 0 0 0 0 0 0 7) tileFreeAction [] (Array.fromList []) [] Nothing
 
 
 type Msg
@@ -116,7 +116,7 @@ setupRandomTiles rooms round1Tiles round2Tiles round3Tiles round4Tiles =
 
 newBoard : PlayerBoard
 newBoard =
-    PlayerBoard (Resources 1 1 1 1 1 1 1 7) (tileFreeAction) [] (Array.repeat 14 Walls.None) [] Nothing
+    PlayerBoard (Resources 1 1 1 1 1 1 1 7) tileFreeAction [] (Array.repeat 14 Walls.None) [] Nothing
 
 
 newAvailableRooms : List Tile
@@ -156,8 +156,16 @@ update msg ({ player1, player2 } as game) =
 
         InitPlayerBoard rooms ->
             ( { game
-                | player1 = { player1 | rooms = List.take 9 rooms |> PlayerBoard.init }
-                , player2 = { player2 | rooms = List.drop 9 rooms |> List.take 9 |> PlayerBoard.init }
+                | player1 =
+                    { player1
+                        | rooms = List.take 9 rooms |> PlayerBoard.init
+                        , freeAction = Tiles.setStatus Active player1.freeAction
+                    }
+                , player2 =
+                    { player2
+                        | rooms = List.drop 9 rooms |> List.take 9 |> PlayerBoard.init
+                        , freeAction = Tiles.setStatus Available player1.freeAction
+                    }
               }
             , Cmd.none
             )
@@ -193,7 +201,6 @@ update msg ({ player1, player2 } as game) =
 
                 node =
                     alphaBeta rootNode 1 9999999 -9999999 True
-
             in
             playAIMoves node.move game
 
@@ -216,18 +223,30 @@ pass game =
         game
             |> updateCurrentPlayer (restorePlayerPass (currentPlayer game))
             |> nextPlayer
+            |> activatePlayer
 
 
-updateAvailableWalls: Int -> Game -> Game
+activatePlayer : Game -> Game
+activatePlayer game =
+    let
+        player =
+            currentPlayer game
+    in
+    updateCurrentPlayer { player | freeAction = player.freeAction |> PlayerBoard.restoreTile |> Tiles.setStatus Active  } game
+
+
+updateAvailableWalls : Int -> Game -> Game
 updateAvailableWalls qty ({ player1, player2 } as game) =
-    { game | availableWalls = game.availableWalls + qty
-           , player1 = updateAvailableWallsResource qty player1
-           , player2 = updateAvailableWallsResource qty player2
-           }
+    { game
+        | availableWalls = game.availableWalls + qty
+        , player1 = updateAvailableWallsResource qty player1
+        , player2 = updateAvailableWallsResource qty player2
+    }
 
-updateAvailableWallsResource: Int -> PlayerBoard -> PlayerBoard
-updateAvailableWallsResource qty ({resources} as player) =
-    {player | resources = {resources | availableWalls = resources.availableWalls + qty}}
+
+updateAvailableWallsResource : Int -> PlayerBoard -> PlayerBoard
+updateAvailableWallsResource qty ({ resources } as player) =
+    { player | resources = { resources | availableWalls = resources.availableWalls + qty } }
 
 
 addToAvailableRooms : Tile -> Game -> Game
@@ -721,15 +740,15 @@ applyActions node tile actions =
 permutations : List Action -> List (List Action)
 permutations actions =
     actions
-    |> List.map (\a -> [a] ++ (nonDisabledActions actions a.disableActions))
+        |> List.map (\a -> [ a ] ++ nonDisabledActions actions a.disableActions)
 
 
-nonDisabledActions: List Action -> List Int -> List Action
+nonDisabledActions : List Action -> List Int -> List Action
 nonDisabledActions actions disabledActions =
     actions
-    |> List.indexedMap Tuple.pair
-    |> List.filter (\(i, a) -> not (List.member i disabledActions))
-    |> List.map Tuple.second
+        |> List.indexedMap Tuple.pair
+        |> List.filter (\( i, a ) -> not (List.member i disabledActions))
+        |> List.map Tuple.second
 
 
 calculateGameValue : Game -> Int
@@ -745,7 +764,7 @@ calculateGameValue game =
         + (player.resources.stone * 2)
         + (player.resources.wood * 2)
         + (player.rooms
-            |> List.filter (\r -> (r.status == Available || r.status == Active))
+            |> List.filter (\r -> r.status == Available || r.status == Active)
             |> List.map .score
             |> List.foldl (+) 0
             |> (*) 100

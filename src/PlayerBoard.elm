@@ -32,6 +32,7 @@ restorePlayerPass : PlayerBoard -> PlayerBoard
 restorePlayerPass board =
     { board
         | actionTiles = List.map (\t -> { t | status = Available }) board.actionTiles
+        , freeAction = Tiles.setStatus Available board.freeAction
         , rooms = List.map restoreTile board.rooms
     }
 

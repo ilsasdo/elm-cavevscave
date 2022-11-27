@@ -223,6 +223,10 @@ consumeAction tile action =
                     )
     }
 
+setStatus: TileStatus -> Tile -> Tile
+setStatus status tile =
+    {tile | status = status }
+
 ---------------------------------------------
 -------------Action Tiles--------------------
 ---------------------------------------------
@@ -230,7 +234,7 @@ consumeAction tile action =
 tileFreeAction : Tile
 tileFreeAction =
     Tile "Free Action"
-        Available
+        Active
         0
         "none"
         priceFree
