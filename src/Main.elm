@@ -9,7 +9,7 @@ import Html.Events exposing (onClick)
 import PlayerBoard exposing (PlayerBoard, isRoomSelectable, restorePlayerNextRound, restorePlayerPass, viewBoard)
 import Random
 import Random.List
-import Resources exposing (Resources)
+import Resources exposing (Resources, updateOpponentsGold)
 import Tiles exposing (Action, Msg(..), Subphase(..), Tile, TileStatus(..), subphaseToString, tileAltareSacrificale, tileAnalisiTerritoriale, tileArredare, tileBancarella, tileCameraSegreta, tileCavaInEspansione, tileColtivare, tileCostruireUnMuro, tileDemolireUnMuro, tileDeposito, tileDepositoDiLegna, tileEquipaggiamenti, tileEspansione, tileFiliera, tileFoodCorner, tileForno, tileFreeAction, tileGoldMine, tileLavorareIlLino, tileLavoriDomestici, tileLuxuryRoom, tileMacina, tileMinare, tileOfficina, tilePerforare, tileRinnovare, tileSalotto, tileScavare, tileShelf, tileSotterraneo, tileSottobosco, tileSpedizione, tileSpinningWheel, tileStanzaDiSnodo, tileTesoreria, tileTunnel, tileWarehouse, viewTile)
 import Walls
 
@@ -32,7 +32,7 @@ emptyGame =
 
 
 emptyBoard =
-    PlayerBoard (Resources 0 0 0 0 0 0 0 7) tileFreeAction [] (Array.fromList []) [] Nothing
+    PlayerBoard (Resources 0 0 0 0 0 0 0 7 0) tileFreeAction [] (Array.fromList []) [] Nothing
 
 
 type Msg
@@ -116,7 +116,7 @@ setupRandomTiles rooms round1Tiles round2Tiles round3Tiles round4Tiles =
 
 newBoard : PlayerBoard
 newBoard =
-    PlayerBoard (Resources 1 1 1 1 1 1 1 7) tileFreeAction [] (Array.repeat 14 Walls.None) [] Nothing
+    PlayerBoard (Resources 1 1 1 1 1 1 1 7 0) tileFreeAction [] (Array.repeat 14 Walls.None) [] Nothing
 
 
 newAvailableRooms : List Tile
@@ -231,8 +231,11 @@ activatePlayer game =
     let
         player =
             currentPlayer game
+        opponent =
+            opponentPlayer game
     in
-    updateCurrentPlayer { player | freeAction = player.freeAction |> PlayerBoard.restoreTile |> Tiles.setStatus Active  } game
+    updateCurrentPlayer { player | freeAction = player.freeAction |> PlayerBoard.restoreTile |> Tiles.setStatus Active
+                                 , resources = updateOpponentsGold opponent.resources.gold player.resources } game
 
 
 updateAvailableWalls : Int -> Game -> Game
@@ -351,6 +354,15 @@ currentPlayer game =
 
     else
         game.player2
+
+
+opponentPlayer : Game -> PlayerBoard
+opponentPlayer game =
+    if game.currentPlayer == 1 then
+        game.player2
+
+    else
+        game.player1
 
 
 updateCurrentPlayer : PlayerBoard -> Game -> Game

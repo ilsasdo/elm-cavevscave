@@ -391,12 +391,8 @@ tilePerforare =
         priceFree
         noWalls
         [ topAction alwaysDoable (\r -> r) (Just Activate1) [ 0 ]
-        , bottomAction alwaysDoable (\r -> r) (Just Escavate1) [ 1 ]
+        , bottomAction (\r -> require ((<) r.opponentsGold) .gold r) (\r -> r) (Just Escavate1) [ 1 ]
         ]
-
-
-
--- TODO: available only if player has more gold than opponent.
 
 
 tileRinnovare : Tile

@@ -12,6 +12,7 @@ type alias Resources =
     , gold : Int
     , actions : Int -- actions available in current round are not a proper resource
                     -- but are used to pay some actions
+    , opponentsGold: Int
     , availableWalls : Int
     }
 
@@ -43,4 +44,8 @@ priceGold qty resources =
 
 priceFree : Resources
 priceFree =
-    Resources 0 0 0 0 0 0 0 7
+    Resources 0 0 0 0 0 0 0 7 -1
+
+updateOpponentsGold : Int -> Resources -> Resources
+updateOpponentsGold qty resources =
+    { resources | opponentsGold = qty }
