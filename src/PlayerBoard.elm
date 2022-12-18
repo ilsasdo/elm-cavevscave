@@ -25,6 +25,7 @@ type Msg
     | RemoveFromAvailableRooms Tile
     | WallBuilt
     | WallDestroyed
+    | ResourceChosen (Maybe Subphase) (Resources -> Resources)
     | None
 
 
@@ -332,7 +333,7 @@ viewBoard board =
     div [ class "playerboard" ]
         [ viewActionTiles board.resources board.actionTiles
         , div [ class "board" ]
-            ([ viewResources board.resources, viewFreeAction board ]
+            ([ viewResources board.resources board.subphase, viewFreeAction board ]
                 ++ viewRooms board
                 ++ viewWalls board
             )
@@ -437,16 +438,24 @@ viewNonSelectableTile resources index tile =
         [ viewTile [] resources tile ]
 
 
-viewResources resources =
+viewResources resources subphase =
     div [ class "resources" ]
-        [ viewResource "food" resources.food
-        , viewResource "wood" resources.wood
-        , viewResource "stone" resources.stone
-        , viewResource "emmer" resources.emmer
-        , viewResource "flax" resources.flax
-        , viewResource "gold" resources.gold
+        [ viewResource "food" resources.food subphase (\r -> {r | food = r.food - 1})
+        , viewResource "wood" resources.wood subphase (\r -> {r | wood = r.wood - 1})
+        , viewResource "stone" resources.stone subphase (\r -> {r | stone = r.stone - 1})
+        , viewResource "emmer" resources.emmer subphase (\r -> {r | emmer = r.emmer - 1})
+        , viewResource "flax" resources.flax subphase (\r -> {r | flax = r.flax - 1})
+        , viewResource "gold" resources.gold subphase (\r -> {r | gold = r.gold - 1})
         ]
 
 
-viewResource resource qty =
-    div [ class (resource ++ " " ++ "qty" ++ toString qty) ] []
+viewResource resource qty subphase resfun =
+    case subphase of
+        Just ChooseResource3 ->
+            div [ class (resource ++ " " ++ "qty" ++ toString qty), onClick (ResourceChosen (Just ChooseResource2) resfun)] []
+        Just ChooseResource2 ->
+            div [ class (resource ++ " " ++ "qty" ++ toString qty), onClick (ResourceChosen (Just ChooseResource1) resfun) ] []
+        Just ChooseResource1 ->
+            div [ class (resource ++ " " ++ "qty" ++ toString qty), onClick (ResourceChosen Nothing resfun) ] []
+        _ ->
+            div [ class (resource ++ " " ++ "qty" ++ toString qty) ] []

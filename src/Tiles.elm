@@ -58,6 +58,9 @@ type Subphase
     | Activate1
     | Activate2
     | Activate3
+    | ChooseResource3
+    | ChooseResource2
+    | ChooseResource1
 
 
 subphaseToString : Maybe Subphase -> String
@@ -755,10 +758,6 @@ tileLuxuryRoom =
         [ fullAction alwaysDoable (\res -> res |> addGold 1 |> addFlax 1) Nothing [ 0 ] ]
 
 
-
--- TODO: the user should choose three resources to spend
-
-
 tileStanzaDiSnodo : Tile
 tileStanzaDiSnodo =
     Tile "Stanza di Snodo" Orange
@@ -767,7 +766,7 @@ tileStanzaDiSnodo =
         "assets/img/rooms/stanza_di_snodo.jpg"
         (priceFree |> priceWood 2)
         (Walls Placed Placed Optional Placed)
-        [ fullAction Resources.atLeastThreeResources (\res -> res |> addGold 2) Nothing [ 0 ] ]
+        [ fullAction Resources.atLeastThreeResources (\res -> res |> addGold 2) (Just ChooseResource3) [ 0 ] ]
 
 
 tileTesoreria : Tile
