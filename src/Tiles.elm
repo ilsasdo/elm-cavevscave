@@ -14,9 +14,14 @@ type TileStatus
     | Rock
     | Empty
 
+type TileType
+    = Orange
+    | Blue
+    | Gray
 
 type alias Tile =
     { title : String
+    , tileType : TileType
     , status : TileStatus
     , score : Int
     , src : String
@@ -234,6 +239,7 @@ setStatus status tile =
 tileFreeAction : Tile
 tileFreeAction =
     Tile "Free Action"
+        Gray
         Active
         0
         "none"
@@ -246,6 +252,7 @@ tileFreeAction =
 tileLavoriDomestici : Tile
 tileLavoriDomestici =
     Tile "Lavori Domestici"
+        Gray
         Available
         3
         "assets/img/rounds/lavori_domestici.jpg"
@@ -259,7 +266,7 @@ tileLavoriDomestici =
 
 tileColtivare : Tile
 tileColtivare =
-    Tile "Coltivare"
+    Tile "Coltivare" Gray
         Available
         2
         "assets/img/rounds/coltivare.jpg"
@@ -272,7 +279,7 @@ tileColtivare =
 
 tileSottobosco : Tile
 tileSottobosco =
-    Tile "Sottobosco"
+    Tile "Sottobosco" Gray
         Available
         1
         "assets/img/rounds/sottobosco.jpg"
@@ -285,7 +292,7 @@ tileSottobosco =
 
 tileScavare : Tile
 tileScavare =
-    Tile "Scavare"
+    Tile "Scavare" Gray
         Available
         4
         "assets/img/rounds/scavare.jpg"
@@ -299,7 +306,7 @@ tileScavare =
 
 tileArredare : Tile
 tileArredare =
-    Tile "Arredare"
+    Tile "Arredare" Gray
         Rock
         6
         "assets/img/rounds/arredare.jpg"
@@ -312,7 +319,7 @@ tileArredare =
 
 tileCostruireUnMuro : Tile
 tileCostruireUnMuro =
-    Tile "Costrurire un Muro"
+    Tile "Costrurire un Muro" Gray
         Rock
         7
         "assets/img/rounds/costruire_un_muro.jpg"
@@ -327,7 +334,7 @@ tileCostruireUnMuro =
 
 tileMinare : Tile
 tileMinare =
-    Tile "Minare"
+    Tile "Minare" Gray
         Rock
         5
         "assets/img/rounds/minare.jpg"
@@ -344,7 +351,7 @@ tileMinare =
 
 tileDemolireUnMuro : Tile
 tileDemolireUnMuro =
-    Tile "Demolire un Muro"
+    Tile "Demolire un Muro"Gray
         Rock
         0
         "assets/img/rounds/demolire_un_muro.jpg"
@@ -356,7 +363,7 @@ tileDemolireUnMuro =
 
 tileEspansione : Tile
 tileEspansione =
-    Tile "Espansione"
+    Tile "Espansione" Gray
         Rock
         10
         "assets/img/rounds/espansione.jpg"
@@ -370,7 +377,7 @@ tileEspansione =
 
 tileSpedizione : Tile
 tileSpedizione =
-    Tile "Spedizione"
+    Tile "Spedizione" Gray
         Rock
         9
         "assets/img/rounds/spedizione.jpg"
@@ -384,7 +391,7 @@ tileSpedizione =
 
 tilePerforare : Tile
 tilePerforare =
-    Tile "Perforare"
+    Tile "Perforare" Gray
         Rock
         8
         "assets/img/rounds/perforare.jpg"
@@ -397,7 +404,7 @@ tilePerforare =
 
 tileRinnovare : Tile
 tileRinnovare =
-    Tile "Rinnovare"
+    Tile "Rinnovare" Gray
         Rock
         11
         "assets/img/rounds/rinnovare.jpg"
@@ -416,7 +423,7 @@ tileRinnovare =
 
 tileRock : Tile
 tileRock =
-    Tile "Rock Tile"
+    Tile "Rock Tile" Gray
         Rock
         0
         ""
@@ -427,7 +434,7 @@ tileRock =
 
 tileEmpty : Tile
 tileEmpty =
-    Tile "Empty Tile"
+    Tile "Empty Tile" Gray
         Empty
         0
         ""
@@ -442,7 +449,7 @@ tileEmpty =
 
 tileSotterraneo : Tile
 tileSotterraneo =
-    Tile "Sotterraneo"
+    Tile "Sotterraneo" Blue
         Rock
         11
         "assets/img/sotterraneo.jpg"
@@ -453,7 +460,7 @@ tileSotterraneo =
 
 tileLavorareIlLino : Tile
 tileLavorareIlLino =
-    Tile "Lavorare il Lino"
+    Tile "Lavorare il Lino" Blue
         Rock
         3
         "assets/img/lavorare_il_lino.jpg"
@@ -464,7 +471,7 @@ tileLavorareIlLino =
 
 tileEquipaggiamenti : Tile
 tileEquipaggiamenti =
-    Tile "Equipaggiamenti"
+    Tile "Equipaggiamenti" Blue
         Rock
         3
         "assets/img/equipaggiamenti.jpg"
@@ -475,7 +482,7 @@ tileEquipaggiamenti =
 
 tileDepositoDiLegna : Tile
 tileDepositoDiLegna =
-    Tile "Deposito di Legna"
+    Tile "Deposito di Legna" Blue
         Rock
         2
         "assets/img/deposito_di_legna.jpg"
@@ -486,7 +493,7 @@ tileDepositoDiLegna =
 
 tileAnalisiTerritoriale : Tile
 tileAnalisiTerritoriale =
-    Tile "Analisi Territoriale"
+    Tile "Analisi Territoriale" Blue
         Rock
         5
         "assets/img/deposito_di_legna.jpg"
@@ -503,7 +510,7 @@ tileAnalisiTerritoriale =
 
 tileCaveEntrance : Tile
 tileCaveEntrance =
-    Tile "Entrata della Cava"
+    Tile "Entrata della Cava" Orange
         Available
         0
         "assets/img/entrata_della_cava.jpg"
@@ -518,7 +525,7 @@ tileCaveEntrance =
 
 tileWarehouse : Tile
 tileWarehouse =
-    Tile "Magazzino"
+    Tile "Magazzino" Orange
         Rock
         2
         "assets/img/magazzino.jpg"
@@ -540,7 +547,7 @@ tileWarehouse =
 
 tileShelf : Tile
 tileShelf =
-    Tile "Shelf"
+    Tile "Shelf" Orange
         Available
         3
         "assets/img/scaffale.jpg"
@@ -555,7 +562,7 @@ tileShelf =
 
 tileFoodCorner : Tile
 tileFoodCorner =
-    Tile "Angolo del Cibo"
+    Tile "Angolo del Cibo" Orange
         Available
         3
         "assets/img/angolo_del_cibo.jpg"
@@ -566,7 +573,7 @@ tileFoodCorner =
 
 tileSpinningWheel : Tile
 tileSpinningWheel =
-    Tile "Filatoio"
+    Tile "Filatoio" Orange
         Available
         4
         "assets/img/filatoio.jpg"
@@ -579,7 +586,7 @@ tileSpinningWheel =
 
 tileTunnel : Tile
 tileTunnel =
-    Tile "Tunnel"
+    Tile "Tunnel" Orange
         Available
         3
         "assets/img/tunnel.jpg"
@@ -592,7 +599,7 @@ tileTunnel =
 
 tileAltareSacrificale : Tile
 tileAltareSacrificale =
-    Tile "Altare Sacrificale"
+    Tile "Altare Sacrificale" Orange
         Rock
         7
         "assets/img/altare_sacrificale.jpg"
@@ -613,7 +620,7 @@ tileAltareSacrificale =
 
 tileBancarella : Tile
 tileBancarella =
-    Tile "Bancarella"
+    Tile "Bancarella" Orange
         Rock
         6
         "assets/img/bancarella.jpg"
@@ -626,7 +633,7 @@ tileBancarella =
 
 tileCameraSegreta : Tile
 tileCameraSegreta =
-    Tile "Camera Segreta"
+    Tile "Camera Segreta" Orange
         Rock
         8
         "assets/img/camera_segreta.jpg"
@@ -639,7 +646,7 @@ tileCameraSegreta =
 
 tileCavaInEspansione : Tile
 tileCavaInEspansione =
-    Tile "Cava in Espansione"
+    Tile "Cava in Espansione" Orange
         Rock
         8
         "assets/img/cava_in_espansione.jpg"
@@ -650,7 +657,7 @@ tileCavaInEspansione =
 
 tileDeposito : Tile
 tileDeposito =
-    Tile "Deposito"
+    Tile "Deposito" Orange
         Rock
         6
         "assets/img/deposito.jpg"
@@ -661,7 +668,7 @@ tileDeposito =
 
 tileFiliera : Tile
 tileFiliera =
-    Tile "Filiera"
+    Tile "Filiera" Orange
         Rock
         5
         "assets/img/filiera.jpg"
@@ -672,7 +679,7 @@ tileFiliera =
 
 tileForno : Tile
 tileForno =
-    Tile "Forno"
+    Tile "Forno" Orange
         Rock
         6
         "assets/img/forno.jpg"
@@ -685,7 +692,7 @@ tileForno =
 
 tileMacina : Tile
 tileMacina =
-    Tile "Macina"
+    Tile "Macina" Orange
         Available
         4
         "assets/img/macina.jpg"
@@ -698,7 +705,7 @@ tileMacina =
 
 tileGoldMine : Tile
 tileGoldMine =
-    Tile "Miniera d'Oro"
+    Tile "Miniera d'Oro" Orange
         Rock
         9
         "assets/img/miniera_d_oro.jpg"
@@ -709,7 +716,7 @@ tileGoldMine =
 
 tileOfficina : Tile
 tileOfficina =
-    Tile "Officina"
+    Tile "Officina" Orange
         Rock
         5
         "assets/img/officina.jpg"
@@ -728,7 +735,7 @@ tileOfficina =
 
 tileSalotto : Tile
 tileSalotto =
-    Tile "Salotto"
+    Tile "Salotto" Orange
         Available
         6
         "assets/img/salotto.jpg"
@@ -739,7 +746,7 @@ tileSalotto =
 
 tileLuxuryRoom : Tile
 tileLuxuryRoom =
-    Tile "Stanza di Lusso"
+    Tile "Stanza di Lusso" Orange
         Rock
         12
         "assets/img/stanza_di_lusso.jpg"
@@ -754,18 +761,18 @@ tileLuxuryRoom =
 
 tileStanzaDiSnodo : Tile
 tileStanzaDiSnodo =
-    Tile "Stanza di Snodo"
+    Tile "Stanza di Snodo" Orange
         Rock
         6
         "assets/img/stanza_di_snodo.jpg"
         (priceFree |> priceWood 2)
         (Walls Placed Placed Optional Placed)
-        [ fullAction alwaysDoable (\res -> res |> addGold 2) Nothing [ 0 ] ]
+        [ fullAction Resources.atLeastThreeResources (\res -> res |> addGold 2) Nothing [ 0 ] ]
 
 
 tileTesoreria : Tile
 tileTesoreria =
-    Tile "Tesoreria"
+    Tile "Tesoreria" Orange
         Rock
         10
         "assets/img/tesoreria.jpg"
@@ -777,11 +784,6 @@ tileTesoreria =
 require : (Int -> Bool) -> (Resources -> Int) -> Resources -> Bool
 require condition getter resources =
     condition (getter resources)
-
-
-require2: Int -> (Int -> Int -> Bool) -> (Resources -> Int) -> Resources -> Bool
-require2 a condition getter resources =
-    condition a (getter resources)
 
 
 topWood : Int -> Resources -> Resources

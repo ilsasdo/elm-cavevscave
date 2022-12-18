@@ -6,7 +6,7 @@ import Html exposing (Html, div)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import Resources exposing (Resources)
-import Tiles exposing (Action, Msg(..), Subphase(..), Tile, TileStatus(..), consumeAction, tileCaveEntrance, tileEmpty, tileRock, viewTile)
+import Tiles exposing (Action, Msg(..), Subphase(..), Tile, TileStatus(..), TileType(..), consumeAction, tileCaveEntrance, tileEmpty, tileRock, viewTile)
 import Walls exposing (Wall(..), Walls)
 
 
@@ -182,6 +182,19 @@ isRoomSelectable : PlayerBoard -> Tile -> Bool
 isRoomSelectable player tile =
     playerHaveResources player tile.price
         && playerCanPlaceRoom player tile
+        && moreOrangeRooms player tile
+
+
+moreOrangeRooms: PlayerBoard -> Tile -> Bool
+moreOrangeRooms player tile =
+    let
+        orangeCount = player.rooms |> List.filter (\t -> t.tileType == Orange) |> List.length
+        blueCount = player.rooms |> List.filter (\t -> t.tileType == Blue) |> List.length
+    in
+    if tile.tileType == Blue then
+        orangeCount > (blueCount + 1)
+    else
+        True
 
 
 playerCanPlaceRoom : PlayerBoard -> Tile -> Bool

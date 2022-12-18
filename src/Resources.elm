@@ -46,6 +46,15 @@ priceFree : Resources
 priceFree =
     Resources 0 0 0 0 0 0 0 7 -1
 
+
 updateOpponentsGold : Int -> Resources -> Resources
 updateOpponentsGold qty resources =
     { resources | opponentsGold = qty }
+
+
+atLeastThreeResources : Resources -> Bool
+atLeastThreeResources resources =
+    [resources.wood, resources.emmer, resources.gold, resources.food, resources.flax, resources.stone]
+    |> List.filter (\qty -> qty > 0)
+    |> List.length
+    |> (<=) 3
