@@ -351,7 +351,7 @@ tileMinare =
 
 tileDemolireUnMuro : Tile
 tileDemolireUnMuro =
-    Tile "Demolire un Muro"Gray
+    Tile "Demolire un Muro" Gray
         Rock
         0
         "assets/img/rounds/demolire_un_muro.jpg"
@@ -452,7 +452,7 @@ tileSotterraneo =
     Tile "Sotterraneo" Blue
         Rock
         11
-        "assets/img/sotterraneo.jpg"
+        "assets/img/equipments/sotterraneo.jpg"
         (priceFree |> priceGold 4 |> priceStone 3)
         (Walls Placed Placed Placed Placed)
         []
@@ -463,7 +463,7 @@ tileLavorareIlLino =
     Tile "Lavorare il Lino" Blue
         Rock
         3
-        "assets/img/lavorare_il_lino.jpg"
+        "assets/img/equipments/lavorare_il_lino.jpg"
         (priceFree |> priceStone 1)
         (Walls Placed Optional Walls.None Placed)
         []
@@ -474,7 +474,7 @@ tileEquipaggiamenti =
     Tile "Equipaggiamenti" Blue
         Rock
         3
-        "assets/img/equipaggiamenti.jpg"
+        "assets/img/equipments/equipaggiamenti.jpg"
         (priceFree |> priceWood 2)
         (Walls Placed Walls.None Walls.None Optional)
         []
@@ -485,7 +485,7 @@ tileDepositoDiLegna =
     Tile "Deposito di Legna" Blue
         Rock
         2
-        "assets/img/deposito_di_legna.jpg"
+        "assets/img/equipments/deposito_di_legna.jpg"
         (priceFree |> priceStone 1)
         (Walls Placed Walls.None Walls.None Placed)
         []
@@ -496,7 +496,7 @@ tileAnalisiTerritoriale =
     Tile "Analisi Territoriale" Blue
         Rock
         5
-        "assets/img/deposito_di_legna.jpg"
+        "assets/img/equipments/deposito_di_legna.jpg"
         priceFree
         (Walls Placed Walls.None Walls.None Optional)
         []
@@ -513,7 +513,7 @@ tileCaveEntrance =
     Tile "Entrata della Cava" Orange
         Available
         0
-        "assets/img/entrata_della_cava.jpg"
+        "assets/img/rooms/entrata_della_cava.jpg"
         priceFree
         noWalls
         [ firstAction alwaysDoable (addWood 1) Nothing [ 0, 1, 2, 3 ]
@@ -528,7 +528,7 @@ tileWarehouse =
     Tile "Magazzino" Orange
         Rock
         2
-        "assets/img/magazzino.jpg"
+        "assets/img/rooms/magazzino.jpg"
         (priceFree |> priceWood 2)
         (Walls Placed Optional Walls.None Optional)
         [ fullAction (require ((<=) 2) .food)
@@ -550,7 +550,7 @@ tileShelf =
     Tile "Shelf" Orange
         Available
         3
-        "assets/img/scaffale.jpg"
+        "assets/img/rooms/scaffale.jpg"
         (priceFree |> priceWood 1)
         (Walls Placed Walls.None Walls.None Walls.None)
         [ firstAction (require ((>) 2) .wood) (topWood 2) Nothing [ 0, 1, 2, 3 ]
@@ -565,7 +565,7 @@ tileFoodCorner =
     Tile "Angolo del Cibo" Orange
         Available
         3
-        "assets/img/angolo_del_cibo.jpg"
+        "assets/img/rooms/angolo_del_cibo.jpg"
         (priceFree |> priceStone 1)
         (Walls Placed Walls.None Walls.None Placed)
         [ fullAction (require ((>) 3) .food) (topFood 3) Nothing [ 0 ] ]
@@ -576,7 +576,7 @@ tileSpinningWheel =
     Tile "Filatoio" Orange
         Available
         4
-        "assets/img/filatoio.jpg"
+        "assets/img/rooms/filatoio.jpg"
         (priceFree |> priceWood 1)
         (Walls Placed Walls.None Walls.None Walls.None)
         [ leftAction (require ((<=) 1) .flax) (\res -> res |> addFlax -1 |> addGold 1) Nothing [ 0, 1 ]
@@ -589,7 +589,7 @@ tileTunnel =
     Tile "Tunnel" Orange
         Available
         3
-        "assets/img/tunnel.jpg"
+        "assets/img/rooms/tunnel.jpg"
         (priceFree |> priceWood 1)
         (Walls Walls.None Placed Walls.None Placed)
         [ topAction alwaysDoable (addFood 2) Nothing [ 0 ]
@@ -602,7 +602,7 @@ tileAltareSacrificale =
     Tile "Altare Sacrificale" Orange
         Rock
         7
-        "assets/img/altare_sacrificale.jpg"
+        "assets/img/rooms/altare_sacrificale.jpg"
         (priceFree |> priceStone 4)
         (Walls Placed Optional Walls.None Optional)
         [ fullAction
@@ -623,7 +623,7 @@ tileBancarella =
     Tile "Bancarella" Orange
         Rock
         6
-        "assets/img/bancarella.jpg"
+        "assets/img/rooms/bancarella.jpg"
         (priceFree |> priceWood 1 |> priceGold 1)
         (Walls Placed Optional Walls.None Optional)
         [ leftAction (require ((<=) 5) .emmer) (\res -> res |> addEmmer -5 |> addGold 4) Nothing [ 0, 1 ]
@@ -636,7 +636,7 @@ tileCameraSegreta =
     Tile "Camera Segreta" Orange
         Rock
         8
-        "assets/img/camera_segreta.jpg"
+        "assets/img/rooms/camera_segreta.jpg"
         (priceFree |> priceWood 2 |> priceStone 1)
         (Walls Placed Placed Placed Placed)
         [ leftAction alwaysDoable (\res -> res |> addFlax 3) Nothing [ 0, 1 ]
@@ -649,7 +649,7 @@ tileCavaInEspansione =
     Tile "Cava in Espansione" Orange
         Rock
         8
-        "assets/img/cava_in_espansione.jpg"
+        "assets/img/rooms/cava_in_espansione.jpg"
         (priceFree |> priceWood 1 |> priceStone 3)
         (Walls Placed Placed Walls.None Placed)
         [ fullAction (require ((<=) 1) .gold) (\res -> res) Nothing [ 0 ] ]
@@ -660,7 +660,7 @@ tileDeposito =
     Tile "Deposito" Orange
         Rock
         6
-        "assets/img/deposito.jpg"
+        "assets/img/rooms/deposito.jpg"
         (priceFree |> priceWood 2 |> priceGold 1)
         (Walls Placed Walls.None Walls.None Placed)
         [ fullAction alwaysDoable (\res -> res |> addEmmer 1 |> addFlax 1 |> addFood 1) Nothing [ 0 ] ]
@@ -671,7 +671,7 @@ tileFiliera =
     Tile "Filiera" Orange
         Rock
         5
-        "assets/img/filiera.jpg"
+        "assets/img/rooms/filiera.jpg"
         (priceFree |> priceWood 2)
         (Walls Placed Walls.None Walls.None Placed)
         [ fullAction (require ((<=) 2) .flax) (\res -> res |> addFlax -2 |> addGold 2 |> addFood 2) Nothing [ 0 ] ]
@@ -682,7 +682,7 @@ tileForno =
     Tile "Forno" Orange
         Rock
         6
-        "assets/img/forno.jpg"
+        "assets/img/rooms/forno.jpg"
         (priceFree |> priceWood 1 |> priceStone 2)
         (Walls Placed Placed Walls.None Placed)
         [ leftAction (require ((<=) 2) .emmer) (\res -> res |> addEmmer -2 |> addFood 4 |> addGold 1) Nothing [ 0, 1 ]
@@ -695,7 +695,7 @@ tileMacina =
     Tile "Macina" Orange
         Available
         4
-        "assets/img/macina.jpg"
+        "assets/img/rooms/macina.jpg"
         (priceFree |> priceStone 1)
         (Walls Placed Walls.None Walls.None Optional)
         [ leftAction (require ((<=) 2) .emmer) (\res -> res |> addEmmer -1 |> addFood 3) Nothing [ 0, 1 ]
@@ -708,7 +708,7 @@ tileGoldMine =
     Tile "Miniera d'Oro" Orange
         Rock
         9
-        "assets/img/miniera_d_oro.jpg"
+        "assets/img/rooms/miniera_d_oro.jpg"
         (priceFree |> priceGold 5)
         (Walls Placed Optional Walls.None Placed)
         [ fullAction alwaysDoable (\res -> res |> addGold 1 |> addStone 1) Nothing [ 0 ] ]
@@ -719,7 +719,7 @@ tileOfficina =
     Tile "Officina" Orange
         Rock
         5
-        "assets/img/officina.jpg"
+        "assets/img/rooms/officina.jpg"
         (priceFree |> priceWood 1 |> priceStone 2)
         (Walls Placed Optional Walls.None Placed)
         [ fullAction
@@ -738,7 +738,7 @@ tileSalotto =
     Tile "Salotto" Orange
         Available
         6
-        "assets/img/salotto.jpg"
+        "assets/img/rooms/salotto.jpg"
         (priceFree |> priceStone 1 |> priceGold 1)
         (Walls Placed Placed Walls.None Placed)
         [ fullAction alwaysDoable (\res -> res |> topWood 1 |> topWood 1 |> topEmmer 1 |> topFlax 1 |> topFood 1 |> topGold 1) Nothing [ 0 ] ]
@@ -749,7 +749,7 @@ tileLuxuryRoom =
     Tile "Stanza di Lusso" Orange
         Rock
         12
-        "assets/img/stanza_di_lusso.jpg"
+        "assets/img/rooms/stanza_di_lusso.jpg"
         (priceFree |> priceGold 7)
         (Walls Placed Placed Optional Placed)
         [ fullAction alwaysDoable (\res -> res |> addGold 1 |> addFlax 1) Nothing [ 0 ] ]
@@ -764,7 +764,7 @@ tileStanzaDiSnodo =
     Tile "Stanza di Snodo" Orange
         Rock
         6
-        "assets/img/stanza_di_snodo.jpg"
+        "assets/img/rooms/stanza_di_snodo.jpg"
         (priceFree |> priceWood 2)
         (Walls Placed Placed Optional Placed)
         [ fullAction Resources.atLeastThreeResources (\res -> res |> addGold 2) Nothing [ 0 ] ]
@@ -775,7 +775,7 @@ tileTesoreria =
     Tile "Tesoreria" Orange
         Rock
         10
-        "assets/img/tesoreria.jpg"
+        "assets/img/rooms/tesoreria.jpg"
         (priceFree |> priceGold 3)
         (Walls Placed Placed Placed Placed)
         [ fullAction (require ((<=) 3) .gold) (\res -> res |> addGold -3 |> addGold 4 |> addFood 1) Nothing [ 0 ] ]
