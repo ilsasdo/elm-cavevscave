@@ -2,9 +2,8 @@ module WallTest exposing (..)
 
 import Expect exposing (Expectation)
 import Test exposing (..)
-import Walls exposing (Wall(..))
-
-
+import Game exposing (..)
+import Walls
 
 -- { east = None, north = Placed, south = None, west = Optional }
 -- { east = None, north = None, south = None, west = Placed }
@@ -17,10 +16,10 @@ suite =
             (\_ ->
                 let
                     w1 =
-                        Walls.Walls Placed None None Optional
+                        Game.Walls Placed None None Optional
 
                     w2 =
-                        Walls.Walls Placed None None None
+                        Game.Walls Placed None None None
                 in
                 Expect.equal True (Walls.matches w1 w2)
             )
@@ -35,9 +34,9 @@ suite =
         , test "rotate None == None"
             (\_ -> Expect.equal True (Walls.matchSide (w None) .west (w None)))
         , test "rotate clockwise"
-            (\_ -> Expect.equal (Walls.Walls None Placed Optional None) (Walls.rotateClockwise (Walls.Walls Placed Optional None None)))
+            (\_ -> Expect.equal (Game.Walls None Placed Optional None) (Walls.rotateClockwise (Game.Walls Placed Optional None None)))
 
         ]
 
 w west =
-    Walls.Walls None None None west
+    Game.Walls None None None west

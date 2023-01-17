@@ -2,37 +2,31 @@ module PlayerBoard exposing (..)
 
 import Array exposing (Array)
 import Debug exposing (toString)
+import Game exposing (Game, GameMsg(..), PlayerBoard, Resources, Subphase(..), Tile, TileStatus(..), TileType(..), Wall(..))
 import Html exposing (Html, div)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
-import Resources exposing (Resources)
-import Tiles exposing (Action, Msg(..), Subphase(..), Tile, TileStatus(..), TileType(..), consumeAction, tileCaveEntrance, tileEmpty, tileRock, viewTile)
-import Walls exposing (Wall(..), Walls)
+import Tiles exposing (consumeAction, tileCaveEntrance, tileEmpty, tileFreeAction, tileRock, viewTile)
+import Walls
 
 
-type alias PlayerBoard =
-    { resources : Resources
-    , freeAction: Tile
-    , rooms : List Tile
-    , walls : Array Wall
-    , actionTiles : List Tile
-    , subphase : Maybe Subphase
-    }
+newBoard : PlayerBoard
+newBoard =
+    PlayerBoard (Resources 1 1 1 1 1 1 1 7 0) tileFreeAction [] (Array.repeat 14 Game.None) [] Nothing
 
+emptyBoard : PlayerBoard
+emptyBoard =
+    PlayerBoard (Resources 0 0 0 0 0 0 0 7 0) tileFreeAction [] (Array.fromList []) [] Nothing
 
-type Msg
-    = AddToAvailableRooms Tile
-    | RemoveFromAvailableRooms Tile
-    | WallBuilt
-    | WallDestroyed
-    | ResourceChosen (Maybe Subphase) (Resources -> Resources)
-    | None
+init : List Tile -> List Tile
+init rooms =
+    List.take 4 rooms ++ [ tileEmpty ] ++ (rooms |> List.drop 4 |> List.take 1) ++ [ tileCaveEntrance ] ++ List.drop 5 rooms
 
 
 restorePlayerPass : PlayerBoard -> PlayerBoard
 restorePlayerPass board =
     { board
-        | actionTiles = List.map (\t -> { t | status = Available }) board.actionTiles
+        | actionTiles = List.map (\t -> { t | status = Available}) board.actionTiles
         , freeAction = Tiles.setStatus Available board.freeAction
         , rooms = List.map restoreTile board.rooms
     }
@@ -59,69 +53,6 @@ restoreTile room =
         room
 
 
-init : List Tile -> List Tile
-init rooms =
-    List.take 4 rooms ++ [ tileEmpty ] ++ (rooms |> List.drop 4 |> List.take 1) ++ [ tileCaveEntrance ] ++ List.drop 5 rooms
-
-
-update : Tiles.Msg -> PlayerBoard -> ( PlayerBoard, Msg )
-update msg player =
-    case msg of
-        Tiles.DoAction tile action ->
-            let
-                consumedTile =
-                    consumeAction tile action
-            in
-            ( { player
-                | resources = action.do player.resources
-                , subphase = action.subphase
-                , rooms = updateTile consumedTile player.rooms
-                , actionTiles = updateTile consumedTile player.actionTiles
-              }
-            , None
-            )
-
-        Tiles.SelectWall index ->
-            case player.subphase of
-                Just BuildWall ->
-                    ( buildWall player index, WallBuilt )
-
-                Just DestroyWall ->
-                    ( destroyWall player index, WallDestroyed )
-
-                _ ->
-                    ( player, None )
-
-        Tiles.SelectRoomTile tile ->
-            case player.subphase of
-                Just Furnish ->
-                    ( { player | subphase = Just (PlaceRoom tile) }, None )
-
-                Just (PlaceRoom tileToPlace) ->
-                    ( placeRoom player tile tileToPlace, RemoveFromAvailableRooms tileToPlace )
-
-                Just EscavateThroughWall ->
-                    ( escavateRoom player tile Nothing, AddToAvailableRooms tile )
-
-                Just Escavate1 ->
-                    ( escavateRoom player tile Nothing, AddToAvailableRooms tile )
-
-                Just Escavate2 ->
-                    ( escavateRoom player tile (Just Escavate1), AddToAvailableRooms tile )
-
-                Just Activate1 ->
-                    ( activateRoom player tile Nothing, None )
-
-                Just Activate2 ->
-                    ( activateRoom player tile (Just Activate1), None )
-
-                Just Activate3 ->
-                    ( activateRoom player tile (Just Activate2), None )
-
-                _ ->
-                    ( player, None )
-
-
 updateTile : Tile -> List Tile -> List Tile
 updateTile tile tiles =
     List.map
@@ -135,7 +66,7 @@ updateTile tile tiles =
         tiles
 
 
-buildWall : PlayerBoard -> Int -> PlayerBoard
+buildWall : PlayerBoard -> Int  -> PlayerBoard
 buildWall player wallIndex =
     let
         walls =
@@ -152,7 +83,7 @@ destroyWall : PlayerBoard -> Int -> PlayerBoard
 destroyWall player wallIndex =
     let
         walls =
-            Array.set wallIndex Walls.None player.walls
+            Array.set wallIndex Game.None player.walls
     in
     { player
         | walls = walls
@@ -230,7 +161,7 @@ payRoom price resources =
 activateRoom player tile subphase =
     { player
         | subphase = subphase
-        , rooms = Tiles.updateStatus tile Tiles.Active player.rooms
+        , rooms = Tiles.updateStatus tile Game.Active player.rooms
     }
 
 
@@ -239,7 +170,7 @@ escavateRoom player tile subphase =
     { player
         | subphase = subphase
         , rooms =
-            Tiles.updateStatus tile Tiles.Empty player.rooms
+            Tiles.updateStatus tile Game.Empty player.rooms
                 |> Tiles.updateWalls player.walls
     }
 
@@ -328,7 +259,7 @@ getTileIndex tiles tile =
         |> Tuple.first
 
 
-viewBoard : PlayerBoard -> Html Tiles.Msg
+viewBoard : PlayerBoard -> Html GameMsg
 viewBoard board =
     div [ class "playerboard" ]
         [ viewActionTiles board.resources board.actionTiles
@@ -340,23 +271,23 @@ viewBoard board =
         ]
 
 
-viewWalls : PlayerBoard -> List (Html Tiles.Msg)
+viewWalls : PlayerBoard -> List (Html GameMsg)
 viewWalls board =
     board.walls
         |> Array.indexedMap (viewWall board.subphase)
         |> Array.toList
 
 
-viewWall : Maybe Subphase -> Int -> Wall -> Html Tiles.Msg
+viewWall : Maybe Subphase -> Int -> Wall -> Html GameMsg
 viewWall subphase index wall =
     case wall of
-        Walls.Placed ->
+        Game.Placed ->
             div [ class ("wall placed wall-" ++ toString index) ] []
 
-        Walls.Optional ->
+        Game.Optional ->
             div [ class ("wall placed wall-" ++ toString index) ] []
 
-        Walls.None ->
+        Game.None ->
             if subphase == Just DestroyWall || subphase == Just BuildWall then
                 div [ class ("wall available wall-" ++ toString index), onClick (SelectWall index) ] []
 
@@ -364,22 +295,22 @@ viewWall subphase index wall =
                 div [ class ("wall available wall-" ++ toString index) ] []
 
 
-viewFreeAction: PlayerBoard -> Html Tiles.Msg
+viewFreeAction: PlayerBoard -> Html GameMsg
 viewFreeAction board =
     viewTile [ class "freeaction"] board.resources board.freeAction
 
 
-viewActionTiles : Resources -> List Tile -> Html Tiles.Msg
+viewActionTiles : Resources -> List Tile -> Html GameMsg
 viewActionTiles resources actionTiles =
     div [ class "actiontiles" ] (List.map (viewTile [ class "actiontile" ] resources) actionTiles)
 
 
-viewRooms : PlayerBoard -> List (Html Tiles.Msg)
+viewRooms : PlayerBoard -> List (Html GameMsg)
 viewRooms board =
     List.indexedMap (viewRoom board) board.rooms
 
 
-viewRoom : PlayerBoard -> Int -> Tile -> Html Tiles.Msg
+viewRoom : PlayerBoard -> Int -> Tile -> Html GameMsg
 viewRoom board index tile =
     case board.subphase of
         Just Escavate1 ->

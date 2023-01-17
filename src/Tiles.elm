@@ -1,103 +1,73 @@
 module Tiles exposing (..)
 
 import Array exposing (Array)
+import Game exposing (Action, GameMsg(..), Resources, Subphase(..), Tile, TileStatus(..), TileType(..), Wall(..))
 import Html exposing (Attribute, Html, div)
 import Html.Attributes exposing (class, style)
 import Html.Events exposing (onClick)
-import Resources exposing (Resources, noWalls, priceFree, priceGold, priceStone, priceWood)
-import Walls exposing (Wall(..), Walls)
+import Random
+import Random.List
+import Resources exposing (noWalls, priceFree, priceGold, priceStone, priceWood)
+import Walls
+
+initRandomTiles =
+    setupRandomTiles
+        [ tileWarehouse
+        , tileAltareSacrificale
+        , tileBancarella
+        , tileCameraSegreta
+        , tileCavaInEspansione
+        , tileDeposito
+        , tileFiliera
+        , tileForno
+        , tileGoldMine
+        , tileOfficina
+        , tileLuxuryRoom
+        , tileStanzaDiSnodo
+        , tileTesoreria
+        , tileAnalisiTerritoriale
+        , tileSotterraneo
+        , tileEquipaggiamenti
+        , tileLavorareIlLino
+        , tileDepositoDiLegna
+        ]
+        [ tileLavoriDomestici
+        , tileColtivare
+        , tileSottobosco
+        , tileScavare
+        ]
+        [ tileArredare
+        , tileCostruireUnMuro
+        , tileMinare
+        ]
+        [ tileDemolireUnMuro
+        , tileEspansione
+        , tileSpedizione
+        , tilePerforare
+        ]
+        [ tileRinnovare ]
 
 
-type TileStatus
-    = Available
-    | Active
-    | Rock
-    | Empty
-
-type TileType
-    = Orange
-    | Blue
-    | Gray
-
-type alias Tile =
-    { title : String
-    , tileType : TileType
-    , status : TileStatus
-    , score : Int
-    , src : String
-    , price : Resources
-    , walls : Walls
-    , actions : List Action
-    }
+initCommonRooms : List Tile
+initCommonRooms =
+    [ tileShelf
+    , tileSpinningWheel
+    , tileMacina
+    , tileSalotto
+    , tileTunnel
+    , tileFoodCorner
+    ]
 
 
-type alias Action =
-    { classes : String
-    , available : Bool
-    , isDoable : Resources -> Bool
-    , do : Resources -> Resources
-    , subphase : Maybe Subphase
-    , disableActions : List Int
-    }
-
-
-type Msg
-    = SelectRoomTile Tile
-    | DoAction Tile Action
-    | SelectWall Int
-
-
-type Subphase
-    = Escavate1
-    | Escavate2
-    | Furnish
-    | PlaceRoom Tile
-    | BuildWall
-    | DestroyWall
-    | EscavateThroughWall
-    | Activate1
-    | Activate2
-    | Activate3
-    | ChooseResource3
-    | ChooseResource2
-    | ChooseResource1
-
-
-subphaseToString : Maybe Subphase -> String
-subphaseToString subphase =
-    case subphase of
-        Nothing ->
-            ""
-
-        Just Escavate1 ->
-            "Escavate 1"
-
-        Just Escavate2 ->
-            "Escavate 2"
-
-        Just Furnish ->
-            "Furnish"
-
-        Just (PlaceRoom tile) ->
-            "PlaceRoom " ++ tile.title
-
-        Just BuildWall ->
-            "Build a Wall"
-
-        Just DestroyWall ->
-            "Destroy a Wall"
-
-        Just EscavateThroughWall ->
-            "Escavate through a Wall"
-
-        Just Activate1 ->
-            "Activate a Room 1"
-
-        Just Activate2 ->
-            "Activate a Room 2"
-
-        Just Activate3 ->
-            "Activate a Room 3"
+setupRandomTiles : List Tile -> List Tile -> List Tile -> List Tile -> List Tile -> Cmd GameMsg
+setupRandomTiles rooms round1Tiles round2Tiles round3Tiles round4Tiles =
+    Cmd.batch
+        [ Random.generate InitPlayerBoard (Random.List.shuffle rooms)
+        , Random.generate InitRoundTiles (Random.List.shuffle round4Tiles)
+        , Random.generate InitRoundTiles (Random.List.shuffle round3Tiles)
+        , Random.generate InitRoundTiles (Random.List.shuffle round2Tiles)
+        , Random.generate InitRoundTiles (Random.List.shuffle round1Tiles)
+        ]
 
 
 updateStatus tile status tiles =
@@ -144,43 +114,43 @@ updateTileWalls walls index tile =
     else
         case index of
             0 ->
-                { tile | walls = Walls Placed (Walls.get 0 walls) (Walls.get 1 walls) Placed }
+                { tile | walls = Game.Walls Game.Placed (Walls.get 0 walls) (Walls.get 1 walls) Game.Placed }
 
             1 ->
-                { tile | walls = Walls Placed Placed (Walls.get 2 walls) (Walls.get 0 walls) }
+                { tile | walls = Game.Walls Game.Placed Game.Placed (Walls.get 2 walls) (Walls.get 0 walls) }
 
             2 ->
-                { tile | walls = Walls (Walls.get 1 walls) (Walls.get 3 walls) (Walls.get 4 walls) Placed }
+                { tile | walls = Game.Walls (Walls.get 1 walls) (Walls.get 3 walls) (Walls.get 4 walls) Game.Placed }
 
             3 ->
-                { tile | walls = Walls (Walls.get 2 walls) Placed (Walls.get 5 walls) (Walls.get 3 walls) }
+                { tile | walls = Game.Walls (Walls.get 2 walls) Game.Placed (Walls.get 5 walls) (Walls.get 3 walls) }
 
             4 ->
-                { tile | walls = Walls (Walls.get 4 walls) (Walls.get 6 walls) (Walls.get 7 walls) Placed }
+                { tile | walls = Game.Walls (Walls.get 4 walls) (Walls.get 6 walls) (Walls.get 7 walls) Game.Placed }
 
             5 ->
-                { tile | walls = Walls (Walls.get 5 walls) Placed (Walls.get 8 walls) (Walls.get 6 walls) }
+                { tile | walls = Game.Walls (Walls.get 5 walls) Game.Placed (Walls.get 8 walls) (Walls.get 6 walls) }
 
             6 ->
-                { tile | walls = Walls (Walls.get 7 walls) (Walls.get 9 walls) (Walls.get 10 walls) Placed }
+                { tile | walls = Game.Walls (Walls.get 7 walls) (Walls.get 9 walls) (Walls.get 10 walls) Game.Placed }
 
             7 ->
-                { tile | walls = Walls (Walls.get 8 walls) Placed (Walls.get 9 walls) (Walls.get 11 walls) }
+                { tile | walls = Game.Walls (Walls.get 8 walls) Game.Placed (Walls.get 9 walls) (Walls.get 11 walls) }
 
             8 ->
-                { tile | walls = Walls (Walls.get 10 walls) (Walls.get 12 walls) Placed Placed }
+                { tile | walls = Game.Walls (Walls.get 10 walls) (Walls.get 12 walls) Game.Placed Game.Placed }
 
             9 ->
-                { tile | walls = Walls (Walls.get 11 walls) (Walls.get 13 walls) Placed (Walls.get 12 walls) }
+                { tile | walls = Game.Walls (Walls.get 11 walls) (Walls.get 13 walls) Game.Placed (Walls.get 12 walls) }
 
             10 ->
-                { tile | walls = Walls Placed Placed Placed (Walls.get 13 walls) }
+                { tile | walls = Game.Walls Game.Placed Game.Placed Game.Placed (Walls.get 13 walls) }
 
             _ ->
                 tile
 
 
-viewTile : List (Attribute Msg) -> Resources -> Tile -> Html Msg
+viewTile : List (Attribute GameMsg) -> Resources -> Tile -> Html GameMsg
 viewTile attributes resources tile =
     div attributes
         [ case tile.status of
@@ -206,7 +176,7 @@ viewTile attributes resources tile =
         ]
 
 
-viewAction : Tile -> Resources -> Action -> Int -> Html Msg
+viewAction : Tile -> Resources -> Action -> Int -> Html GameMsg
 viewAction tile resources action index =
     if action.available && action.isDoable resources then
         div [ class ("action doable " ++ action.classes), onClick (DoAction tile action) ] []
@@ -248,9 +218,9 @@ tileFreeAction =
         "none"
         priceFree
         noWalls
-        [ firstAction (require ((<) 0) .emmer) (\r -> r |> addFood 1 |> addEmmer -1) Nothing []
-        , secondAction (require ((<) 0) .flax) (\r -> r |> addFood 1 |> addFlax -1) Nothing []
-        , thirdAction (require ((<) 0) .gold) (\r -> r |> addFood 1 |> addGold -1) Nothing []]
+        [ firstAction (require .emmer (>) 0) (\r -> r |> addFood 1 |> addEmmer -1) Nothing []
+        , secondAction (require .flax (>) 0) (\r -> r |> addFood 1 |> addFlax -1) Nothing []
+        , thirdAction (require .gold (>) 0) (\r -> r |> addFood 1 |> addGold -1) Nothing []]
 
 tileLavoriDomestici : Tile
 tileLavoriDomestici =
@@ -262,8 +232,8 @@ tileLavoriDomestici =
         priceFree
         noWalls
         [ topAction (\r -> r.food > r.actions) (\r -> r |> addFood r.actions) (Just Furnish) [ 0 ]
-        , bottomLeftAction (require ((<=) 5) .food) (addFood -5) (Just Furnish) [ 1, 2 ]
-        , bottomRightAction (require ((<=) 1) .gold) (addGold -1) (Just Furnish) [ 1, 2 ]
+        , bottomLeftAction (require .food (>=) 5) (addFood -5) (Just Furnish) [ 1, 2 ]
+        , bottomRightAction (require .gold (>=) 1) (addGold -1) (Just Furnish) [ 1, 2 ]
         ]
 
 
@@ -302,7 +272,7 @@ tileScavare =
         priceFree
         noWalls
         [ topLeftAction alwaysDoable (\r -> r) (Just Escavate1) [ 0, 1 ]
-        , topRightAction (require ((<=) 2) .food) (addFood -2) (Just Escavate2) [ 0, 1 ]
+        , topRightAction (require .food (>=) 2) (addFood -2) (Just Escavate2) [ 0, 1 ]
         , bottomAction alwaysDoable (addStone 1) Nothing [ 2 ]
         ]
 
@@ -331,7 +301,7 @@ tileCostruireUnMuro =
         [ topLeftAction alwaysDoable (\r -> r) (Just Activate1) [ 0 ]
         , thirdAction alwaysDoable (addWood 1) Nothing [ 1, 2 ]
         , fourthAction alwaysDoable (addStone 1) Nothing [ 1, 2 ]
-        , bottomAction (require ((<) 0) .availableWalls) (\r -> r) (Just BuildWall) [ 3 ]
+        , bottomAction (require .availableWalls (>) 0) (\r -> r) (Just BuildWall) [ 3 ]
         ]
 
 
@@ -373,8 +343,8 @@ tileEspansione =
         priceFree
         noWalls
         [ topAction alwaysDoable (\r -> r) (Just Escavate1) [ 0 ]
-        , bottomLeftAction (require ((<=) 5) .food) (addFood -5) (Just Furnish) [ 1, 2 ]
-        , bottomRightAction (require ((<=) 1) .gold) (addGold -1) (Just Furnish) [ 1, 2 ]
+        , bottomLeftAction (require .food (>=) 5) (addFood -5) (Just Furnish) [ 1, 2 ]
+        , bottomRightAction (require .gold (>=) 1) (addGold -1) (Just Furnish) [ 1, 2 ]
         ]
 
 
@@ -386,8 +356,8 @@ tileSpedizione =
         "assets/img/rounds/spedizione.jpg"
         priceFree
         noWalls
-        [ firstAction (require ((<=) 5) .wood) (\r -> r |> addWood -5 |> addGold 5) Nothing [ 0, 1, 2 ]
-        , secondAction (require ((<=) 5) .stone) (\r -> r |> addStone -5 |> addGold 5) Nothing [ 0, 1, 2 ]
+        [ firstAction (require .wood (>=) 5) (\r -> r |> addWood -5 |> addGold 5) Nothing [ 0, 1, 2 ]
+        , secondAction (require .stone (>=) 5) (\r -> r |> addStone -5 |> addGold 5) Nothing [ 0, 1, 2 ]
         , rightAction alwaysDoable (\r -> r) (Just Activate3) [ 0, 1, 2 ]
         ]
 
@@ -401,7 +371,7 @@ tilePerforare =
         priceFree
         noWalls
         [ topAction alwaysDoable (\r -> r) (Just Activate1) [ 0 ]
-        , bottomAction (\r -> require ((<) r.opponentsGold) .gold r) (\r -> r) (Just Escavate1) [ 1 ]
+        , bottomAction (\r -> require .gold (>) r.opponentsGold r) (\r -> r) (Just Escavate1) [ 1 ]
         ]
 
 
@@ -413,7 +383,7 @@ tileRinnovare =
         "assets/img/rounds/rinnovare.jpg"
         priceFree
         noWalls
-        [ topAction (require ((<) 0) .availableWalls) (\r -> r) (Just BuildWall) [ 0 ]
+        [ topAction (require .availableWalls (>) 0) (\r -> r) (Just BuildWall) [ 0 ]
         , bottomAction alwaysDoable (\r -> r) (Just Furnish) [ 1 ]
         ]
 
@@ -431,7 +401,7 @@ tileRock =
         0
         ""
         priceFree
-        (Walls None None None None)
+        (Game.Walls Game.None Game.None Game.None Game.None)
         []
 
 
@@ -442,7 +412,7 @@ tileEmpty =
         0
         ""
         priceFree
-        (Walls None None None Placed)
+        (Game.Walls Game.None Game.None Game.None Game.Placed)
         []
 
 
@@ -457,7 +427,7 @@ tileSotterraneo =
         11
         "assets/img/equipments/sotterraneo.jpg"
         (priceFree |> priceGold 4 |> priceStone 3)
-        (Walls Placed Placed Placed Placed)
+        (Game.Walls Game.Placed Game.Placed Game.Placed Game.Placed)
         []
 
 
@@ -468,7 +438,7 @@ tileLavorareIlLino =
         3
         "assets/img/equipments/lavorare_il_lino.jpg"
         (priceFree |> priceStone 1)
-        (Walls Placed Optional Walls.None Placed)
+        (Game.Walls Game.Placed Game.Optional Game.None Game.Placed)
         []
 
 
@@ -479,7 +449,7 @@ tileEquipaggiamenti =
         3
         "assets/img/equipments/equipaggiamenti.jpg"
         (priceFree |> priceWood 2)
-        (Walls Placed Walls.None Walls.None Optional)
+        (Game.Walls Game.Placed Game.None Game.None Game.Optional)
         []
 
 
@@ -490,7 +460,7 @@ tileDepositoDiLegna =
         2
         "assets/img/equipments/deposito_di_legna.jpg"
         (priceFree |> priceStone 1)
-        (Walls Placed Walls.None Walls.None Placed)
+        (Game.Walls Game.Placed Game.None Game.None Game.Placed)
         []
 
 
@@ -501,7 +471,7 @@ tileAnalisiTerritoriale =
         5
         "assets/img/equipments/deposito_di_legna.jpg"
         priceFree
-        (Walls Placed Walls.None Walls.None Optional)
+        (Game.Walls Game.Placed Game.None Game.None Game.Optional)
         []
 
 
@@ -533,8 +503,8 @@ tileWarehouse =
         2
         "assets/img/rooms/magazzino.jpg"
         (priceFree |> priceWood 2)
-        (Walls Placed Optional Walls.None Optional)
-        [ fullAction (require ((<=) 2) .food)
+        (Game.Walls Game.Placed Game.Optional Game.None Game.Optional)
+        [ fullAction (require .food (>=) 2)
             (\res ->
                 res
                     |> addFood -2
@@ -555,11 +525,11 @@ tileShelf =
         3
         "assets/img/rooms/scaffale.jpg"
         (priceFree |> priceWood 1)
-        (Walls Placed Walls.None Walls.None Walls.None)
-        [ firstAction (require ((>) 2) .wood) (topWood 2) Nothing [ 0, 1, 2, 3 ]
-        , secondAction (require ((>) 2) .stone) (topStone 2) Nothing [ 0, 1, 2, 3 ]
-        , thirdAction (require ((>) 2) .emmer) (topEmmer 2) Nothing [ 0, 1, 2, 3 ]
-        , fourthAction (require ((>) 2) .flax) (topFlax 2) Nothing [ 0, 1, 2, 3 ]
+        (Game.Walls Game.Placed Game.None Game.None Game.None)
+        [ firstAction (require .wood (<) 2) (topWood 2) Nothing [ 0, 1, 2, 3 ]
+        , secondAction (require .stone (<) 2) (topStone 2) Nothing [ 0, 1, 2, 3 ]
+        , thirdAction (require .emmer (<) 2) (topEmmer 2) Nothing [ 0, 1, 2, 3 ]
+        , fourthAction (require .flax (<) 2) (topFlax 2) Nothing [ 0, 1, 2, 3 ]
         ]
 
 
@@ -570,8 +540,8 @@ tileFoodCorner =
         3
         "assets/img/rooms/angolo_del_cibo.jpg"
         (priceFree |> priceStone 1)
-        (Walls Placed Walls.None Walls.None Placed)
-        [ fullAction (require ((>) 3) .food) (topFood 3) Nothing [ 0 ] ]
+        (Game.Walls Game.Placed Game.None Game.None Game.Placed)
+        [ fullAction (require .food (<) 3) (topFood 3) Nothing [ 0 ] ]
 
 
 tileSpinningWheel : Tile
@@ -581,9 +551,9 @@ tileSpinningWheel =
         4
         "assets/img/rooms/filatoio.jpg"
         (priceFree |> priceWood 1)
-        (Walls Placed Walls.None Walls.None Walls.None)
-        [ leftAction (require ((<=) 1) .flax) (\res -> res |> addFlax -1 |> addGold 1) Nothing [ 0, 1 ]
-        , rightAction (require ((<=) 3) .flax) (\res -> res |> addFlax -3 |> addGold 2) Nothing [ 0, 1 ]
+        (Game.Walls Game.Placed Game.None Game.None Game.None)
+        [ leftAction (require .flax (>=) 1) (\res -> res |> addFlax -1 |> addGold 1) Nothing [ 0, 1 ]
+        , rightAction (require .flax (>=) 3) (\res -> res |> addFlax -3 |> addGold 2) Nothing [ 0, 1 ]
         ]
 
 
@@ -594,9 +564,9 @@ tileTunnel =
         3
         "assets/img/rooms/tunnel.jpg"
         (priceFree |> priceWood 1)
-        (Walls Walls.None Placed Walls.None Placed)
+        (Game.Walls Game.None Game.Placed Game.None Game.Placed)
         [ topAction alwaysDoable (addFood 2) Nothing [ 0 ]
-        , bottomAction (require ((>) 3) .stone) (\resources -> resources |> addStone 1 |> minStone 3) Nothing [ 1 ]
+        , bottomAction (require .stone (<) 3) (\resources -> resources |> addStone 1 |> minStone 3) Nothing [ 1 ]
         ]
 
 
@@ -607,13 +577,13 @@ tileAltareSacrificale =
         7
         "assets/img/rooms/altare_sacrificale.jpg"
         (priceFree |> priceStone 4)
-        (Walls Placed Optional Walls.None Optional)
+        (Game.Walls Game.Placed Optional Game.None Optional)
         [ fullAction
             (\res ->
-                require ((<=) 1) .wood res
-                    && require ((<=) 1) .emmer res
-                    && require ((<=) 1) .flax res
-                    && require ((<=) 1) .food res
+                require .wood (>=) 1 res
+                    && require .emmer (>=) 1 res
+                    && require .flax (>=) 1 res
+                    && require .food (>=) 1 res
             )
             (\res -> res |> addEmmer -1 |> addWood -1 |> addFlax -1 |> addFood -1 |> addGold 3)
             Nothing
@@ -628,9 +598,9 @@ tileBancarella =
         6
         "assets/img/rooms/bancarella.jpg"
         (priceFree |> priceWood 1 |> priceGold 1)
-        (Walls Placed Optional Walls.None Optional)
-        [ leftAction (require ((<=) 5) .emmer) (\res -> res |> addEmmer -5 |> addGold 4) Nothing [ 0, 1 ]
-        , rightAction (require ((<=) 5) .flax) (\res -> res |> addFlax -5 |> addGold 4) Nothing [ 0, 1 ]
+        (Game.Walls Game.Placed Game.Optional Game.None Game.Optional)
+        [ leftAction (require .emmer (>=) 5) (\res -> res |> addEmmer -5 |> addGold 4) Nothing [ 0, 1 ]
+        , rightAction (require .flax (>=) 5) (\res -> res |> addFlax -5 |> addGold 4) Nothing [ 0, 1 ]
         ]
 
 
@@ -641,7 +611,7 @@ tileCameraSegreta =
         8
         "assets/img/rooms/camera_segreta.jpg"
         (priceFree |> priceWood 2 |> priceStone 1)
-        (Walls Placed Placed Placed Placed)
+        (Game.Walls Game.Placed Game.Placed Game.Placed Game.Placed)
         [ leftAction alwaysDoable (\res -> res |> addFlax 3) Nothing [ 0, 1 ]
         , rightAction alwaysDoable (\res -> res |> addGold 1) Nothing [ 0, 1 ]
         ]
@@ -654,8 +624,8 @@ tileCavaInEspansione =
         8
         "assets/img/rooms/cava_in_espansione.jpg"
         (priceFree |> priceWood 1 |> priceStone 3)
-        (Walls Placed Placed Walls.None Placed)
-        [ fullAction (require ((<=) 1) .gold) (\res -> res) Nothing [ 0 ] ]
+        (Game.Walls Game.Placed Game.Placed Game.None Game.Placed)
+        [ fullAction (require .gold (>=) 1) (\res -> res) Nothing [ 0 ] ]
 
 
 tileDeposito : Tile
@@ -665,7 +635,7 @@ tileDeposito =
         6
         "assets/img/rooms/deposito.jpg"
         (priceFree |> priceWood 2 |> priceGold 1)
-        (Walls Placed Walls.None Walls.None Placed)
+        (Game.Walls Game.Placed Game.None Game.None Game.Placed)
         [ fullAction alwaysDoable (\res -> res |> addEmmer 1 |> addFlax 1 |> addFood 1) Nothing [ 0 ] ]
 
 
@@ -676,8 +646,8 @@ tileFiliera =
         5
         "assets/img/rooms/filiera.jpg"
         (priceFree |> priceWood 2)
-        (Walls Placed Walls.None Walls.None Placed)
-        [ fullAction (require ((<=) 2) .flax) (\res -> res |> addFlax -2 |> addGold 2 |> addFood 2) Nothing [ 0 ] ]
+        (Game.Walls Game.Placed Game.None Game.None Game.Placed)
+        [ fullAction (require .flax (>=) 2) (\res -> res |> addFlax -2 |> addGold 2 |> addFood 2) Nothing [ 0 ] ]
 
 
 tileForno : Tile
@@ -687,9 +657,9 @@ tileForno =
         6
         "assets/img/rooms/forno.jpg"
         (priceFree |> priceWood 1 |> priceStone 2)
-        (Walls Placed Placed Walls.None Placed)
-        [ leftAction (require ((<=) 2) .emmer) (\res -> res |> addEmmer -2 |> addFood 4 |> addGold 1) Nothing [ 0, 1 ]
-        , rightAction (require ((<=) 3) .emmer) (\res -> res |> addEmmer -3 |> addFood 4 |> addGold 2) Nothing [ 0, 1 ]
+        (Game.Walls Game.Placed Game.Placed Game.None Game.Placed)
+        [ leftAction (require .emmer (>=) 2) (\res -> res |> addEmmer -2 |> addFood 4 |> addGold 1) Nothing [ 0, 1 ]
+        , rightAction (require .emmer (>=) 3) (\res -> res |> addEmmer -3 |> addFood 4 |> addGold 2) Nothing [ 0, 1 ]
         ]
 
 
@@ -700,9 +670,9 @@ tileMacina =
         4
         "assets/img/rooms/macina.jpg"
         (priceFree |> priceStone 1)
-        (Walls Placed Walls.None Walls.None Optional)
-        [ leftAction (require ((<=) 2) .emmer) (\res -> res |> addEmmer -1 |> addFood 3) Nothing [ 0, 1 ]
-        , rightAction (require ((<=) 3) .emmer) (\res -> res |> addEmmer -4 |> addFood 7) Nothing [ 0, 1 ]
+        (Game.Walls Game.Placed Game.None Game.None Game.Optional)
+        [ leftAction (require .emmer (>=) 2) (\res -> res |> addEmmer -1 |> addFood 3) Nothing [ 0, 1 ]
+        , rightAction (require .emmer (>=) 3) (\res -> res |> addEmmer -4 |> addFood 7) Nothing [ 0, 1 ]
         ]
 
 
@@ -713,7 +683,7 @@ tileGoldMine =
         9
         "assets/img/rooms/miniera_d_oro.jpg"
         (priceFree |> priceGold 5)
-        (Walls Placed Optional Walls.None Placed)
+        (Game.Walls Game.Placed Game.Optional Game.None Game.Placed)
         [ fullAction alwaysDoable (\res -> res |> addGold 1 |> addStone 1) Nothing [ 0 ] ]
 
 
@@ -724,11 +694,11 @@ tileOfficina =
         5
         "assets/img/rooms/officina.jpg"
         (priceFree |> priceWood 1 |> priceStone 2)
-        (Walls Placed Optional Walls.None Placed)
+        (Game.Walls Game.Placed Game.Optional Game.None Game.Placed)
         [ fullAction
             (\res ->
-                require ((<=) 1) .flax res
-                    && require ((<=) 2) .food res
+                require .flax (>=) 1 res
+                    && require .food (>=) 2 res
             )
             (\res -> res |> addWood -2 |> addFlax -1 |> addGold 3)
             Nothing
@@ -743,7 +713,7 @@ tileSalotto =
         6
         "assets/img/rooms/salotto.jpg"
         (priceFree |> priceStone 1 |> priceGold 1)
-        (Walls Placed Placed Walls.None Placed)
+        (Game.Walls Game.Placed Game.Placed Game.None Game.Placed)
         [ fullAction alwaysDoable (\res -> res |> topWood 1 |> topWood 1 |> topEmmer 1 |> topFlax 1 |> topFood 1 |> topGold 1) Nothing [ 0 ] ]
 
 
@@ -754,7 +724,7 @@ tileLuxuryRoom =
         12
         "assets/img/rooms/stanza_di_lusso.jpg"
         (priceFree |> priceGold 7)
-        (Walls Placed Placed Optional Placed)
+        (Game.Walls Game.Placed Game.Placed Game.Optional Game.Placed)
         [ fullAction alwaysDoable (\res -> res |> addGold 1 |> addFlax 1) Nothing [ 0 ] ]
 
 
@@ -765,7 +735,7 @@ tileStanzaDiSnodo =
         6
         "assets/img/rooms/stanza_di_snodo.jpg"
         (priceFree |> priceWood 2)
-        (Walls Placed Placed Optional Placed)
+        (Game.Walls Game.Placed Game.Placed Game.Optional Game.Placed)
         [ fullAction Resources.atLeastThreeResources (\res -> res |> addGold 2) (Just ChooseResource3) [ 0 ] ]
 
 
@@ -776,13 +746,13 @@ tileTesoreria =
         10
         "assets/img/rooms/tesoreria.jpg"
         (priceFree |> priceGold 3)
-        (Walls Placed Placed Placed Placed)
-        [ fullAction (require ((<=) 3) .gold) (\res -> res |> addGold -3 |> addGold 4 |> addFood 1) Nothing [ 0 ] ]
+        (Game.Walls Game.Placed Game.Placed Game.Placed Game.Placed)
+        [ fullAction (require .gold (>=) 3) (\res -> res |> addGold -3 |> addGold 4 |> addFood 1) Nothing [ 0 ] ]
 
 
-require : (Int -> Bool) -> (Resources -> Int) -> Resources -> Bool
-require condition getter resources =
-    condition (getter resources)
+require : (Resources -> Int) -> (Int -> Int -> Bool) -> Int -> Resources -> Bool
+require getter condition qty resources =
+    condition (getter resources) qty
 
 
 topWood : Int -> Resources -> Resources

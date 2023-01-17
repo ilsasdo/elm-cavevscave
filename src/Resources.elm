@@ -1,20 +1,6 @@
 module Resources exposing (..)
 
-import Walls exposing (Wall(..), Walls)
-
-
-type alias Resources =
-    { food : Int
-    , wood : Int
-    , stone : Int
-    , emmer : Int
-    , flax : Int
-    , gold : Int
-    , actions : Int -- actions available in current round are not a proper resource
-                    -- but are used to pay some actions
-    , opponentsGold: Int
-    , availableWalls : Int
-    }
+import Game exposing (Resources, Wall(..), Walls)
 
 
 noWalls : Walls

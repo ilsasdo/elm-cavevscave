@@ -1,136 +1,25 @@
-module Main exposing (Node, emptyGame, main, playTile)
+module Main exposing (main)
 
-import Array
 import Browser
-import Debug exposing (toString)
+import Game exposing (..)
 import Html exposing (Html, div, text)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
-import PlayerBoard exposing (PlayerBoard, isRoomSelectable, restorePlayerNextRound, restorePlayerPass, viewBoard)
-import Random
-import Random.List
-import Resources exposing (Resources, updateOpponentsGold)
-import Tiles exposing (Action, Msg(..), Subphase(..), Tile, TileStatus(..), subphaseToString, tileAltareSacrificale, tileAnalisiTerritoriale, tileArredare, tileBancarella, tileCameraSegreta, tileCavaInEspansione, tileColtivare, tileCostruireUnMuro, tileDemolireUnMuro, tileDeposito, tileDepositoDiLegna, tileEquipaggiamenti, tileEspansione, tileFiliera, tileFoodCorner, tileForno, tileFreeAction, tileGoldMine, tileLavorareIlLino, tileLavoriDomestici, tileLuxuryRoom, tileMacina, tileMinare, tileOfficina, tilePerforare, tileRinnovare, tileSalotto, tileScavare, tileShelf, tileSotterraneo, tileSottobosco, tileSpedizione, tileSpinningWheel, tileStanzaDiSnodo, tileTesoreria, tileTunnel, tileWarehouse, viewTile)
-import Walls
-
-
-type alias Game =
-    { player1 : PlayerBoard
-    , player2 : PlayerBoard
-    , round : Int -- starts with 1 ends with 8
-    , actions : Int -- 2 actions for rounds 1,2,3. 3 actions for rounds 4,5,6,7. 4 actions for round 8
-    , currentPlayer : Int -- 1 or 2
-    , phase : RoundPhase
-    , actionTiles : List Tile
-    , availableRooms : List Tile
-    , availableWalls : Int
-    }
-
-
-emptyGame =
-    Game emptyBoard emptyBoard 0 0 0 NewActionPhase [] [] 0
-
-
-emptyBoard =
-    PlayerBoard (Resources 0 0 0 0 0 0 0 7 0) tileFreeAction [] (Array.fromList []) [] Nothing
-
-
-type Msg
-    = InitPlayerBoard (List Tile)
-    | InitRoundTiles (List Tile)
-    | PlayerMsg Tiles.Msg
-    | PickRoundTile Tile
-    | Pass
-    | PlayAI
-
-
-type RoundPhase
-    = NewActionPhase
-    | ActionPhase
-
-
-phaseToString phase =
-    case phase of
-        NewActionPhase ->
-            "New Action Phase"
-
-        ActionPhase ->
-            "Action Phase"
+import PlayerBoard exposing (isRoomSelectable, restorePlayerNextRound, restorePlayerPass, updateTile, viewBoard)
+import Resources exposing (updateOpponentsGold)
+import Tiles exposing (viewTile)
 
 
 main =
     Browser.element { init = init, view = view, update = update, subscriptions = \_ -> Sub.none }
 
 
-init : () -> ( Game, Cmd Msg )
+init : () -> ( Game, Cmd GameMsg )
 init _ =
-    ( Game newBoard newBoard 1 2 1 NewActionPhase [] newAvailableRooms 7
-    , setupRandomTiles
-        [ tileWarehouse
-        , tileAltareSacrificale
-        , tileBancarella
-        , tileCameraSegreta
-        , tileCavaInEspansione
-        , tileDeposito
-        , tileFiliera
-        , tileForno
-        , tileGoldMine
-        , tileOfficina
-        , tileLuxuryRoom
-        , tileStanzaDiSnodo
-        , tileTesoreria
-        , tileAnalisiTerritoriale
-        , tileSotterraneo
-        , tileEquipaggiamenti
-        , tileLavorareIlLino
-        , tileDepositoDiLegna
-        ]
-        [ tileLavoriDomestici
-        , tileColtivare
-        , tileSottobosco
-        , tileScavare
-        ]
-        [ tileArredare
-        , tileCostruireUnMuro
-        , tileMinare
-        ]
-        [ tileDemolireUnMuro
-        , tileEspansione
-        , tileSpedizione
-        , tilePerforare
-        ]
-        [ tileRinnovare ]
-    )
+    ( Game PlayerBoard.newBoard PlayerBoard.newBoard 1 2 1 NewActionPhase [] Tiles.initCommonRooms 7, Tiles.initRandomTiles )
 
 
-setupRandomTiles : List Tile -> List Tile -> List Tile -> List Tile -> List Tile -> Cmd Msg
-setupRandomTiles rooms round1Tiles round2Tiles round3Tiles round4Tiles =
-    Cmd.batch
-        [ Random.generate InitPlayerBoard (Random.List.shuffle rooms)
-        , Random.generate InitRoundTiles (Random.List.shuffle round4Tiles)
-        , Random.generate InitRoundTiles (Random.List.shuffle round3Tiles)
-        , Random.generate InitRoundTiles (Random.List.shuffle round2Tiles)
-        , Random.generate InitRoundTiles (Random.List.shuffle round1Tiles)
-        ]
-
-
-newBoard : PlayerBoard
-newBoard =
-    PlayerBoard (Resources 1 1 1 1 1 1 1 7 0) tileFreeAction [] (Array.repeat 14 Walls.None) [] Nothing
-
-
-newAvailableRooms : List Tile
-newAvailableRooms =
-    [ tileShelf
-    , tileSpinningWheel
-    , tileMacina
-    , tileSalotto
-    , tileTunnel
-    , tileFoodCorner
-    ]
-
-
-update : Msg -> Game -> ( Game, Cmd Msg )
+update : GameMsg -> Game -> ( Game, Cmd GameMsg )
 update msg ({ player1, player2 } as game) =
     let
         activePlayer =
@@ -170,48 +59,88 @@ update msg ({ player1, player2 } as game) =
             , Cmd.none
             )
 
-        PlayerMsg tileMsg ->
-            let
-                ( player, playerMsg ) =
-                    PlayerBoard.update tileMsg activePlayer
-            in
-            case playerMsg of
-                PlayerBoard.AddToAvailableRooms tile ->
-                    ( game |> updateCurrentPlayer player |> addToAvailableRooms tile, Cmd.none )
+        AddToAvailableRooms tile ->
+            ( game |> updateCurrentPlayer activePlayer |> addToAvailableRooms tile, Cmd.none )
 
-                PlayerBoard.RemoveFromAvailableRooms tile ->
-                    ( game |> updateCurrentPlayer player |> removeFromAvailableRooms tile, Cmd.none )
+        RemoveFromAvailableRooms tile ->
+            ( game |> updateCurrentPlayer activePlayer |> removeFromAvailableRooms tile, Cmd.none )
 
-                PlayerBoard.WallBuilt ->
-                    ( game |> updateCurrentPlayer player |> updateAvailableWalls -1, Cmd.none )
+        WallBuilt ->
+            ( game |> updateCurrentPlayer activePlayer |> updateAvailableWalls -1, Cmd.none )
 
-                PlayerBoard.WallDestroyed ->
-                    ( game |> updateCurrentPlayer player |> updateAvailableWalls 1, Cmd.none )
-
-                PlayerBoard.None ->
-                    ( game |> updateCurrentPlayer player, Cmd.none )
+        WallDestroyed ->
+            ( game |> updateCurrentPlayer activePlayer |> updateAvailableWalls 1, Cmd.none )
 
         Pass ->
             ( pass game, Cmd.none )
 
-        PlayAI ->
-            let
-                rootNode =
-                    Node game 0 []
-
-                node =
-                    alphaBeta rootNode 1 9999999 -9999999 True
-            in
-            playAIMoves node.move game
-
         PickRoundTile tile ->
             ( { game
                 | phase = ActionPhase
-                , actionTiles = Tiles.updateStatus tile Tiles.Empty game.actionTiles
+                , actionTiles = Tiles.updateStatus tile Empty game.actionTiles
               }
-                |> updateCurrentPlayer { activePlayer | actionTiles = { tile | status = Tiles.Active } :: activePlayer.actionTiles }
+                |> updateCurrentPlayer { activePlayer | actionTiles = { tile | status = Active } :: activePlayer.actionTiles }
             , Cmd.none
             )
+
+        DoAction tile action ->
+            let
+                consumedTile =
+                    Tiles.consumeAction tile action
+            in
+            ( updateCurrentPlayer
+                { activePlayer
+                    | resources = action.do activePlayer.resources
+                    , subphase = action.subphase
+                    , rooms = updateTile consumedTile activePlayer.rooms
+                    , actionTiles = updateTile consumedTile activePlayer.actionTiles
+                }
+                game
+            , Cmd.none
+            )
+
+        SelectWall index ->
+            case activePlayer.subphase of
+                Just BuildWall ->
+                    update WallBuilt (updateCurrentPlayer (PlayerBoard.buildWall activePlayer index) game)
+
+                Just DestroyWall ->
+                    update WallDestroyed (updateCurrentPlayer (PlayerBoard.destroyWall activePlayer index) game)
+
+                _ ->
+                    ( game, Cmd.none )
+
+        SelectRoomTile tile ->
+            case activePlayer.subphase of
+                Just Furnish ->
+                    ( updateCurrentPlayer { activePlayer | subphase = Just (PlaceRoom tile) } game, Cmd.none )
+
+                Just (PlaceRoom tileToPlace) ->
+                    update (RemoveFromAvailableRooms tileToPlace) (updateCurrentPlayer (PlayerBoard.placeRoom activePlayer tile tileToPlace) game)
+
+                Just EscavateThroughWall ->
+                    update (AddToAvailableRooms tile) (updateCurrentPlayer (PlayerBoard.escavateRoom activePlayer tile Nothing) game)
+
+                Just Escavate1 ->
+                    update (AddToAvailableRooms tile) (updateCurrentPlayer (PlayerBoard.escavateRoom activePlayer tile Nothing) game)
+
+                Just Escavate2 ->
+                    update (AddToAvailableRooms tile) (updateCurrentPlayer (PlayerBoard.escavateRoom activePlayer tile (Just Escavate1)) game)
+
+                Just Activate1 ->
+                    ( updateCurrentPlayer (PlayerBoard.activateRoom activePlayer tile Nothing) game, Cmd.none )
+
+                Just Activate2 ->
+                    ( updateCurrentPlayer (PlayerBoard.activateRoom activePlayer tile (Just Activate1)) game, Cmd.none )
+
+                Just Activate3 ->
+                    ( updateCurrentPlayer (PlayerBoard.activateRoom activePlayer tile (Just Activate2)) game, Cmd.none )
+
+                _ ->
+                    ( game, Cmd.none )
+
+        ResourceChosen maybeSubphase function ->
+            ( game, Cmd.none )
 
 
 pass : Game -> Game
@@ -231,11 +160,16 @@ activatePlayer game =
     let
         player =
             currentPlayer game
+
         opponent =
             opponentPlayer game
     in
-    updateCurrentPlayer { player | freeAction = player.freeAction |> PlayerBoard.restoreTile |> Tiles.setStatus Active
-                                 , resources = updateOpponentsGold opponent.resources.gold player.resources } game
+    updateCurrentPlayer
+        { player
+            | freeAction = player.freeAction |> PlayerBoard.restoreTile |> Tiles.setStatus Active
+            , resources = updateOpponentsGold opponent.resources.gold player.resources
+        }
+        game
 
 
 updateAvailableWalls : Int -> Game -> Game
@@ -315,17 +249,19 @@ nextPlayer game =
     }
 
 
-view : Game -> Html Msg
+view : Game -> Html GameMsg
 view game =
     div [ class "container" ]
-        [ viewStatusBar game, viewActionTiles game, viewMain game ]
+        [ viewStatusBar game
+        , viewActionTiles game
+        , viewMain game
+        ]
 
 
-viewStatusBar : Game -> Html Msg
+viewStatusBar : Game -> Html GameMsg
 viewStatusBar game =
     div [ class "statusbar" ]
         [ Html.button [ onClick Pass ] [ text "Pass" ]
-        , Html.button [ onClick PlayAI ] [ text "Play AI" ]
         , div []
             [ text
                 ("Round: "
@@ -337,7 +273,7 @@ viewStatusBar game =
                     ++ "/"
                     ++ String.fromInt game.actions
                     ++ " || Phase: "
-                    ++ phaseToString game.phase
+                    ++ roundPhaseToString game.phase
                     ++ " || Subphase: "
                     ++ (game |> currentPlayer |> .subphase |> subphaseToString)
                     ++ " || Available Walls: "
@@ -374,422 +310,39 @@ updateCurrentPlayer player game =
         { game | player2 = player }
 
 
-viewActionTiles : Game -> Html Msg
+viewActionTiles : Game -> Html GameMsg
 viewActionTiles game =
     div [ class "actiontiles" ]
         (List.map (viewActionTile game) game.actionTiles)
 
 
-viewActionTile : Game -> Tile -> Html Msg
+viewActionTile : Game -> Tile -> Html GameMsg
 viewActionTile game tile =
     if game.phase == NewActionPhase && tile.status == Available then
-        Html.map mapToPickRoundTile (viewTile [ class "actiontile pick", onClick (SelectRoomTile tile) ] (currentPlayer game).resources tile)
+        viewTile [ class "actiontile pick", onClick (PickRoundTile tile) ] (currentPlayer game).resources tile
 
     else
-        Html.map PlayerMsg (viewTile [ class "actiontile" ] game.player1.resources tile)
+        viewTile [ class "actiontile" ] game.player1.resources tile
 
 
-mapToPickRoundTile msg =
-    case msg of
-        Tiles.SelectRoomTile tile ->
-            PickRoundTile tile
-
-        _ ->
-            PlayerMsg msg
-
-
-viewMain : Game -> Html Msg
+viewMain : Game -> Html GameMsg
 viewMain game =
-    Html.map PlayerMsg
-        (div [ class "mainboard" ]
-            [ viewBoard game.player1
-            , viewAvailableRooms (currentPlayer game) game.availableRooms
-            , viewBoard game.player2
-            ]
-        )
+    div [ class "mainboard" ]
+        [ viewBoard game.player1
+        , viewAvailableRooms (currentPlayer game) game.availableRooms
+        , viewBoard game.player2
+        ]
 
 
-viewAvailableRooms : PlayerBoard -> List Tile -> Html Tiles.Msg
+viewAvailableRooms : PlayerBoard -> List Tile -> Html GameMsg
 viewAvailableRooms player rooms =
     div [ class "availablerooms" ] (List.map (viewAvailableRoom player) rooms)
 
 
-viewAvailableRoom : PlayerBoard -> Tile -> Html Tiles.Msg
+viewAvailableRoom : PlayerBoard -> Tile -> Html GameMsg
 viewAvailableRoom player room =
     if player.subphase == Just Furnish && isRoomSelectable player room then
         viewTile [ class "availableroom pick", onClick (SelectRoomTile room) ] player.resources room
 
     else
         viewTile [ class "availableroom" ] player.resources room
-
-
-type alias PlayerMove =
-    List Msg
-
-
-type alias Node =
-    { game : Game
-    , value : Int
-    , move : PlayerMove
-    }
-
-
-nodeToString : Node -> String
-nodeToString node =
-    "Node (" ++ toString node.value ++ "), moves: " ++ playerMoveToString node.move
-
-
-nodeValues : List Node -> String
-nodeValues nodes =
-    nodes
-        |> List.map .value
-        |> List.map toString
-        |> String.join ", "
-
-
-playerMoveToString : List Msg -> String
-playerMoveToString playerMove =
-    playerMove
-        |> List.map msgToString
-        |> String.join ", "
-
-
-msgToString : Msg -> String
-msgToString msg =
-    case msg of
-        PickRoundTile t ->
-            "PickRoundTile(" ++ t.title ++ ")"
-
-        PlayerMsg playerMsg ->
-            case playerMsg of
-                SelectRoomTile t1 ->
-                    "SelectRoomTile(" ++ t1.title ++ ")"
-
-                DoAction t1 action ->
-                    "DoAction(" ++ t1.title ++ ", " ++ toString action.subphase ++ ")"
-
-                SelectWall w ->
-                    "SelectWall(" ++ toString w ++ ")"
-
-        _ ->
-            toString msg
-
-
-alphaBeta : Node -> Int -> Int -> Int -> Bool -> Node
-alphaBeta node depth a b maximizingPlayer =
-    if depth == 0 || isTerminalNode node then
-        node
-
-    else
-        let
-            nodes =
-                calculatePlayerMoves node.game
-
-            print1 =
-                Debug.log "AlphaBeta" ("max=" ++ toString maximizingPlayer ++ ", depth=" ++ toString depth ++ ", a=" ++ toString a ++ ", b=" ++ toString b ++ ", nodeCount=" ++ (List.length nodes |> toString) ++ ", nodeValues: " ++ nodeValues nodes)
-        in
-        if maximizingPlayer then
-            eachNodeMax nodes (depth - 1) a b False
-
-        else
-            eachNodeMin nodes (depth - 1) a b True
-
-
-emptyNode =
-    Node emptyGame 0 []
-
-
-eachNodeMax : List Node -> Int -> Int -> Int -> Bool -> Node
-eachNodeMax nodes depth a b maximizingPlayer =
-    let
-        node =
-            List.head nodes |> Maybe.withDefault emptyNode
-    in
-    if List.length nodes == 1 then
-        node
-
-    else
-        let
-            abNode =
-                alphaBeta node depth a b maximizingPlayer
-
-            newValue =
-                max node.value abNode.value
-        in
-        if newValue >= b then
-            abNode
-
-        else
-            eachNodeMax (List.drop 1 nodes) depth (max a newValue) b maximizingPlayer
-
-
-eachNodeMin : List Node -> Int -> Int -> Int -> Bool -> Node
-eachNodeMin nodes depth a b maximizingPlayer =
-    let
-        node =
-            List.head nodes |> Maybe.withDefault emptyNode
-    in
-    if List.length nodes == 1 then
-        node
-
-    else
-        let
-            abNode =
-                alphaBeta node depth a b maximizingPlayer
-
-            newValue =
-                max node.value abNode.value
-        in
-        if newValue <= a then
-            abNode
-
-        else
-            eachNodeMin (List.drop 1 nodes) depth a (min b newValue) maximizingPlayer
-
-
-playAIMoves : List Msg -> Game -> ( Game, Cmd Msg )
-playAIMoves moves game =
-    let
-        msg =
-            List.head moves
-    in
-    case msg of
-        Just m ->
-            playAIMoves (List.drop 1 moves) (update m game |> Tuple.first)
-
-        Nothing ->
-            ( game, Cmd.none )
-
-
-isTerminalNode : Node -> Bool
-isTerminalNode node =
-    if node.game.round > 8 then
-        True
-
-    else
-        False
-
-
-calculatePlayerMoves : Game -> List Node
-calculatePlayerMoves game =
-    game.actionTiles
-        |> List.filter (\t -> t.status == Available)
-        |> List.sortBy (\t -> -t.score)
-        |> List.map (\roundTile -> playTile (playMove (Node game 0 []) (PickRoundTile roundTile)) roundTile roundTile.actions)
-        |> List.foldl (++) []
-        |> List.sortBy (\n -> -n.value)
-        |> List.map passGame
-
-
-passGame : Node -> Node
-passGame node =
-    playMove node Pass
-
-
-playMove : Node -> Msg -> Node
-playMove node msg =
-    let
-        updatedGame =
-            update msg node.game |> Tuple.first
-    in
-    Node updatedGame node.value (node.move ++ [ msg ])
-
-
-playMoves : Node -> PlayerMove -> Node
-playMoves node moves =
-    let
-        move =
-            List.head moves
-    in
-    case move of
-        Just msg ->
-            playMoves (playMove node msg) (List.drop 1 moves)
-
-        Nothing ->
-            node
-
-
-playTile : Node -> Tile -> List Action -> List Node
-playTile node tile actions =
-    let
-        action =
-            List.head actions
-
-        player =
-            currentPlayer node.game
-    in
-    case action of
-        Just a ->
-            if a.isDoable player.resources then
-                let
-                    newNode =
-                        playMove node (PlayerMsg (DoAction tile a))
-
-                    playedActions =
-                        playRoundTileAction newNode
-                in
-                if List.length playedActions == 0 then
-                    playTile newNode tile (List.drop 1 actions)
-
-                else
-                    playedActions
-                        |> List.map (\n -> playTile n tile (List.drop 1 actions))
-                        |> List.foldl (++) []
-
-            else
-                playTile node tile (List.drop 1 actions)
-
-        Nothing ->
-            [ node ]
-
-
-playRoundTileAction : Node -> List Node
-playRoundTileAction node =
-    let
-        player =
-            currentPlayer node.game
-    in
-    case player.subphase of
-        Nothing ->
-            [ Node node.game (calculateGameValue node.game) node.move ]
-
-        Just Escavate1 ->
-            player.rooms
-                |> List.filter (\t -> t.status == Rock)
-                |> List.filter (PlayerBoard.isReachableRoom player)
-                |> List.map (\t -> playMove node (PlayerMsg (SelectRoomTile t)))
-                |> List.map playRoundTileAction
-                |> List.foldl (++) []
-
-        Just Escavate2 ->
-            player.rooms
-                |> List.filter (\t -> t.status == Rock)
-                |> List.filter (PlayerBoard.isReachableRoom player)
-                |> List.map (\t -> playMove node (PlayerMsg (SelectRoomTile t)))
-                |> List.map playRoundTileAction
-                |> List.foldl (++) []
-
-        -- TODO: handle through wall special case here
-        Just EscavateThroughWall ->
-            player.rooms
-                |> List.filter (\t -> t.status == Rock)
-                |> List.filter (PlayerBoard.isReachableRoom player)
-                |> List.map (\t -> playMove node (PlayerMsg (SelectRoomTile t)))
-                |> List.map playRoundTileAction
-                |> List.foldl (++) []
-
-        Just Furnish ->
-            node.game.availableRooms
-                |> List.filter (PlayerBoard.isRoomSelectable player)
-                |> List.map (\t -> playMove node (PlayerMsg (SelectRoomTile t)))
-                |> List.map playRoundTileAction
-                |> List.foldl (++) []
-
-        Just (PlaceRoom tileToPlace) ->
-            player.rooms
-                |> List.filter (\t -> t.status == Empty && Walls.matches t.walls tileToPlace.walls)
-                |> List.map (\t -> playMove node (PlayerMsg (SelectRoomTile t)))
-                |> List.map playRoundTileAction
-                |> List.foldl (++) []
-
-        Just BuildWall ->
-            player.walls
-                |> Array.toIndexedList
-                |> List.filter (\( i, w ) -> w == Walls.None)
-                |> List.map (\( i, w ) -> playMove node (PlayerMsg (Tiles.SelectWall i)))
-                |> List.map playRoundTileAction
-                |> List.foldl (++) []
-
-        Just DestroyWall ->
-            player.walls
-                |> Array.toIndexedList
-                |> List.filter (\( i, w ) -> w == Walls.Placed)
-                |> List.map (\( i, w ) -> playMove node (PlayerMsg (Tiles.SelectWall i)))
-                |> List.map playRoundTileAction
-                |> List.foldl (++) []
-
-        Just Activate1 ->
-            player.rooms
-                |> List.filter (\t -> t.status == Available)
-                |> List.map (activateTile node)
-                |> List.foldl (++) []
-                |> List.map playRoundTileAction
-                |> List.foldl (++) []
-
-        Just Activate2 ->
-            player.rooms
-                |> List.filter (\t -> t.status == Available)
-                |> List.map (activateTile node)
-                |> List.foldl (++) []
-                |> List.map playRoundTileAction
-                |> List.foldl (++) []
-
-        Just Activate3 ->
-            player.rooms
-                |> List.filter (\t -> t.status == Available)
-                |> List.map (activateTile node)
-                |> List.foldl (++) []
-                |> List.map playRoundTileAction
-                |> List.foldl (++) []
-
-
-activateTile : Node -> Tile -> List Node
-activateTile node tile =
-    let
-        n =
-            playMove node (PlayerMsg (Tiles.SelectRoomTile tile))
-    in
-    tile.actions
-        |> permutations
-        |> List.map (applyActions n tile)
-
-
-applyActions : Node -> Tile -> List Action -> Node
-applyActions node tile actions =
-    playMoves node (List.map (\a -> PlayerMsg (DoAction tile a)) actions)
-
-
-permutations : List Action -> List (List Action)
-permutations actions =
-    actions
-        |> List.map (\a -> [ a ] ++ nonDisabledActions actions a.disableActions)
-
-
-nonDisabledActions : List Action -> List Int -> List Action
-nonDisabledActions actions disabledActions =
-    actions
-        |> List.indexedMap Tuple.pair
-        |> List.filter (\( i, a ) -> not (List.member i disabledActions))
-        |> List.map Tuple.second
-
-
-calculateGameValue : Game -> Int
-calculateGameValue game =
-    let
-        player =
-            currentPlayer game
-    in
-    (player.resources.gold * 10)
-        + (player.resources.emmer * 2)
-        + (player.resources.flax * 2)
-        + (player.resources.food * 3)
-        + (player.resources.stone * 2)
-        + (player.resources.wood * 2)
-        + (player.rooms
-            |> List.filter (\r -> r.status == Available || r.status == Active)
-            |> List.map .score
-            |> List.foldl (+) 0
-            |> (*) 100
-          )
-        + (player.rooms
-            |> List.filter (\r -> r.status == Empty)
-            |> List.map .score
-            |> List.foldl (+) 0
-            |> (*) 5
-          )
-        + (game.availableRooms
-            |> List.filter (isRoomSelectable player)
-            |> List.map .score
-            |> List.foldl (+) 0
-            |> (*) 6
-          )

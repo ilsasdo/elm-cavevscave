@@ -2,20 +2,7 @@ module Walls exposing (..)
 
 
 import Array exposing (Array)
-
-
-type Wall
-    = Placed
-    | Optional
-    | None
-
-
-type alias Walls =
-    { north : Wall
-    , east : Wall
-    , south : Wall
-    , west : Wall
-    }
+import Game as Wall exposing (Wall(..), Walls)
 
 
 get: Int -> Array Wall -> Wall
@@ -62,11 +49,11 @@ matchSides caveWall roomWall =
 matchSide: Walls -> (Walls -> Wall) -> Walls -> Bool
 matchSide r1 side r2 =
     case (side r2) of
-        Placed ->
-            (side r1) == Placed || (side r1) == Optional
+        Wall.Placed ->
+            (side r1) == Placed || (side r1) == Wall.Optional
 
-        Optional ->
+        Wall.Optional ->
             True
 
-        None ->
-            (side r1) == None || (side r1) == Optional
+        Wall.None ->
+            (side r1) == Wall.None || (side r1) == Wall.Optional
