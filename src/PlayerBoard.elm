@@ -14,9 +14,11 @@ newBoard : PlayerBoard
 newBoard =
     PlayerBoard (Resources 1 1 1 1 1 1 1 7 0) tileFreeAction [] (Array.repeat 14 Game.None) [] Nothing
 
+
 emptyBoard : PlayerBoard
 emptyBoard =
     PlayerBoard (Resources 0 0 0 0 0 0 0 7 0) tileFreeAction [] (Array.fromList []) [] Nothing
+
 
 init : List Tile -> List Tile
 init rooms =
@@ -26,7 +28,7 @@ init rooms =
 restorePlayerPass : PlayerBoard -> PlayerBoard
 restorePlayerPass board =
     { board
-        | actionTiles = List.map (\t -> { t | status = Available}) board.actionTiles
+        | actionTiles = List.map (\t -> { t | status = Available }) board.actionTiles
         , freeAction = Tiles.setStatus Available board.freeAction
         , rooms = List.map restoreTile board.rooms
     }
@@ -66,7 +68,7 @@ updateTile tile tiles =
         tiles
 
 
-buildWall : PlayerBoard -> Int  -> PlayerBoard
+buildWall : PlayerBoard -> Int -> PlayerBoard
 buildWall player wallIndex =
     let
         walls =
@@ -117,14 +119,18 @@ isRoomSelectable player tile =
         && moreOrangeRooms player tile
 
 
-moreOrangeRooms: PlayerBoard -> Tile -> Bool
+moreOrangeRooms : PlayerBoard -> Tile -> Bool
 moreOrangeRooms player tile =
     let
-        orangeCount = player.rooms |> List.filter (\t -> t.tileType == Orange) |> List.length
-        blueCount = player.rooms |> List.filter (\t -> t.tileType == Blue) |> List.length
+        orangeCount =
+            player.rooms |> List.filter (\t -> t.tileType == Orange) |> List.length
+
+        blueCount =
+            player.rooms |> List.filter (\t -> t.tileType == Blue) |> List.length
     in
     if tile.tileType == Blue then
         orangeCount > (blueCount + 1)
+
     else
         True
 
@@ -295,9 +301,9 @@ viewWall subphase index wall =
                 div [ class ("wall available wall-" ++ toString index) ] []
 
 
-viewFreeAction: PlayerBoard -> Html GameMsg
+viewFreeAction : PlayerBoard -> Html GameMsg
 viewFreeAction board =
-    viewTile [ class "freeaction"] board.resources board.freeAction
+    viewTile [ class "freeaction" ] board.resources board.freeAction
 
 
 viewActionTiles : Resources -> List Tile -> Html GameMsg
@@ -328,7 +334,7 @@ viewRoom board index tile =
                 viewNonSelectableTile board.resources index tile
 
         Just (PlaceRoom t) ->
-            if (Debug.log "(tile.status == Empty)" ((tile.status == Empty))) && Walls.matches (Debug.log "(t.walls)" ((t.walls))) (Debug.log "(tile.walls)" ((tile.walls))) then
+            if Debug.log "(tile.status == Empty)" (tile.status == Empty) && Walls.matches (Debug.log "(t.walls)" t.walls) (Debug.log "(tile.walls)" tile.walls) then
                 viewSelectableTile board.resources index tile
 
             else
@@ -371,22 +377,25 @@ viewNonSelectableTile resources index tile =
 
 viewResources resources subphase =
     div [ class "resources" ]
-        [ viewResource "food" resources.food subphase (\r -> {r | food = r.food - 1})
-        , viewResource "wood" resources.wood subphase (\r -> {r | wood = r.wood - 1})
-        , viewResource "stone" resources.stone subphase (\r -> {r | stone = r.stone - 1})
-        , viewResource "emmer" resources.emmer subphase (\r -> {r | emmer = r.emmer - 1})
-        , viewResource "flax" resources.flax subphase (\r -> {r | flax = r.flax - 1})
-        , viewResource "gold" resources.gold subphase (\r -> {r | gold = r.gold - 1})
+        [ viewResource "food" resources.food subphase (\r -> { r | food = r.food - 1 })
+        , viewResource "wood" resources.wood subphase (\r -> { r | wood = r.wood - 1 })
+        , viewResource "stone" resources.stone subphase (\r -> { r | stone = r.stone - 1 })
+        , viewResource "emmer" resources.emmer subphase (\r -> { r | emmer = r.emmer - 1 })
+        , viewResource "flax" resources.flax subphase (\r -> { r | flax = r.flax - 1 })
+        , viewResource "gold" resources.gold subphase (\r -> { r | gold = r.gold - 1 })
         ]
 
 
 viewResource resource qty subphase resfun =
     case subphase of
         Just ChooseResource3 ->
-            div [ class (resource ++ " " ++ "qty" ++ toString qty), onClick (ResourceChosen (Just ChooseResource2) resfun)] []
+            div [ class (resource ++ " " ++ "qty" ++ toString qty), onClick (ResourceChosen (Just ChooseResource2) resfun) ] []
+
         Just ChooseResource2 ->
             div [ class (resource ++ " " ++ "qty" ++ toString qty), onClick (ResourceChosen (Just ChooseResource1) resfun) ] []
+
         Just ChooseResource1 ->
             div [ class (resource ++ " " ++ "qty" ++ toString qty), onClick (ResourceChosen Nothing resfun) ] []
+
         _ ->
             div [ class (resource ++ " " ++ "qty" ++ toString qty) ] []

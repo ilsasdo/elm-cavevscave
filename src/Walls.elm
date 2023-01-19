@@ -4,6 +4,9 @@ module Walls exposing (..)
 import Array exposing (Array)
 import Game as Wall exposing (Wall(..), Walls)
 
+noWalls : Walls
+noWalls =
+    Walls Optional Optional Optional Optional
 
 get: Int -> Array Wall -> Wall
 get index walls =

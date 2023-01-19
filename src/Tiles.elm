@@ -7,8 +7,9 @@ import Html.Attributes exposing (class, style)
 import Html.Events exposing (onClick)
 import Random
 import Random.List
-import Resources exposing (noWalls, priceFree, priceGold, priceStone, priceWood)
-import Walls
+import Resources exposing (addEmmer, addFlax, addFood, addGold, addStone, addWood, alwaysDoable, minStone, priceFree, priceGold, priceStone, priceWood, require, topEmmer, topFlax, topFood, topGold, topStone, topWood)
+import Walls exposing (noWalls)
+
 
 initRandomTiles =
     setupRandomTiles
@@ -201,13 +202,17 @@ consumeAction tile action =
                     )
     }
 
-setStatus: TileStatus -> Tile -> Tile
+
+setStatus : TileStatus -> Tile -> Tile
 setStatus status tile =
-    {tile | status = status }
+    { tile | status = status }
+
+
 
 ---------------------------------------------
 -------------Action Tiles--------------------
 ---------------------------------------------
+
 
 tileFreeAction : Tile
 tileFreeAction =
@@ -220,7 +225,9 @@ tileFreeAction =
         noWalls
         [ firstAction (require .emmer (>) 0) (\r -> r |> addFood 1 |> addEmmer -1) Nothing []
         , secondAction (require .flax (>) 0) (\r -> r |> addFood 1 |> addFlax -1) Nothing []
-        , thirdAction (require .gold (>) 0) (\r -> r |> addFood 1 |> addGold -1) Nothing []]
+        , thirdAction (require .gold (>) 0) (\r -> r |> addFood 1 |> addGold -1) Nothing []
+        ]
+
 
 tileLavoriDomestici : Tile
 tileLavoriDomestici =
@@ -239,7 +246,8 @@ tileLavoriDomestici =
 
 tileColtivare : Tile
 tileColtivare =
-    Tile "Coltivare" Gray
+    Tile "Coltivare"
+        Gray
         Available
         2
         "assets/img/rounds/coltivare.jpg"
@@ -252,7 +260,8 @@ tileColtivare =
 
 tileSottobosco : Tile
 tileSottobosco =
-    Tile "Sottobosco" Gray
+    Tile "Sottobosco"
+        Gray
         Available
         1
         "assets/img/rounds/sottobosco.jpg"
@@ -265,7 +274,8 @@ tileSottobosco =
 
 tileScavare : Tile
 tileScavare =
-    Tile "Scavare" Gray
+    Tile "Scavare"
+        Gray
         Available
         4
         "assets/img/rounds/scavare.jpg"
@@ -279,7 +289,8 @@ tileScavare =
 
 tileArredare : Tile
 tileArredare =
-    Tile "Arredare" Gray
+    Tile "Arredare"
+        Gray
         Rock
         6
         "assets/img/rounds/arredare.jpg"
@@ -292,7 +303,8 @@ tileArredare =
 
 tileCostruireUnMuro : Tile
 tileCostruireUnMuro =
-    Tile "Costrurire un Muro" Gray
+    Tile "Costrurire un Muro"
+        Gray
         Rock
         7
         "assets/img/rounds/costruire_un_muro.jpg"
@@ -307,7 +319,8 @@ tileCostruireUnMuro =
 
 tileMinare : Tile
 tileMinare =
-    Tile "Minare" Gray
+    Tile "Minare"
+        Gray
         Rock
         5
         "assets/img/rounds/minare.jpg"
@@ -324,7 +337,8 @@ tileMinare =
 
 tileDemolireUnMuro : Tile
 tileDemolireUnMuro =
-    Tile "Demolire un Muro" Gray
+    Tile "Demolire un Muro"
+        Gray
         Rock
         0
         "assets/img/rounds/demolire_un_muro.jpg"
@@ -336,7 +350,8 @@ tileDemolireUnMuro =
 
 tileEspansione : Tile
 tileEspansione =
-    Tile "Espansione" Gray
+    Tile "Espansione"
+        Gray
         Rock
         10
         "assets/img/rounds/espansione.jpg"
@@ -350,7 +365,8 @@ tileEspansione =
 
 tileSpedizione : Tile
 tileSpedizione =
-    Tile "Spedizione" Gray
+    Tile "Spedizione"
+        Gray
         Rock
         9
         "assets/img/rounds/spedizione.jpg"
@@ -364,7 +380,8 @@ tileSpedizione =
 
 tilePerforare : Tile
 tilePerforare =
-    Tile "Perforare" Gray
+    Tile "Perforare"
+        Gray
         Rock
         8
         "assets/img/rounds/perforare.jpg"
@@ -377,7 +394,8 @@ tilePerforare =
 
 tileRinnovare : Tile
 tileRinnovare =
-    Tile "Rinnovare" Gray
+    Tile "Rinnovare"
+        Gray
         Rock
         11
         "assets/img/rounds/rinnovare.jpg"
@@ -396,7 +414,8 @@ tileRinnovare =
 
 tileRock : Tile
 tileRock =
-    Tile "Rock Tile" Gray
+    Tile "Rock Tile"
+        Gray
         Rock
         0
         ""
@@ -407,7 +426,8 @@ tileRock =
 
 tileEmpty : Tile
 tileEmpty =
-    Tile "Empty Tile" Gray
+    Tile "Empty Tile"
+        Gray
         Empty
         0
         ""
@@ -422,7 +442,8 @@ tileEmpty =
 
 tileSotterraneo : Tile
 tileSotterraneo =
-    Tile "Sotterraneo" Blue
+    Tile "Sotterraneo"
+        Blue
         Rock
         11
         "assets/img/equipments/sotterraneo.jpg"
@@ -433,7 +454,8 @@ tileSotterraneo =
 
 tileLavorareIlLino : Tile
 tileLavorareIlLino =
-    Tile "Lavorare il Lino" Blue
+    Tile "Lavorare il Lino"
+        Blue
         Rock
         3
         "assets/img/equipments/lavorare_il_lino.jpg"
@@ -444,7 +466,8 @@ tileLavorareIlLino =
 
 tileEquipaggiamenti : Tile
 tileEquipaggiamenti =
-    Tile "Equipaggiamenti" Blue
+    Tile "Equipaggiamenti"
+        Blue
         Rock
         3
         "assets/img/equipments/equipaggiamenti.jpg"
@@ -455,7 +478,8 @@ tileEquipaggiamenti =
 
 tileDepositoDiLegna : Tile
 tileDepositoDiLegna =
-    Tile "Deposito di Legna" Blue
+    Tile "Deposito di Legna"
+        Blue
         Rock
         2
         "assets/img/equipments/deposito_di_legna.jpg"
@@ -466,7 +490,8 @@ tileDepositoDiLegna =
 
 tileAnalisiTerritoriale : Tile
 tileAnalisiTerritoriale =
-    Tile "Analisi Territoriale" Blue
+    Tile "Analisi Territoriale"
+        Blue
         Rock
         5
         "assets/img/equipments/deposito_di_legna.jpg"
@@ -483,7 +508,8 @@ tileAnalisiTerritoriale =
 
 tileCaveEntrance : Tile
 tileCaveEntrance =
-    Tile "Entrata della Cava" Orange
+    Tile "Entrata della Cava"
+        Orange
         Available
         0
         "assets/img/rooms/entrata_della_cava.jpg"
@@ -498,7 +524,8 @@ tileCaveEntrance =
 
 tileWarehouse : Tile
 tileWarehouse =
-    Tile "Magazzino" Orange
+    Tile "Magazzino"
+        Orange
         Rock
         2
         "assets/img/rooms/magazzino.jpg"
@@ -520,7 +547,8 @@ tileWarehouse =
 
 tileShelf : Tile
 tileShelf =
-    Tile "Shelf" Orange
+    Tile "Shelf"
+        Orange
         Available
         3
         "assets/img/rooms/scaffale.jpg"
@@ -535,7 +563,8 @@ tileShelf =
 
 tileFoodCorner : Tile
 tileFoodCorner =
-    Tile "Angolo del Cibo" Orange
+    Tile "Angolo del Cibo"
+        Orange
         Available
         3
         "assets/img/rooms/angolo_del_cibo.jpg"
@@ -546,7 +575,8 @@ tileFoodCorner =
 
 tileSpinningWheel : Tile
 tileSpinningWheel =
-    Tile "Filatoio" Orange
+    Tile "Filatoio"
+        Orange
         Available
         4
         "assets/img/rooms/filatoio.jpg"
@@ -559,7 +589,8 @@ tileSpinningWheel =
 
 tileTunnel : Tile
 tileTunnel =
-    Tile "Tunnel" Orange
+    Tile "Tunnel"
+        Orange
         Available
         3
         "assets/img/rooms/tunnel.jpg"
@@ -572,7 +603,8 @@ tileTunnel =
 
 tileAltareSacrificale : Tile
 tileAltareSacrificale =
-    Tile "Altare Sacrificale" Orange
+    Tile "Altare Sacrificale"
+        Orange
         Rock
         7
         "assets/img/rooms/altare_sacrificale.jpg"
@@ -593,7 +625,8 @@ tileAltareSacrificale =
 
 tileBancarella : Tile
 tileBancarella =
-    Tile "Bancarella" Orange
+    Tile "Bancarella"
+        Orange
         Rock
         6
         "assets/img/rooms/bancarella.jpg"
@@ -606,7 +639,8 @@ tileBancarella =
 
 tileCameraSegreta : Tile
 tileCameraSegreta =
-    Tile "Camera Segreta" Orange
+    Tile "Camera Segreta"
+        Orange
         Rock
         8
         "assets/img/rooms/camera_segreta.jpg"
@@ -619,7 +653,8 @@ tileCameraSegreta =
 
 tileCavaInEspansione : Tile
 tileCavaInEspansione =
-    Tile "Cava in Espansione" Orange
+    Tile "Cava in Espansione"
+        Orange
         Rock
         8
         "assets/img/rooms/cava_in_espansione.jpg"
@@ -630,7 +665,8 @@ tileCavaInEspansione =
 
 tileDeposito : Tile
 tileDeposito =
-    Tile "Deposito" Orange
+    Tile "Deposito"
+        Orange
         Rock
         6
         "assets/img/rooms/deposito.jpg"
@@ -641,7 +677,8 @@ tileDeposito =
 
 tileFiliera : Tile
 tileFiliera =
-    Tile "Filiera" Orange
+    Tile "Filiera"
+        Orange
         Rock
         5
         "assets/img/rooms/filiera.jpg"
@@ -652,7 +689,8 @@ tileFiliera =
 
 tileForno : Tile
 tileForno =
-    Tile "Forno" Orange
+    Tile "Forno"
+        Orange
         Rock
         6
         "assets/img/rooms/forno.jpg"
@@ -665,7 +703,8 @@ tileForno =
 
 tileMacina : Tile
 tileMacina =
-    Tile "Macina" Orange
+    Tile "Macina"
+        Orange
         Available
         4
         "assets/img/rooms/macina.jpg"
@@ -678,7 +717,8 @@ tileMacina =
 
 tileGoldMine : Tile
 tileGoldMine =
-    Tile "Miniera d'Oro" Orange
+    Tile "Miniera d'Oro"
+        Orange
         Rock
         9
         "assets/img/rooms/miniera_d_oro.jpg"
@@ -689,7 +729,8 @@ tileGoldMine =
 
 tileOfficina : Tile
 tileOfficina =
-    Tile "Officina" Orange
+    Tile "Officina"
+        Orange
         Rock
         5
         "assets/img/rooms/officina.jpg"
@@ -708,7 +749,8 @@ tileOfficina =
 
 tileSalotto : Tile
 tileSalotto =
-    Tile "Salotto" Orange
+    Tile "Salotto"
+        Orange
         Available
         6
         "assets/img/rooms/salotto.jpg"
@@ -719,7 +761,8 @@ tileSalotto =
 
 tileLuxuryRoom : Tile
 tileLuxuryRoom =
-    Tile "Stanza di Lusso" Orange
+    Tile "Stanza di Lusso"
+        Orange
         Rock
         12
         "assets/img/rooms/stanza_di_lusso.jpg"
@@ -730,7 +773,8 @@ tileLuxuryRoom =
 
 tileStanzaDiSnodo : Tile
 tileStanzaDiSnodo =
-    Tile "Stanza di Snodo" Orange
+    Tile "Stanza di Snodo"
+        Orange
         Rock
         6
         "assets/img/rooms/stanza_di_snodo.jpg"
@@ -741,88 +785,14 @@ tileStanzaDiSnodo =
 
 tileTesoreria : Tile
 tileTesoreria =
-    Tile "Tesoreria" Orange
+    Tile "Tesoreria"
+        Orange
         Rock
         10
         "assets/img/rooms/tesoreria.jpg"
         (priceFree |> priceGold 3)
         (Game.Walls Game.Placed Game.Placed Game.Placed Game.Placed)
         [ fullAction (require .gold (>=) 3) (\res -> res |> addGold -3 |> addGold 4 |> addFood 1) Nothing [ 0 ] ]
-
-
-require : (Resources -> Int) -> (Int -> Int -> Bool) -> Int -> Resources -> Bool
-require getter condition qty resources =
-    condition (getter resources) qty
-
-
-topWood : Int -> Resources -> Resources
-topWood qty resources =
-    { resources | wood = Basics.max resources.wood qty }
-
-
-topFood : Int -> Resources -> Resources
-topFood qty resources =
-    { resources | food = Basics.max resources.food qty }
-
-
-topStone : Int -> Resources -> Resources
-topStone qty resources =
-    { resources | stone = Basics.max resources.stone qty }
-
-
-topGold : Int -> Resources -> Resources
-topGold qty resources =
-    { resources | gold = Basics.max resources.gold qty }
-
-
-minStone : Int -> Resources -> Resources
-minStone qty resources =
-    { resources | stone = Basics.min resources.stone qty }
-
-
-topFlax : Int -> Resources -> Resources
-topFlax qty resources =
-    { resources | flax = Basics.max resources.flax qty }
-
-
-topEmmer : Int -> Resources -> Resources
-topEmmer qty resources =
-    { resources | emmer = Basics.max resources.emmer qty }
-
-
-addWood : Int -> Resources -> Resources
-addWood qty resources =
-    { resources | wood = min 9 (resources.wood + qty) }
-
-
-addStone : Int -> Resources -> Resources
-addStone qty resources =
-    { resources | stone = min 9 (resources.stone + qty) }
-
-
-addFlax : Int -> Resources -> Resources
-addFlax qty resources =
-    { resources | flax = min 9 (resources.flax + qty) }
-
-
-addEmmer : Int -> Resources -> Resources
-addEmmer qty resources =
-    { resources | emmer = min 9 (resources.emmer + qty) }
-
-
-addFood : Int -> Resources -> Resources
-addFood qty resources =
-    { resources | food = min 9 (resources.food + qty) }
-
-
-addGold : Int -> Resources -> Resources
-addGold qty resources =
-    { resources | gold = min 19 (resources.gold + qty) }
-
-
-alwaysDoable : Resources -> Bool
-alwaysDoable resources =
-    True
 
 
 firstAction : (Resources -> Bool) -> (Resources -> Resources) -> Maybe Subphase -> List Int -> Action
