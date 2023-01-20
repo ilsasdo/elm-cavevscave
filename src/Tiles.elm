@@ -779,7 +779,7 @@ tileStanzaDiSnodo =
         6
         "assets/img/rooms/stanza_di_snodo.jpg"
         (priceFree |> priceWood 2)
-        (Game.Walls Game.Placed Game.Placed Game.Optional Game.Placed)
+        (Game.Walls Game.None Game.Placed Game.None Game.Placed)
         [ fullAction Resources.atLeastThreeResources (\res -> res |> addGold 2) (Just ChooseResource3) [ 0 ] ]
 
 

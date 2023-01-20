@@ -90,8 +90,8 @@ type alias Resources =
     , actions : Int -- actions available in current round are not a proper resource
 
     -- but are used to pay some actions
-    , opponentsGold : Int
     , availableWalls : Int
+    , opponentsGold : Int
     }
 
 

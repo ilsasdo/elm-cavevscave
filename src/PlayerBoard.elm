@@ -6,6 +6,7 @@ import Game exposing (Game, GameMsg(..), PlayerBoard, Resources, Subphase(..), T
 import Html exposing (Html, div)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
+import Resources
 import Tiles exposing (consumeAction, tileCaveEntrance, tileEmpty, tileFreeAction, tileRock, viewTile)
 import Walls
 
@@ -175,10 +176,32 @@ escavateRoom : PlayerBoard -> Tile -> Maybe Subphase -> PlayerBoard
 escavateRoom player tile subphase =
     { player
         | subphase = subphase
+        , resources = addFoodForBonusRooms player tile
         , rooms =
             Tiles.updateStatus tile Game.Empty player.rooms
                 |> Tiles.updateWalls player.walls
     }
+
+
+addFoodForBonusRooms: PlayerBoard -> Tile -> Resources
+addFoodForBonusRooms ({resources} as player) tile =
+    let
+        roomIndex = indexOf tile player.rooms
+    in
+    if roomIndex == 3 || roomIndex == 7 then
+        Resources.addFood 1 player.resources
+    else
+        player.resources
+
+
+indexOf: Tile -> List Tile -> Int
+indexOf tile tiles =
+    tiles
+    |> List.indexedMap Tuple.pair
+    |> List.filter (\tp -> ((Tuple.second tp).title == tile.title))
+    |> List.head
+    |> Maybe.withDefault (0, tile)
+    |> Tuple.first
 
 
 isReachableRoom : PlayerBoard -> Tile -> Bool
@@ -188,7 +211,7 @@ isReachableRoom board tile =
             Array.fromList board.rooms
 
         tileIndex =
-            getTileIndex board.rooms tile
+            indexOf tile board.rooms
     in
     isReachable tileIndex roomArray
 
@@ -256,15 +279,6 @@ isRoom tileIndex roomArray =
         |> (\t -> t.status /= Rock)
 
 
-getTileIndex tiles tile =
-    tiles
-        |> List.indexedMap (\i -> \t -> ( i, t ))
-        |> List.filter (\( i, t ) -> tile.title == t.title)
-        |> List.head
-        |> Maybe.withDefault ( 0, tile )
-        |> Tuple.first
-
-
 viewBoard : PlayerBoard -> Html GameMsg
 viewBoard board =
     div [ class "playerboard" ]
@@ -319,6 +333,13 @@ viewRooms board =
 viewRoom : PlayerBoard -> Int -> Tile -> Html GameMsg
 viewRoom board index tile =
     case board.subphase of
+        Just EscavateThroughWall ->
+            if tile.status == Rock && isReachableRoom board tile then
+                viewSelectableTile board.resources index tile
+
+            else
+                viewNonSelectableTile board.resources index tile
+
         Just Escavate1 ->
             if tile.status == Rock && isReachableRoom board tile then
                 viewSelectableTile board.resources index tile

@@ -108,7 +108,8 @@ update msg ({ player1, player2 } as game) =
                     update WallDestroyed (updateCurrentPlayer (PlayerBoard.destroyWall activePlayer index) game)
 
                 _ ->
-                    ( game, Cmd.none )
+                    (game, Cmd.none)
+
 
         SelectRoomTile tile ->
             case activePlayer.subphase of
@@ -137,10 +138,18 @@ update msg ({ player1, player2 } as game) =
                     ( updateCurrentPlayer (PlayerBoard.activateRoom activePlayer tile (Just Activate2)) game, Cmd.none )
 
                 _ ->
-                    ( game, Cmd.none )
+                    (game, Cmd.none)
 
-        ResourceChosen maybeSubphase function ->
-            ( game, Cmd.none )
+
+        ResourceChosen maybeSubphase updateResources ->
+            ( updateCurrentPlayer
+                { activePlayer
+                    | resources = updateResources activePlayer.resources
+                    , subphase = maybeSubphase
+                }
+                game
+            , Cmd.none
+            )
 
 
 pass : Game -> Game

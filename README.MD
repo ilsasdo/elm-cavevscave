@@ -2,11 +2,10 @@
 
 ## Missing Game Rules
 
-1. Player should not be able to click on furnish room action if there is no room he can furnish
-2. add 1 food when escavate the bonus rooms
-3. additional cave when all board is full
-4. Blue Rooms Effects
-5. the user should choose three resources in order to play "Stanza di Snodo"
+1. Blue Rooms Effects
+2. additional cave when all board is full
+3. mining through walls
+4. Player should not be able to click on furnish room action if there is no room he can furnish
 
 ## Feature Roadmap
 
