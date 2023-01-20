@@ -6,6 +6,7 @@
 2. additional cave when all board is full
 3. mining through walls
 4. Player should not be able to click on furnish room action if there is no room he can furnish
+5. PLayer should not be able to choose "demolire un muro" if he doesn't have a wall to destroy.
 
 ## Feature Roadmap
 

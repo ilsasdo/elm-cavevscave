@@ -331,10 +331,6 @@ tileMinare =
         ]
 
 
-
---TODO: available only if there are walls to destroy
-
-
 tileDemolireUnMuro : Tile
 tileDemolireUnMuro =
     Tile "Demolire un Muro"
@@ -780,6 +776,7 @@ tileStanzaDiSnodo =
         "assets/img/rooms/stanza_di_snodo.jpg"
         (priceFree |> priceWood 2)
         (Game.Walls Game.None Game.Placed Game.None Game.Placed)
+        -- TODO: resources should be update after wall choice
         [ fullAction Resources.atLeastThreeResources (\res -> res |> addGold 2) (Just ChooseResource3) [ 0 ] ]
 
 
