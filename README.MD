@@ -3,6 +3,7 @@
 ## Missing Game Rules
 
 1. Blue Rooms Effects
+   2. Equipment Prospecting Site should be disabled as soon the user clicks somewhereelse
 2. additional cave when all board is full
 3. mining through walls
 4. You cannot use the Rooms that you Furnish right away
