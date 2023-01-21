@@ -7,7 +7,7 @@ import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import PlayerBoard exposing (isRoomSelectable, restorePlayerNextRound, restorePlayerPass, updateTile, viewBoard)
 import Resources exposing (updateOpponentsGold)
-import Tiles exposing (viewTile)
+import Tiles exposing (tileProspectingSite, tileSottobosco, viewTile)
 
 
 main =
@@ -60,26 +60,22 @@ update msg ({ player1, player2 } as game) =
             )
 
         AddToAvailableRooms tile ->
-            ( game |> updateCurrentPlayer activePlayer |> addToAvailableRooms tile, Cmd.none )
+            ( game |> setCurrentPlayer activePlayer |> addToAvailableRooms tile, Cmd.none )
 
         RemoveFromAvailableRooms tile ->
-            ( game |> updateCurrentPlayer activePlayer |> removeFromAvailableRooms tile, Cmd.none )
+            ( game |> setCurrentPlayer activePlayer |> removeFromAvailableRooms tile, Cmd.none )
 
         WallBuilt ->
-            ( game |> updateCurrentPlayer activePlayer |> updateAvailableWalls -1, Cmd.none )
+            ( game |> setCurrentPlayer activePlayer |> updateAvailableWalls -1, Cmd.none )
 
         WallDestroyed ->
-            ( game |> updateCurrentPlayer activePlayer |> updateAvailableWalls 1, Cmd.none )
+            ( game |> setCurrentPlayer activePlayer |> updateAvailableWalls 1, Cmd.none )
 
         Pass ->
             ( pass game, Cmd.none )
 
         PickRoundTile tile ->
-            ( { game
-                | phase = ActionPhase
-                , actionTiles = Tiles.updateStatus tile Empty game.actionTiles
-              }
-                |> updateCurrentPlayer { activePlayer | actionTiles = { tile | status = Active } :: activePlayer.actionTiles }
+            ( pickRoundTile game activePlayer tile
             , Cmd.none
             )
 
@@ -88,7 +84,7 @@ update msg ({ player1, player2 } as game) =
                 consumedTile =
                     Tiles.consumeAction tile action
             in
-            ( updateCurrentPlayer
+            ( setCurrentPlayer
                 { activePlayer
                     | resources = action.do activePlayer.resources
                     , subphase = action.subphase
@@ -102,47 +98,45 @@ update msg ({ player1, player2 } as game) =
         SelectWall index ->
             case activePlayer.subphase of
                 Just BuildWall ->
-                    update WallBuilt (updateCurrentPlayer (PlayerBoard.buildWall activePlayer index) game)
+                    update WallBuilt (setCurrentPlayer (PlayerBoard.buildWall activePlayer index) game)
 
                 Just DestroyWall ->
-                    update WallDestroyed (updateCurrentPlayer (PlayerBoard.destroyWall activePlayer index) game)
+                    update WallDestroyed (setCurrentPlayer (PlayerBoard.destroyWall activePlayer index) game)
 
                 _ ->
-                    (game, Cmd.none)
-
+                    ( game, Cmd.none )
 
         SelectRoomTile tile ->
             case activePlayer.subphase of
                 Just Furnish ->
-                    ( updateCurrentPlayer { activePlayer | subphase = Just (PlaceRoom tile) } game, Cmd.none )
+                    ( setCurrentPlayer { activePlayer | subphase = Just (PlaceRoom tile) } game, Cmd.none )
 
                 Just (PlaceRoom tileToPlace) ->
-                    update (RemoveFromAvailableRooms tileToPlace) (updateCurrentPlayer (PlayerBoard.placeRoom activePlayer tile tileToPlace) game)
+                    update (RemoveFromAvailableRooms tileToPlace) (setCurrentPlayer (PlayerBoard.placeRoom activePlayer tile tileToPlace) game)
 
                 Just EscavateThroughWall ->
-                    update (AddToAvailableRooms tile) (updateCurrentPlayer (PlayerBoard.escavateRoom activePlayer tile Nothing) game)
+                    update (AddToAvailableRooms tile) (setCurrentPlayer (PlayerBoard.escavateRoom activePlayer tile Nothing) game)
 
                 Just Escavate1 ->
-                    update (AddToAvailableRooms tile) (updateCurrentPlayer (PlayerBoard.escavateRoom activePlayer tile Nothing) game)
+                    update (AddToAvailableRooms tile) (setCurrentPlayer (PlayerBoard.escavateRoom activePlayer tile Nothing) game)
 
                 Just Escavate2 ->
-                    update (AddToAvailableRooms tile) (updateCurrentPlayer (PlayerBoard.escavateRoom activePlayer tile (Just Escavate1)) game)
+                    update (AddToAvailableRooms tile) (setCurrentPlayer (PlayerBoard.escavateRoom activePlayer tile (Just Escavate1)) game)
 
                 Just Activate1 ->
-                    ( updateCurrentPlayer (PlayerBoard.activateRoom activePlayer tile Nothing) game, Cmd.none )
+                    ( setCurrentPlayer (PlayerBoard.activateRoom activePlayer tile Nothing) game, Cmd.none )
 
                 Just Activate2 ->
-                    ( updateCurrentPlayer (PlayerBoard.activateRoom activePlayer tile (Just Activate1)) game, Cmd.none )
+                    ( setCurrentPlayer (PlayerBoard.activateRoom activePlayer tile (Just Activate1)) game, Cmd.none )
 
                 Just Activate3 ->
-                    ( updateCurrentPlayer (PlayerBoard.activateRoom activePlayer tile (Just Activate2)) game, Cmd.none )
+                    ( setCurrentPlayer (PlayerBoard.activateRoom activePlayer tile (Just Activate2)) game, Cmd.none )
 
                 _ ->
-                    (game, Cmd.none)
-
+                    ( game, Cmd.none )
 
         ResourceChosen maybeSubphase updateResources ->
-            ( updateCurrentPlayer
+            ( setCurrentPlayer
                 { activePlayer
                     | resources = updateResources activePlayer.resources
                     , subphase = maybeSubphase
@@ -152,6 +146,28 @@ update msg ({ player1, player2 } as game) =
             )
 
 
+pickRoundTile game activePlayer tile =
+    let
+        player =
+            { activePlayer | actionTiles = { tile | status = Active } :: activePlayer.actionTiles }
+    in
+    { game
+        | phase = ActionPhase
+        , actionTiles = Tiles.updateStatus tile Empty game.actionTiles
+    }
+        |> setCurrentPlayer player
+        |> activateProspectingSite player tile
+
+
+activateProspectingSite : PlayerBoard -> Tile -> Game -> Game
+activateProspectingSite player tile game =
+    if tile.title == tileSottobosco.title && PlayerBoard.playerHasEquipment player tileProspectingSite then
+        setCurrentPlayer (PlayerBoard.activateRoom player tileProspectingSite (Just Sell1FoodFor1Gold)) game
+
+    else
+        game
+
+
 pass : Game -> Game
 pass game =
     if List.length game.player1.actionTiles == game.actions && List.length game.player2.actionTiles == game.actions then
@@ -159,7 +175,7 @@ pass game =
 
     else
         game
-            |> updateCurrentPlayer (restorePlayerPass (currentPlayer game))
+            |> setCurrentPlayer (restorePlayerPass (currentPlayer game))
             |> nextPlayer
             |> activatePlayer
 
@@ -173,7 +189,7 @@ activatePlayer game =
         opponent =
             opponentPlayer game
     in
-    updateCurrentPlayer
+    setCurrentPlayer
         { player
             | freeAction = player.freeAction |> PlayerBoard.restoreTile |> Tiles.setStatus Active
             , resources = updateOpponentsGold opponent.resources.gold player.resources
@@ -310,8 +326,8 @@ opponentPlayer game =
         game.player1
 
 
-updateCurrentPlayer : PlayerBoard -> Game -> Game
-updateCurrentPlayer player game =
+setCurrentPlayer : PlayerBoard -> Game -> Game
+setCurrentPlayer player game =
     if game.currentPlayer == 1 then
         { game | player1 = player }
 

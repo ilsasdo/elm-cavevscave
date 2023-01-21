@@ -50,6 +50,7 @@ type Subphase
     | ChooseResource3
     | ChooseResource2
     | ChooseResource1
+    | Sell1FoodFor1Gold
 
 
 type Wall
@@ -141,6 +142,9 @@ subphaseToString subphase =
     case subphase of
         Nothing ->
             ""
+
+        Just Sell1FoodFor1Gold ->
+            "Sell 1 Food for 1 Gold"
 
         Just Escavate1 ->
             "Escavate 1"

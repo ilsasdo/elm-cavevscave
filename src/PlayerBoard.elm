@@ -136,6 +136,15 @@ moreOrangeRooms player tile =
         True
 
 
+playerHasEquipment : PlayerBoard -> Tile -> Bool
+playerHasEquipment player tile =
+    player.rooms
+        |> List.filter (\t -> t.status == Available)
+        |> List.filter (\t -> t.title == tile.title)
+        |> List.length
+        |> (<) 0
+
+
 playerCanPlaceRoom : PlayerBoard -> Tile -> Bool
 playerCanPlaceRoom player tile =
     player.rooms
@@ -183,25 +192,27 @@ escavateRoom player tile subphase =
     }
 
 
-addFoodForBonusRooms: PlayerBoard -> Tile -> Resources
-addFoodForBonusRooms ({resources} as player) tile =
+addFoodForBonusRooms : PlayerBoard -> Tile -> Resources
+addFoodForBonusRooms ({ resources } as player) tile =
     let
-        roomIndex = indexOf tile player.rooms
+        roomIndex =
+            indexOf tile player.rooms
     in
     if roomIndex == 3 || roomIndex == 7 then
         Resources.addFood 1 player.resources
+
     else
         player.resources
 
 
-indexOf: Tile -> List Tile -> Int
+indexOf : Tile -> List Tile -> Int
 indexOf tile tiles =
     tiles
-    |> List.indexedMap Tuple.pair
-    |> List.filter (\tp -> ((Tuple.second tp).title == tile.title))
-    |> List.head
-    |> Maybe.withDefault (0, tile)
-    |> Tuple.first
+        |> List.indexedMap Tuple.pair
+        |> List.filter (\tp -> (Tuple.second tp).title == tile.title)
+        |> List.head
+        |> Maybe.withDefault ( 0, tile )
+        |> Tuple.first
 
 
 isReachableRoom : PlayerBoard -> Tile -> Bool

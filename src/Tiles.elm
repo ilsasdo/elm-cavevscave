@@ -7,7 +7,7 @@ import Html.Attributes exposing (class, style)
 import Html.Events exposing (onClick)
 import Random
 import Random.List
-import Resources exposing (addEmmer, addFlax, addFood, addGold, addStone, addWood, alwaysDoable, minStone, priceFree, priceGold, priceStone, priceWood, require, topEmmer, topFlax, topFood, topGold, topStone, topWood)
+import Resources exposing (addEmmer, addFlax, addFood, addGold, addStone, addWood, alwaysDoable, minStone, priceFood, priceFree, priceGold, priceStone, priceWood, require, topEmmer, topFlax, topFood, topGold, topStone, topWood)
 import Walls exposing (noWalls)
 
 
@@ -26,7 +26,7 @@ initRandomTiles =
         , tileLuxuryRoom
         , tileStanzaDiSnodo
         , tileTesoreria
-        , tileAnalisiTerritoriale
+        , tileProspectingSite
         , tileSotterraneo
         , tileEquipaggiamenti
         , tileLavorareIlLino
@@ -484,16 +484,16 @@ tileDepositoDiLegna =
         []
 
 
-tileAnalisiTerritoriale : Tile
-tileAnalisiTerritoriale =
-    Tile "Analisi Territoriale"
+tileProspectingSite : Tile
+tileProspectingSite =
+    Tile "Prospecting Site"
         Blue
-        Rock
+        Available
         5
-        "assets/img/equipments/deposito_di_legna.jpg"
+        "assets/img/equipments/analisi_territoriale.jpg"
         priceFree
         (Game.Walls Game.Placed Game.None Game.None Game.Optional)
-        []
+        [ bottomAction (\r -> require .food (>) 0 r) (\r -> r |> addFood -1 |> addGold 1) Nothing [ 0 ] ]
 
 
 
