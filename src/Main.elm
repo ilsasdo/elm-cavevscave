@@ -67,12 +67,12 @@ update msg ({ player1, player2 } as game) =
 
         WallBuilt ->
             game
-            |> getCurrentPlayer
-            |> PlayerBoard.applyDungeon
-            |> setCurrentPlayer2 game
-            |> updateAvailableWalls -1
-            |> Tuple.pair Cmd.none
-            |> swap
+                |> getCurrentPlayer
+                |> PlayerBoard.applyDungeon
+                |> setCurrentPlayer2 game
+                |> updateAvailableWalls -1
+                |> Tuple.pair Cmd.none
+                |> swap
 
         WallDestroyed ->
             ( game |> updateAvailableWalls 1, Cmd.none )
@@ -92,7 +92,7 @@ update msg ({ player1, player2 } as game) =
             in
             ( setCurrentPlayer
                 { activePlayer
-                    | resources = action.do activePlayer.resources
+                    | resources = action.do activePlayer.resources |> PlayerBoard.applyRettingRoom activePlayer
                     , subphase = action.subphase
                     , rooms = updateTile consumedTile activePlayer.rooms
                     , actionTiles = updateTile consumedTile activePlayer.actionTiles
@@ -153,7 +153,6 @@ update msg ({ player1, player2 } as game) =
                         |> PlayerBoard.activateRoom tile Nothing
                         |> updateGame game
 
-
                 Just (Activate2 first) ->
                     activePlayer
                         |> PlayerBoard.activateRoom tile (PlayerBoard.applyEquipmentRoom (Activate2 first) activePlayer)
@@ -177,14 +176,18 @@ update msg ({ player1, player2 } as game) =
             , Cmd.none
             )
 
-swap (a, b) =
-    (b, a)
+
+swap ( a, b ) =
+    ( b, a )
+
 
 setCurrentPlayer2 player game =
     setCurrentPlayer game player
 
+
 updateGame game player =
-    (setCurrentPlayer player game, Cmd.none)
+    ( setCurrentPlayer player game, Cmd.none )
+
 
 pickActionTile game activePlayer tile =
     let

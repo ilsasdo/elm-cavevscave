@@ -7,7 +7,7 @@ import Html exposing (Html, div)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import Resources
-import Tiles exposing (consumeAction, tileCaveEntrance, tileEmpty, tileEquipmentRoom, tileFreeAction, tileRock, tileWoodStoreroom, viewTile)
+import Tiles exposing (consumeAction, tileCaveEntrance, tileDungeon, tileEmpty, tileEquipmentRoom, tileFreeAction, tileRettingRoom, tileRock, tileWoodStoreroom, viewTile)
 import Walls
 
 
@@ -173,11 +173,13 @@ payRoom price resources =
         , emmer = resources.emmer - price.emmer
     }
 
+
 deactivateRooms player =
     { player
         | subphase = Nothing
         , rooms = Tiles.deactivateTiles player.rooms
     }
+
 
 activateRoom tile subphase player =
     { player
@@ -192,12 +194,14 @@ applyEquipmentRoom subphase player =
             Activate2 first ->
                 if first then
                     Just (Activate2 False)
+
                 else
                     Just (Activate1 False)
 
             Activate3 first ->
                 if first then
                     Just (Activate3 False)
+
                 else
                     Just (Activate2 False)
 
@@ -215,12 +219,34 @@ applyEquipmentRoom subphase player =
             _ ->
                 Nothing
 
+
+applyRettingRoom player newResources =
+    let
+        flaxGain =
+            newResources.flax - player.resources.flax
+    in
+    if
+        (flaxGain >= 1 && flaxGain <= 3)
+            && playerHasEquipment player tileRettingRoom
+    then
+        Resources.addFood 1 newResources
+
+    else
+        newResources
+
+
 applyDungeon player =
-    { player | resources = Resources.addGold 2 player.resources }
+    if playerHasEquipment player tileDungeon then
+        { player | resources = Resources.addGold 2 player.resources }
+
+    else
+        player
+
 
 applyWoodStoreroom first qty player =
     if first && playerHasEquipment player tileWoodStoreroom then
         { player | resources = Resources.addFood qty player.resources }
+
     else
         player
 

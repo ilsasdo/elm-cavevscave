@@ -29,7 +29,7 @@ initRandomTiles =
         , tileProspectingSite
         , tileDungeon
         , tileEquipmentRoom
-        , tileLavorareIlLino
+        , tileRettingRoom
         , tileWoodStoreroom
         ]
         [ tileLavoriDomestici
@@ -455,9 +455,9 @@ tileDungeon =
         []
 
 
-tileLavorareIlLino : Tile
-tileLavorareIlLino =
-    Tile "Lavorare il Lino"
+tileRettingRoom : Tile
+tileRettingRoom =
+    Tile "Retting Room"
         Blue
         Rock
         3
