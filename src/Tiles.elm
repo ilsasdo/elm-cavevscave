@@ -292,8 +292,8 @@ tileScavare =
         "assets/img/rounds/scavare.jpg"
         priceFree
         noWalls
-        [ topLeftAction alwaysDoable (\r -> r) (Just Escavate1) [ 0, 1 ]
-        , topRightAction (require .food (>=) 2) (addFood -2) (Just Escavate2) [ 0, 1 ]
+        [ topLeftAction alwaysDoable (\r -> r) (Just Excavate1) [ 0, 1 ]
+        , topRightAction (require .food (>=) 2) (addFood -2) (Just Excavate2) [ 0, 1 ]
         , bottomAction alwaysDoable (addStone 1) Nothing [ 2 ]
         ]
 
@@ -338,7 +338,7 @@ tileMinare =
         priceFree
         noWalls
         [ leftAction alwaysDoable (\r -> r) (Just (Activate2 True)) [ 0, 1 ]
-        , rightAction alwaysDoable (\r -> r) (Just EscavateThroughWall) [ 0, 1 ]
+        , rightAction alwaysDoable (\r -> r) (Just ExcavateThroughWall) [ 0, 1 ]
         ]
 
 
@@ -364,7 +364,7 @@ tileEspansione =
         "assets/img/rounds/espansione.jpg"
         priceFree
         noWalls
-        [ topAction alwaysDoable (\r -> r) (Just Escavate1) [ 0 ]
+        [ topAction alwaysDoable (\r -> r) (Just Excavate1) [ 0 ]
         , bottomLeftAction (require .food (>=) 5) (addFood -5) (Just Furnish) [ 1, 2 ]
         , bottomRightAction (require .gold (>=) 1) (addGold -1) (Just Furnish) [ 1, 2 ]
         ]
@@ -395,7 +395,7 @@ tilePerforare =
         priceFree
         noWalls
         [ topAction alwaysDoable (\r -> r) (Just (Activate1 True)) [ 0 ]
-        , bottomAction (\r -> require .gold (>) r.opponentsGold r) (\r -> r) (Just Escavate1) [ 1 ]
+        , bottomAction (\r -> require .gold (>) r.opponentsGold r) (\r -> r) (Just Excavate1) [ 1 ]
         ]
 
 

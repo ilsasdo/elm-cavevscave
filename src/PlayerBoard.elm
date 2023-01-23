@@ -285,8 +285,8 @@ indexOf tile tiles =
         |> Tuple.first
 
 
-isReachableRoom : PlayerBoard -> Tile -> Bool
-isReachableRoom board tile =
+isExcavatable : PlayerBoard -> Tile -> Bool
+isExcavatable board tile =
     let
         roomArray =
             Array.fromList board.rooms
@@ -414,21 +414,21 @@ viewRooms board =
 viewRoom : PlayerBoard -> Int -> Tile -> Html GameMsg
 viewRoom board index tile =
     case board.subphase of
-        Just EscavateThroughWall ->
-            if tile.status == Rock && isReachableRoom board tile then
+        Just ExcavateThroughWall ->
+            if tile.status == Rock && isExcavatable board tile then
                 viewSelectableTile board.resources index tile
 
             else
                 viewNonSelectableTile board.resources index tile
 
-        Just Escavate1 ->
-            if tile.status == Rock && isReachableRoom board tile then
+        Just Excavate1 ->
+            if tile.status == Rock && isExcavatable board tile then
                 viewSelectableTile board.resources index tile
 
             else
                 viewNonSelectableTile board.resources index tile
 
-        Just Escavate2 ->
+        Just Excavate2 ->
             if tile.status == Rock then
                 viewSelectableTile board.resources index tile
 

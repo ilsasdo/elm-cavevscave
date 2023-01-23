@@ -37,13 +37,13 @@ type TileType
 
 
 type Subphase
-    = Escavate1
-    | Escavate2
+    = Excavate1
+    | Excavate2
     | Furnish
     | PlaceRoom Tile
     | BuildWall
     | DestroyWall
-    | EscavateThroughWall
+    | ExcavateThroughWall
     | Activate1 Bool
     | Activate2 Bool
     | Activate3 Bool
@@ -142,10 +142,10 @@ subphaseToString subphase =
         Nothing ->
             ""
 
-        Just Escavate1 ->
+        Just Excavate1 ->
             "Escavate 1"
 
-        Just Escavate2 ->
+        Just Excavate2 ->
             "Escavate 2"
 
         Just Furnish ->
@@ -160,7 +160,7 @@ subphaseToString subphase =
         Just DestroyWall ->
             "Destroy a Wall"
 
-        Just EscavateThroughWall ->
+        Just ExcavateThroughWall ->
             "Escavate through a Wall"
 
         Just (Activate1 first) ->

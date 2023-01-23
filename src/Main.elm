@@ -129,21 +129,21 @@ update msg ({ player1, player2 } as game) =
                         |> setCurrentPlayer2 game
                         |> update (RemoveFromAvailableRooms tileToPlace)
 
-                Just EscavateThroughWall ->
+                Just ExcavateThroughWall ->
                     activePlayer
                         |> PlayerBoard.escavateRoom tile Nothing
                         |> setCurrentPlayer2 game
                         |> update (AddToAvailableRooms tile)
 
-                Just Escavate1 ->
+                Just Excavate1 ->
                     activePlayer
                         |> PlayerBoard.escavateRoom tile Nothing
                         |> setCurrentPlayer2 game
                         |> update (AddToAvailableRooms tile)
 
-                Just Escavate2 ->
+                Just Excavate2 ->
                     activePlayer
-                        |> PlayerBoard.escavateRoom tile (Just Escavate1)
+                        |> PlayerBoard.escavateRoom tile (Just Excavate1)
                         |> setCurrentPlayer2 game
                         |> update (AddToAvailableRooms tile)
 

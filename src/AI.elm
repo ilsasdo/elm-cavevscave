@@ -249,7 +249,7 @@ playRoundTileAction node =
         Just Escavate1 ->
             player.rooms
                 |> List.filter (\t -> t.status == Rock)
-                |> List.filter (PlayerBoard.isReachableRoom player)
+                |> List.filter (PlayerBoard.isExcavatable player)
                 |> List.map (\t -> playMove node (PlayerMsg (SelectRoomTile t)))
                 |> List.map playRoundTileAction
                 |> List.foldl (++) []
@@ -257,7 +257,7 @@ playRoundTileAction node =
         Just Escavate2 ->
             player.rooms
                 |> List.filter (\t -> t.status == Rock)
-                |> List.filter (PlayerBoard.isReachableRoom player)
+                |> List.filter (PlayerBoard.isExcavatable player)
                 |> List.map (\t -> playMove node (PlayerMsg (SelectRoomTile t)))
                 |> List.map playRoundTileAction
                 |> List.foldl (++) []
@@ -266,7 +266,7 @@ playRoundTileAction node =
         Just EscavateThroughWall ->
             player.rooms
                 |> List.filter (\t -> t.status == Rock)
-                |> List.filter (PlayerBoard.isReachableRoom player)
+                |> List.filter (PlayerBoard.isExcavatable player)
                 |> List.map (\t -> playMove node (PlayerMsg (SelectRoomTile t)))
                 |> List.map playRoundTileAction
                 |> List.foldl (++) []
