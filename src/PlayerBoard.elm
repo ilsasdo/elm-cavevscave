@@ -69,8 +69,8 @@ updateTile tile tiles =
         tiles
 
 
-buildWall : PlayerBoard -> Int -> PlayerBoard
-buildWall player wallIndex =
+buildWall : Int -> PlayerBoard -> PlayerBoard
+buildWall wallIndex player =
     let
         walls =
             Array.set wallIndex Placed player.walls
@@ -82,8 +82,8 @@ buildWall player wallIndex =
     }
 
 
-destroyWall : PlayerBoard -> Int -> PlayerBoard
-destroyWall player wallIndex =
+destroyWall : Int -> PlayerBoard -> PlayerBoard
+destroyWall wallIndex player =
     let
         walls =
             Array.set wallIndex Game.None player.walls
@@ -95,8 +95,8 @@ destroyWall player wallIndex =
     }
 
 
-placeRoom : PlayerBoard -> Tile -> Tile -> PlayerBoard
-placeRoom player tile tileToPlace =
+placeRoom : Tile -> Tile -> PlayerBoard -> PlayerBoard
+placeRoom tile tileToPlace player =
     { player
         | resources = payRoom tileToPlace.price player.resources
         , subphase = Nothing
@@ -173,16 +173,28 @@ payRoom price resources =
         , emmer = resources.emmer - price.emmer
     }
 
+deactivateRooms player =
+    { player
+        | subphase = Nothing
+        , rooms = Tiles.deactivateTiles player.rooms
+    }
 
-activateRoom player tile subphase =
+activateRoom tile subphase player =
     { player
         | subphase = subphase
         , rooms = Tiles.updateStatus tile Game.Active player.rooms
     }
 
 
-escavateRoom : PlayerBoard -> Tile -> Maybe Subphase -> PlayerBoard
-escavateRoom player tile subphase =
+addFoodIfFirst first qty player =
+    if first then
+        { player | resources = Resources.addFood qty player.resources }
+    else
+        player
+
+
+escavateRoom : Tile -> Maybe Subphase -> PlayerBoard -> PlayerBoard
+escavateRoom tile subphase player =
     { player
         | subphase = subphase
         , resources = addFoodForBonusRooms player tile
@@ -372,21 +384,21 @@ viewRoom board index tile =
             else
                 viewNonSelectableTile board.resources index tile
 
-        Just Activate1 ->
+        Just (Activate1 first) ->
             if tile.status == Available then
                 viewSelectableTile board.resources index tile
 
             else
                 viewNonSelectableTile board.resources index tile
 
-        Just Activate2 ->
+        Just (Activate2 first) ->
             if tile.status == Available then
                 viewSelectableTile board.resources index tile
 
             else
                 viewNonSelectableTile board.resources index tile
 
-        Just Activate3 ->
+        Just (Activate3 first) ->
             if tile.status == Available then
                 viewSelectableTile board.resources index tile
 

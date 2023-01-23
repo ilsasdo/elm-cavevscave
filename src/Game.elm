@@ -44,13 +44,12 @@ type Subphase
     | BuildWall
     | DestroyWall
     | EscavateThroughWall
-    | Activate1
-    | Activate2
-    | Activate3
+    | Activate1 Bool
+    | Activate2 Bool
+    | Activate3 Bool
     | ChooseResource3
     | ChooseResource2
     | ChooseResource1
-    | Sell1FoodFor1Gold
 
 
 type Wall
@@ -143,9 +142,6 @@ subphaseToString subphase =
         Nothing ->
             ""
 
-        Just Sell1FoodFor1Gold ->
-            "Sell 1 Food for 1 Gold"
-
         Just Escavate1 ->
             "Escavate 1"
 
@@ -167,13 +163,13 @@ subphaseToString subphase =
         Just EscavateThroughWall ->
             "Escavate through a Wall"
 
-        Just Activate1 ->
+        Just (Activate1 first) ->
             "Activate a Room 1"
 
-        Just Activate2 ->
+        Just (Activate2 first) ->
             "Activate a Room 2"
 
-        Just Activate3 ->
+        Just (Activate3 first) ->
             "Activate a Room 3"
 
         Just ChooseResource3 ->

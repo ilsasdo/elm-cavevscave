@@ -6,7 +6,7 @@ import Html exposing (Html, div, text)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import PlayerBoard exposing (isRoomSelectable, restorePlayerNextRound, restorePlayerPass, updateTile, viewBoard)
-import Resources exposing (updateOpponentsGold)
+import Resources exposing (addFood, updateOpponentsGold)
 import Tiles exposing (tileProspectingSite, tileSottobosco, viewTile)
 
 
@@ -23,7 +23,7 @@ update : GameMsg -> Game -> ( Game, Cmd GameMsg )
 update msg ({ player1, player2 } as game) =
     let
         activePlayer =
-            currentPlayer game
+            getCurrentPlayer game
     in
     case msg of
         InitRoundTiles tiles ->
@@ -60,22 +60,22 @@ update msg ({ player1, player2 } as game) =
             )
 
         AddToAvailableRooms tile ->
-            ( game |> setCurrentPlayer activePlayer |> addToAvailableRooms tile, Cmd.none )
+            ( game |> addToAvailableRooms tile, Cmd.none )
 
         RemoveFromAvailableRooms tile ->
-            ( game |> setCurrentPlayer activePlayer |> removeFromAvailableRooms tile, Cmd.none )
+            ( game |> removeFromAvailableRooms tile, Cmd.none )
 
         WallBuilt ->
-            ( game |> setCurrentPlayer activePlayer |> updateAvailableWalls -1, Cmd.none )
+            ( game |> updateAvailableWalls -1, Cmd.none )
 
         WallDestroyed ->
-            ( game |> setCurrentPlayer activePlayer |> updateAvailableWalls 1, Cmd.none )
+            ( game |> updateAvailableWalls 1, Cmd.none )
 
         Pass ->
             ( pass game, Cmd.none )
 
         PickRoundTile tile ->
-            ( pickRoundTile game activePlayer tile
+            ( pickActionTile game activePlayer tile
             , Cmd.none
             )
 
@@ -98,10 +98,16 @@ update msg ({ player1, player2 } as game) =
         SelectWall index ->
             case activePlayer.subphase of
                 Just BuildWall ->
-                    update WallBuilt (setCurrentPlayer (PlayerBoard.buildWall activePlayer index) game)
+                    activePlayer
+                        |> PlayerBoard.buildWall index
+                        |> setCurrentPlayer2 game
+                        |> update WallBuilt
 
                 Just DestroyWall ->
-                    update WallDestroyed (setCurrentPlayer (PlayerBoard.destroyWall activePlayer index) game)
+                    activePlayer
+                        |> PlayerBoard.destroyWall index
+                        |> setCurrentPlayer2 game
+                        |> update WallDestroyed
 
                 _ ->
                     ( game, Cmd.none )
@@ -112,25 +118,52 @@ update msg ({ player1, player2 } as game) =
                     ( setCurrentPlayer { activePlayer | subphase = Just (PlaceRoom tile) } game, Cmd.none )
 
                 Just (PlaceRoom tileToPlace) ->
-                    update (RemoveFromAvailableRooms tileToPlace) (setCurrentPlayer (PlayerBoard.placeRoom activePlayer tile tileToPlace) game)
+                    game
+                        |> getCurrentPlayer
+                        |> PlayerBoard.placeRoom tile tileToPlace
+                        |> setCurrentPlayer2 game
+                        |> update (RemoveFromAvailableRooms tileToPlace)
 
                 Just EscavateThroughWall ->
-                    update (AddToAvailableRooms tile) (setCurrentPlayer (PlayerBoard.escavateRoom activePlayer tile Nothing) game)
+                    game
+                        |> getCurrentPlayer
+                        |> PlayerBoard.escavateRoom tile Nothing
+                        |> setCurrentPlayer2 game
+                        |> update (AddToAvailableRooms tile)
 
                 Just Escavate1 ->
-                    update (AddToAvailableRooms tile) (setCurrentPlayer (PlayerBoard.escavateRoom activePlayer tile Nothing) game)
+                    game
+                        |> getCurrentPlayer
+                        |> PlayerBoard.escavateRoom tile Nothing
+                        |> setCurrentPlayer2 game
+                        |> update (AddToAvailableRooms tile)
 
                 Just Escavate2 ->
-                    update (AddToAvailableRooms tile) (setCurrentPlayer (PlayerBoard.escavateRoom activePlayer tile (Just Escavate1)) game)
+                    game
+                        |> getCurrentPlayer
+                        |> PlayerBoard.escavateRoom tile (Just Escavate1)
+                        |> setCurrentPlayer2 game
+                        |> update (AddToAvailableRooms tile)
 
-                Just Activate1 ->
-                    ( setCurrentPlayer (PlayerBoard.activateRoom activePlayer tile Nothing) game, Cmd.none )
+                Just (Activate1 first) ->
+                    game
+                        |> getCurrentPlayer
+                        |> PlayerBoard.addFoodIfFirst first 1
+                        |> PlayerBoard.activateRoom tile Nothing
+                        |> updateGame game
 
-                Just Activate2 ->
-                    ( setCurrentPlayer (PlayerBoard.activateRoom activePlayer tile (Just Activate1)) game, Cmd.none )
 
-                Just Activate3 ->
-                    ( setCurrentPlayer (PlayerBoard.activateRoom activePlayer tile (Just Activate2)) game, Cmd.none )
+                Just (Activate2 first) ->
+                    game
+                        |> getCurrentPlayer
+                        |> PlayerBoard.activateRoom tile (Just (Activate1 False))
+                        |> updateGame game
+
+                Just (Activate3 first) ->
+                    game
+                        |> getCurrentPlayer
+                        |> PlayerBoard.activateRoom tile (Just (Activate2 False))
+                        |> updateGame game
 
                 _ ->
                     ( game, Cmd.none )
@@ -145,8 +178,13 @@ update msg ({ player1, player2 } as game) =
             , Cmd.none
             )
 
+setCurrentPlayer2 player game =
+    setCurrentPlayer game player
 
-pickRoundTile game activePlayer tile =
+updateGame game player =
+    (setCurrentPlayer player game, Cmd.none)
+
+pickActionTile game activePlayer tile =
     let
         player =
             { activePlayer | actionTiles = { tile | status = Active } :: activePlayer.actionTiles }
@@ -162,7 +200,7 @@ pickRoundTile game activePlayer tile =
 activateProspectingSite : PlayerBoard -> Tile -> Game -> Game
 activateProspectingSite player tile game =
     if tile.title == tileSottobosco.title && PlayerBoard.playerHasEquipment player tileProspectingSite then
-        setCurrentPlayer (PlayerBoard.activateRoom player tileProspectingSite (Just Sell1FoodFor1Gold)) game
+        setCurrentPlayer (PlayerBoard.activateRoom tileProspectingSite Nothing player) game
 
     else
         game
@@ -175,7 +213,7 @@ pass game =
 
     else
         game
-            |> setCurrentPlayer (restorePlayerPass (currentPlayer game))
+            |> setCurrentPlayer (restorePlayerPass (getCurrentPlayer game))
             |> nextPlayer
             |> activatePlayer
 
@@ -184,7 +222,7 @@ activatePlayer : Game -> Game
 activatePlayer game =
     let
         player =
-            currentPlayer game
+            getCurrentPlayer game
 
         opponent =
             opponentPlayer game
@@ -294,13 +332,13 @@ viewStatusBar game =
                     ++ " || Player "
                     ++ String.fromInt game.currentPlayer
                     ++ " || Actions: "
-                    ++ (game |> currentPlayer |> .actionTiles |> List.length |> String.fromInt)
+                    ++ (game |> getCurrentPlayer |> .actionTiles |> List.length |> String.fromInt)
                     ++ "/"
                     ++ String.fromInt game.actions
                     ++ " || Phase: "
                     ++ roundPhaseToString game.phase
                     ++ " || Subphase: "
-                    ++ (game |> currentPlayer |> .subphase |> subphaseToString)
+                    ++ (game |> getCurrentPlayer |> .subphase |> subphaseToString)
                     ++ " || Available Walls: "
                     ++ (game.availableWalls |> String.fromInt)
                 )
@@ -308,8 +346,8 @@ viewStatusBar game =
         ]
 
 
-currentPlayer : Game -> PlayerBoard
-currentPlayer game =
+getCurrentPlayer : Game -> PlayerBoard
+getCurrentPlayer game =
     if game.currentPlayer == 1 then
         game.player1
 
@@ -344,7 +382,7 @@ viewActionTiles game =
 viewActionTile : Game -> Tile -> Html GameMsg
 viewActionTile game tile =
     if game.phase == NewActionPhase && tile.status == Available then
-        viewTile [ class "actiontile pick", onClick (PickRoundTile tile) ] (currentPlayer game).resources tile
+        viewTile [ class "actiontile pick", onClick (PickRoundTile tile) ] (getCurrentPlayer game).resources tile
 
     else
         viewTile [ class "actiontile" ] game.player1.resources tile
@@ -354,7 +392,7 @@ viewMain : Game -> Html GameMsg
 viewMain game =
     div [ class "mainboard" ]
         [ viewBoard game.player1
-        , viewAvailableRooms (currentPlayer game) game.availableRooms
+        , viewAvailableRooms (getCurrentPlayer game) game.availableRooms
         , viewBoard game.player2
         ]
 

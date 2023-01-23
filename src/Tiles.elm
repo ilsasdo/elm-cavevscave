@@ -82,6 +82,17 @@ updateStatus tile status tiles =
         )
         tiles
 
+deactivateTiles tiles =
+    List.map
+        (\t ->
+            if t.status == Game.Active then
+                { t | status = Game.Available }
+
+            else
+                t
+        )
+        tiles
+
 
 updateWalls : Array Wall -> List Tile -> List Tile
 updateWalls walls tiles =
@@ -160,7 +171,7 @@ viewTile attributes resources tile =
                     [ style "background-image" ("url(" ++ tile.src ++ ")")
                     , class "tile"
                     ]
-                    (List.indexedMap (\index -> \action -> viewAction tile resources action index) tile.actions)
+                    (List.map (viewAction tile resources) tile.actions)
 
             Available ->
                 div
@@ -177,8 +188,8 @@ viewTile attributes resources tile =
         ]
 
 
-viewAction : Tile -> Resources -> Action -> Int -> Html GameMsg
-viewAction tile resources action index =
+viewAction : Tile -> Resources -> Action -> Html GameMsg
+viewAction tile resources action =
     if action.available && action.isDoable resources then
         div [ class ("action doable " ++ action.classes), onClick (DoAction tile action) ] []
 
@@ -253,7 +264,7 @@ tileColtivare =
         "assets/img/rounds/coltivare.jpg"
         priceFree
         noWalls
-        [ topAction alwaysDoable (\r -> r) (Just Activate1) [ 0 ]
+        [ topAction alwaysDoable (\r -> r) (Just (Activate1 True)) [ 0 ]
         , bottomAction alwaysDoable (\r -> r |> addEmmer 2 |> addFlax 1) Nothing [ 1 ]
         ]
 
@@ -267,7 +278,7 @@ tileSottobosco =
         "assets/img/rounds/sottobosco.jpg"
         priceFree
         noWalls
-        [ topAction alwaysDoable (\r -> r) (Just Activate1) [ 0 ]
+        [ topAction alwaysDoable (\r -> r) (Just (Activate1 True)) [ 0 ]
         , bottomAction alwaysDoable (addWood 2) Nothing [ 1 ]
         ]
 
@@ -310,7 +321,7 @@ tileCostruireUnMuro =
         "assets/img/rounds/costruire_un_muro.jpg"
         priceFree
         noWalls
-        [ topLeftAction alwaysDoable (\r -> r) (Just Activate1) [ 0 ]
+        [ topLeftAction alwaysDoable (\r -> r) (Just (Activate1 True)) [ 0 ]
         , thirdAction alwaysDoable (addWood 1) Nothing [ 1, 2 ]
         , fourthAction alwaysDoable (addStone 1) Nothing [ 1, 2 ]
         , bottomAction (require .availableWalls (>) 0) (\r -> r) (Just BuildWall) [ 3 ]
@@ -326,7 +337,7 @@ tileMinare =
         "assets/img/rounds/minare.jpg"
         priceFree
         noWalls
-        [ leftAction alwaysDoable (\r -> r) (Just Activate2) [ 0, 1 ]
+        [ leftAction alwaysDoable (\r -> r) (Just (Activate2 True)) [ 0, 1 ]
         , rightAction alwaysDoable (\r -> r) (Just EscavateThroughWall) [ 0, 1 ]
         ]
 
@@ -370,7 +381,7 @@ tileSpedizione =
         noWalls
         [ firstAction (require .wood (>=) 5) (\r -> r |> addWood -5 |> addGold 5) Nothing [ 0, 1, 2 ]
         , secondAction (require .stone (>=) 5) (\r -> r |> addStone -5 |> addGold 5) Nothing [ 0, 1, 2 ]
-        , rightAction alwaysDoable (\r -> r) (Just Activate3) [ 0, 1, 2 ]
+        , rightAction alwaysDoable (\r -> r) (Just (Activate3 True)) [ 0, 1, 2 ]
         ]
 
 
@@ -383,7 +394,7 @@ tilePerforare =
         "assets/img/rounds/perforare.jpg"
         priceFree
         noWalls
-        [ topAction alwaysDoable (\r -> r) (Just Activate1) [ 0 ]
+        [ topAction alwaysDoable (\r -> r) (Just (Activate1 True)) [ 0 ]
         , bottomAction (\r -> require .gold (>) r.opponentsGold r) (\r -> r) (Just Escavate1) [ 1 ]
         ]
 
@@ -430,10 +441,6 @@ tileEmpty =
         priceFree
         (Game.Walls Game.None Game.None Game.None Game.Placed)
         []
-
-
-
--- TODO: Handle Equipment Events
 
 
 tileSotterraneo : Tile
