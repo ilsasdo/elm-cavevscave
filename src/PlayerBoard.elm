@@ -7,7 +7,7 @@ import Html exposing (Html, div)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import Resources
-import Tiles exposing (consumeAction, tileCaveEntrance, tileEmpty, tileFreeAction, tileRock, viewTile)
+import Tiles exposing (consumeAction, tileCaveEntrance, tileEmpty, tileEquipmentRoom, tileFreeAction, tileRock, tileWoodStoreroom, viewTile)
 import Walls
 
 
@@ -186,8 +186,39 @@ activateRoom tile subphase player =
     }
 
 
-addFoodIfFirst first qty player =
-    if first then
+applyEquipmentRoom subphase player =
+    if playerHasEquipment player tileEquipmentRoom then
+        case subphase of
+            Activate2 first ->
+                if first then
+                    Just (Activate2 False)
+                else
+                    Just (Activate1 False)
+
+            Activate3 first ->
+                if first then
+                    Just (Activate3 False)
+                else
+                    Just (Activate2 False)
+
+            _ ->
+                Nothing
+
+    else
+        case subphase of
+            Activate2 first ->
+                Just (Activate1 False)
+
+            Activate3 first ->
+                Just (Activate2 False)
+
+            _ ->
+                Nothing
+
+
+
+applyWoodStoreroom first qty player =
+    if first && playerHasEquipment player tileWoodStoreroom then
         { player | resources = Resources.addFood qty player.resources }
     else
         player

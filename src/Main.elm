@@ -118,51 +118,44 @@ update msg ({ player1, player2 } as game) =
                     ( setCurrentPlayer { activePlayer | subphase = Just (PlaceRoom tile) } game, Cmd.none )
 
                 Just (PlaceRoom tileToPlace) ->
-                    game
-                        |> getCurrentPlayer
+                    activePlayer
                         |> PlayerBoard.placeRoom tile tileToPlace
                         |> setCurrentPlayer2 game
                         |> update (RemoveFromAvailableRooms tileToPlace)
 
                 Just EscavateThroughWall ->
-                    game
-                        |> getCurrentPlayer
+                    activePlayer
                         |> PlayerBoard.escavateRoom tile Nothing
                         |> setCurrentPlayer2 game
                         |> update (AddToAvailableRooms tile)
 
                 Just Escavate1 ->
-                    game
-                        |> getCurrentPlayer
+                    activePlayer
                         |> PlayerBoard.escavateRoom tile Nothing
                         |> setCurrentPlayer2 game
                         |> update (AddToAvailableRooms tile)
 
                 Just Escavate2 ->
-                    game
-                        |> getCurrentPlayer
+                    activePlayer
                         |> PlayerBoard.escavateRoom tile (Just Escavate1)
                         |> setCurrentPlayer2 game
                         |> update (AddToAvailableRooms tile)
 
                 Just (Activate1 first) ->
-                    game
-                        |> getCurrentPlayer
-                        |> PlayerBoard.addFoodIfFirst first 1
+                    activePlayer
+                        |> PlayerBoard.applyWoodStoreroom first 1
                         |> PlayerBoard.activateRoom tile Nothing
                         |> updateGame game
 
 
                 Just (Activate2 first) ->
-                    game
-                        |> getCurrentPlayer
-                        |> PlayerBoard.activateRoom tile (Just (Activate1 False))
+                    activePlayer
+                        |> PlayerBoard.activateRoom tile (PlayerBoard.applyEquipmentRoom (Activate2 first) activePlayer)
                         |> updateGame game
 
                 Just (Activate3 first) ->
-                    game
-                        |> getCurrentPlayer
-                        |> PlayerBoard.activateRoom tile (Just (Activate2 False))
+                    activePlayer
+                        |> PlayerBoard.activateRoom tile (PlayerBoard.applyEquipmentRoom (Activate3 first) activePlayer)
                         |> updateGame game
 
                 _ ->

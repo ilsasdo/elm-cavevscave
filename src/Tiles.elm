@@ -28,9 +28,9 @@ initRandomTiles =
         , tileTesoreria
         , tileProspectingSite
         , tileSotterraneo
-        , tileEquipaggiamenti
+        , tileEquipmentRoom
         , tileLavorareIlLino
-        , tileDepositoDiLegna
+        , tileWoodStoreroom
         ]
         [ tileLavoriDomestici
         , tileColtivare
@@ -467,9 +467,9 @@ tileLavorareIlLino =
         []
 
 
-tileEquipaggiamenti : Tile
-tileEquipaggiamenti =
-    Tile "Equipaggiamenti"
+tileEquipmentRoom : Tile
+tileEquipmentRoom =
+    Tile "Equipment Room"
         Blue
         Rock
         3
@@ -479,9 +479,9 @@ tileEquipaggiamenti =
         []
 
 
-tileDepositoDiLegna : Tile
-tileDepositoDiLegna =
-    Tile "Deposito di Legna"
+tileWoodStoreroom : Tile
+tileWoodStoreroom =
+    Tile "Wood Storeroom"
         Blue
         Rock
         2
