@@ -66,7 +66,13 @@ update msg ({ player1, player2 } as game) =
             ( game |> removeFromAvailableRooms tile, Cmd.none )
 
         WallBuilt ->
-            ( game |> updateAvailableWalls -1, Cmd.none )
+            game
+            |> getCurrentPlayer
+            |> PlayerBoard.applyDungeon
+            |> setCurrentPlayer2 game
+            |> updateAvailableWalls -1
+            |> Tuple.pair Cmd.none
+            |> swap
 
         WallDestroyed ->
             ( game |> updateAvailableWalls 1, Cmd.none )
@@ -170,6 +176,9 @@ update msg ({ player1, player2 } as game) =
                 game
             , Cmd.none
             )
+
+swap (a, b) =
+    (b, a)
 
 setCurrentPlayer2 player game =
     setCurrentPlayer game player

@@ -27,7 +27,7 @@ initRandomTiles =
         , tileStanzaDiSnodo
         , tileTesoreria
         , tileProspectingSite
-        , tileSotterraneo
+        , tileDungeon
         , tileEquipmentRoom
         , tileLavorareIlLino
         , tileWoodStoreroom
@@ -443,9 +443,9 @@ tileEmpty =
         []
 
 
-tileSotterraneo : Tile
-tileSotterraneo =
-    Tile "Sotterraneo"
+tileDungeon : Tile
+tileDungeon =
+    Tile "Dungeon"
         Blue
         Rock
         11

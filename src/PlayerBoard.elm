@@ -215,7 +215,8 @@ applyEquipmentRoom subphase player =
             _ ->
                 Nothing
 
-
+applyDungeon player =
+    { player | resources = Resources.addGold 2 player.resources }
 
 applyWoodStoreroom first qty player =
     if first && playerHasEquipment player tileWoodStoreroom then
