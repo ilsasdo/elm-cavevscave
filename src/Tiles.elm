@@ -249,7 +249,7 @@ tileLavoriDomestici =
         "assets/img/rounds/lavori_domestici.jpg"
         priceFree
         noWalls
-        [ topAction (\r -> r.food > r.actions) (\r -> r |> addFood r.actions) (Just Furnish) [ 0 ]
+        [ topAction (\r -> r.food > r.actions) (\r -> r |> addFood -r.actions) (Just Furnish) [ 0 ]
         , bottomLeftAction (require .food (>=) 5) (addFood -5) (Just Furnish) [ 1, 2 ]
         , bottomRightAction (require .gold (>=) 1) (addGold -1) (Just Furnish) [ 1, 2 ]
         ]
@@ -495,7 +495,7 @@ tileProspectingSite : Tile
 tileProspectingSite =
     Tile "Prospecting Site"
         Blue
-        Available
+        Rock
         5
         "assets/img/equipments/analisi_territoriale.jpg"
         priceFree
@@ -713,8 +713,8 @@ tileMacina =
         "assets/img/rooms/macina.jpg"
         (priceFree |> priceStone 1)
         (Game.Walls Game.Placed Game.None Game.None Game.Optional)
-        [ leftAction (require .emmer (>=) 2) (\res -> res |> addEmmer -1 |> addFood 3) Nothing [ 0, 1 ]
-        , rightAction (require .emmer (>=) 3) (\res -> res |> addEmmer -4 |> addFood 7) Nothing [ 0, 1 ]
+        [ leftAction (require .emmer (>=) 1) (\res -> res |> addEmmer -1 |> addFood 3) Nothing [ 0, 1 ]
+        , rightAction (require .emmer (>=) 4) (\res -> res |> addEmmer -4 |> addFood 7) Nothing [ 0, 1 ]
         ]
 
 
