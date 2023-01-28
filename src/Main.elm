@@ -7,6 +7,7 @@ import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import PlayerBoard exposing (isRoomSelectable, restorePlayerNextRound, restorePlayerPass, updateTile, viewBoard)
 import Resources exposing (addFood, updateOpponentsGold)
+import Stack
 import Tiles exposing (tileProspectingSite, tileSottobosco, viewTile)
 
 
@@ -93,7 +94,7 @@ update msg ({ player1, player2 } as game) =
             ( setCurrentPlayer
                 { activePlayer
                     | resources = action.do activePlayer.resources |> PlayerBoard.applyRettingRoom activePlayer
-                    , subphase = action.subphase
+                    , subphase = Maybe.withDefault activePlayer.subphase (Just action.subphase)
                     , rooms = updateTile consumedTile activePlayer.rooms
                     , actionTiles = updateTile consumedTile activePlayer.actionTiles
                 }
@@ -341,9 +342,7 @@ viewStatusBar game =
                     ++ "/"
                     ++ String.fromInt game.actions
                     ++ " || Phase: "
-                    ++ roundPhaseToString game.phase
-                    ++ " || Subphase: "
-                    ++ (game |> getCurrentPlayer |> .subphase |> subphaseToString)
+                    ++ (Stack.top game.stack |> subphaseToString)
                     ++ " || Available Walls: "
                     ++ (game.availableWalls |> String.fromInt)
                 )
@@ -386,7 +385,7 @@ viewActionTiles game =
 
 viewActionTile : Game -> Tile -> Html GameMsg
 viewActionTile game tile =
-    if game.phase == NewActionPhase && tile.status == Available then
+    if Stack.top game.stack == Just NewActionPhase && tile.status == Available then
         viewTile [ class "actiontile pick", onClick (PickRoundTile tile) ] (getCurrentPlayer game).resources tile
 
     else

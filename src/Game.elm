@@ -1,6 +1,7 @@
 module Game exposing (..)
 
 import Array exposing (Array)
+import Stack exposing (Stack)
 
 
 type GameMsg
@@ -18,11 +19,6 @@ type GameMsg
     | ResourceChosen (Maybe Subphase) (Resources -> Resources)
 
 
-type RoundPhase
-    = NewActionPhase
-    | ActionPhase
-
-
 type TileStatus
     = Available
     | Active
@@ -37,7 +33,9 @@ type TileType
 
 
 type Subphase
-    = Excavate1
+    = NewActionPhase
+    | ActionPhase
+    | Excavate1
     | Excavate2
     | Furnish
     | PlaceRoom Tile
@@ -109,10 +107,10 @@ type alias Game =
     , round : Int -- starts with 1 ends with 8
     , actions : Int -- 2 actions for rounds 1,2,3. 3 actions for rounds 4,5,6,7. 4 actions for round 8
     , currentPlayer : Int -- 1 or 2
-    , phase : RoundPhase
     , actionTiles : List Tile
     , availableRooms : List Tile
     , availableWalls : Int
+    , stack : Stack Subphase
     }
 
 
@@ -126,19 +124,15 @@ type alias PlayerBoard =
     }
 
 
-roundPhaseToString : RoundPhase -> String
-roundPhaseToString phase =
-    case phase of
-        NewActionPhase ->
-            "New Action Phase"
-
-        ActionPhase ->
-            "Action Phase"
-
-
 subphaseToString : Maybe Subphase -> String
 subphaseToString subphase =
     case subphase of
+        Just NewActionPhase ->
+            "New Action Phase"
+
+        Just ActionPhase ->
+            "Action Phase"
+
         Nothing ->
             ""
 

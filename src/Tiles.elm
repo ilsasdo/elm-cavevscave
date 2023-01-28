@@ -4,7 +4,8 @@ import Array exposing (Array)
 import Game exposing (Action, GameMsg(..), Resources, Subphase(..), Tile, TileStatus(..), TileType(..), Wall(..))
 import Html exposing (Attribute, Html, div)
 import Html.Attributes exposing (class, style)
-import Html.Events exposing (onClick)
+import Html.Events as Html
+import HtmlExt exposing (onClick)
 import Random
 import Random.List
 import Resources exposing (addEmmer, addFlax, addFood, addGold, addStone, addWood, alwaysDoable, minStone, priceFood, priceFree, priceGold, priceStone, priceWood, require, topEmmer, topFlax, topFood, topGold, topStone, topWood)
@@ -191,7 +192,7 @@ viewTile attributes resources tile =
 viewAction : Tile -> Resources -> Action -> Html GameMsg
 viewAction tile resources action =
     if action.available && action.isDoable resources then
-        div [ class ("action doable " ++ action.classes), onClick (DoAction tile action) ] []
+        div [ class ("action doable " ++ action.classes), Html.onClick (DoAction tile action) ] []
 
     else
         div [ class ("action notdoable " ++ action.classes) ] []
@@ -332,7 +333,7 @@ tileMinare : Tile
 tileMinare =
     Tile "Minare"
         Gray
-        Rock
+        Available
         5
         "assets/img/rounds/minare.jpg"
         priceFree
@@ -374,7 +375,7 @@ tileSpedizione : Tile
 tileSpedizione =
     Tile "Spedizione"
         Gray
-        Rock
+        Available
         9
         "assets/img/rounds/spedizione.jpg"
         priceFree
