@@ -15,9 +15,14 @@ top stack =
     List.head stack
 
 
-pop : Stack a -> ( Maybe a, Stack a )
+popWithReturn : Stack a -> ( Maybe a, Stack a )
+popWithReturn stack =
+    ( top stack, pop stack )
+
+
+pop : Stack a -> Stack a
 pop stack =
-    ( top stack, List.drop 1 stack )
+    List.drop 1 stack
 
 
 contains : a -> Stack a -> Bool

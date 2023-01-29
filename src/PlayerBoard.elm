@@ -2,7 +2,7 @@ module PlayerBoard exposing (..)
 
 import Array exposing (Array)
 import Debug exposing (toString)
-import Game exposing (Game, GameMsg(..), PlayerBoard, Resources, Subphase(..), Tile, TileStatus(..), TileType(..), Wall(..))
+import Game exposing (Action, Game, GameMsg(..), PlayerBoard, Resources, Subphase(..), Tile, TileStatus(..), TileType(..), Wall(..))
 import Html exposing (Html, div)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
@@ -54,6 +54,24 @@ restoreTile room =
 
     else
         room
+
+
+chooseResource : (Resources -> Resources) -> PlayerBoard -> PlayerBoard
+chooseResource updateResources player =
+    { player | resources = updateResources player.resources }
+
+
+doAction : Tile -> Action -> PlayerBoard -> PlayerBoard
+doAction tile action player =
+    let
+        consumedTile =
+            Tiles.consumeAction tile action
+    in
+    { player
+        | resources = action.do player.resources |> applyRettingRoom player
+        , rooms = updateTile consumedTile player.rooms
+        , actionTiles = updateTile consumedTile player.actionTiles
+    }
 
 
 updateTile : Tile -> List Tile -> List Tile

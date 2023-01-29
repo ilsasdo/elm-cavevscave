@@ -17,7 +17,7 @@ main =
 
 init : () -> ( Game, Cmd GameMsg )
 init _ =
-    ( Game PlayerBoard.newBoard PlayerBoard.newBoard 1 2 1 [] Tiles.initCommonRooms 7 [NewActionPhase], Tiles.initRandomTiles )
+    ( Game PlayerBoard.newBoard PlayerBoard.newBoard 1 2 1 [] Tiles.initCommonRooms 7 [ NewActionPhase ], Tiles.initRandomTiles )
 
 
 update : GameMsg -> Game -> ( Game, Cmd GameMsg )
@@ -87,22 +87,16 @@ update msg ({ player1, player2 } as game) =
             )
 
         DoAction tile action ->
-            let
-                consumedTile =
-                    Tiles.consumeAction tile action
-            in
-            ( setCurrentPlayer
-                { activePlayer
-                    | resources = action.do activePlayer.resources |> PlayerBoard.applyRettingRoom activePlayer
-                    , rooms = updateTile consumedTile activePlayer.rooms
-                    , actionTiles = updateTile consumedTile activePlayer.actionTiles
-                }
-                game
-            , Cmd.none
-            )
+            game
+                |> getCurrentPlayer
+                |> PlayerBoard.doAction tile action
+                |> setCurrentPlayer2 game
+                |> pushToPhase action.subphase
+                |> Tuple.pair Cmd.none
+                |> swap
 
         SelectWall index ->
-            case (Stack.top game.stack) of
+            case Stack.top game.stack of
                 Just BuildWall ->
                     activePlayer
                         |> PlayerBoard.buildWall index
@@ -119,7 +113,7 @@ update msg ({ player1, player2 } as game) =
                     ( game, Cmd.none )
 
         SelectRoomTile tile ->
-            case (Stack.top game.stack) of
+            case Stack.top game.stack of
                 Just Furnish ->
                     ( setCurrentPlayer activePlayer game, Cmd.none )
 
@@ -127,24 +121,28 @@ update msg ({ player1, player2 } as game) =
                     activePlayer
                         |> PlayerBoard.placeRoom tile tileToPlace
                         |> setCurrentPlayer2 game
+                        |> popFromPhase
                         |> update (RemoveFromAvailableRooms tileToPlace)
 
                 Just ExcavateThroughWall ->
                     activePlayer
                         |> PlayerBoard.escavateRoom tile
                         |> setCurrentPlayer2 game
+                        |> popFromPhase
                         |> update (AddToAvailableRooms tile)
 
                 Just Excavate1 ->
                     activePlayer
                         |> PlayerBoard.escavateRoom tile
                         |> setCurrentPlayer2 game
+                        |> popFromPhase
                         |> update (AddToAvailableRooms tile)
 
                 Just Excavate2 ->
                     activePlayer
                         |> PlayerBoard.escavateRoom tile
                         |> setCurrentPlayer2 game
+                        |> popFromPhase
                         |> pushToPhase (Just Excavate1)
                         |> update (AddToAvailableRooms tile)
 
@@ -153,6 +151,7 @@ update msg ({ player1, player2 } as game) =
                         |> PlayerBoard.applyWoodStoreroom first 1
                         |> PlayerBoard.activateRoom tile
                         |> setCurrentPlayer2 game
+                        |> popFromPhase
                         |> Tuple.pair Cmd.none
                         |> swap
 
@@ -160,6 +159,7 @@ update msg ({ player1, player2 } as game) =
                     activePlayer
                         |> PlayerBoard.activateRoom tile
                         |> setCurrentPlayer2 game
+                        |> popFromPhase
                         |> pushToPhase (PlayerBoard.applyEquipmentRoom (Activate2 first) activePlayer)
                         |> Tuple.pair Cmd.none
                         |> swap
@@ -168,6 +168,7 @@ update msg ({ player1, player2 } as game) =
                     activePlayer
                         |> PlayerBoard.activateRoom tile
                         |> setCurrentPlayer2 game
+                        |> popFromPhase
                         |> pushToPhase (PlayerBoard.applyEquipmentRoom (Activate3 first) activePlayer)
                         |> Tuple.pair Cmd.none
                         |> swap
@@ -176,19 +177,27 @@ update msg ({ player1, player2 } as game) =
                     ( game, Cmd.none )
 
         ResourceChosen maybeSubphase updateResources ->
-            ( setCurrentPlayer
-                { activePlayer
-                    | resources = updateResources activePlayer.resources
-                }
-                game
-            , Cmd.none
-            )
+            game
+                |> getCurrentPlayer
+                |> PlayerBoard.chooseResource updateResources
+                |> setCurrentPlayer2 game
+                |> popFromPhase
+                |> pushToPhase maybeSubphase
+                |> Tuple.pair Cmd.none
+                |> swap
 
-pushToPhase: Maybe Subphase -> Game -> Game
+
+popFromPhase : Game -> Game
+popFromPhase game =
+    { game | stack = Stack.pop game.stack }
+
+
+pushToPhase : Maybe Subphase -> Game -> Game
 pushToPhase sub game =
     case sub of
         Just subphase ->
             { game | stack = Stack.push subphase game.stack }
+
         Nothing ->
             game
 
@@ -205,7 +214,7 @@ updateGame game player =
     ( setCurrentPlayer player game, Cmd.none )
 
 
-pickActionTile: Game -> PlayerBoard -> Tile -> Game
+pickActionTile : Game -> PlayerBoard -> Tile -> Game
 pickActionTile game activePlayer tile =
     let
         player =
@@ -312,7 +321,7 @@ nextRound game =
                 game.actionTiles
     in
     { game
-        | stack = [NewActionPhase]
+        | stack = [ NewActionPhase ]
         , round = round
         , actions = actions
         , actionTiles = actionTiles
@@ -324,7 +333,7 @@ nextRound game =
 nextPlayer : Game -> Game
 nextPlayer game =
     { game
-        | stack = [NewActionPhase]
+        | stack = [ NewActionPhase ]
         , currentPlayer =
             if game.currentPlayer == 1 then
                 2
