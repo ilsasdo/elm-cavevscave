@@ -26,3 +26,10 @@ contains a stack =
         |> List.filter ((==) a)
         |> List.length
         |> (>) 0
+
+
+topIs: a -> Stack a -> Bool
+topIs a stack =
+    stack
+        |> top
+        |> (==) (Just a)

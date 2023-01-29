@@ -17,7 +17,7 @@ main =
 
 init : () -> ( Game, Cmd GameMsg )
 init _ =
-    ( Game PlayerBoard.newBoard PlayerBoard.newBoard 1 2 1 NewActionPhase [] Tiles.initCommonRooms 7, Tiles.initRandomTiles )
+    ( Game PlayerBoard.newBoard PlayerBoard.newBoard 1 2 1 [] Tiles.initCommonRooms 7 [NewActionPhase], Tiles.initRandomTiles )
 
 
 update : GameMsg -> Game -> ( Game, Cmd GameMsg )
@@ -94,7 +94,6 @@ update msg ({ player1, player2 } as game) =
             ( setCurrentPlayer
                 { activePlayer
                     | resources = action.do activePlayer.resources |> PlayerBoard.applyRettingRoom activePlayer
-                    , subphase = Maybe.withDefault activePlayer.subphase (Just action.subphase)
                     , rooms = updateTile consumedTile activePlayer.rooms
                     , actionTiles = updateTile consumedTile activePlayer.actionTiles
                 }
@@ -103,7 +102,7 @@ update msg ({ player1, player2 } as game) =
             )
 
         SelectWall index ->
-            case activePlayer.subphase of
+            case (Stack.top game.stack) of
                 Just BuildWall ->
                     activePlayer
                         |> PlayerBoard.buildWall index
@@ -120,9 +119,9 @@ update msg ({ player1, player2 } as game) =
                     ( game, Cmd.none )
 
         SelectRoomTile tile ->
-            case activePlayer.subphase of
+            case (Stack.top game.stack) of
                 Just Furnish ->
-                    ( setCurrentPlayer { activePlayer | subphase = Just (PlaceRoom tile) } game, Cmd.none )
+                    ( setCurrentPlayer activePlayer game, Cmd.none )
 
                 Just (PlaceRoom tileToPlace) ->
                     activePlayer
@@ -132,37 +131,46 @@ update msg ({ player1, player2 } as game) =
 
                 Just ExcavateThroughWall ->
                     activePlayer
-                        |> PlayerBoard.escavateRoom tile Nothing
+                        |> PlayerBoard.escavateRoom tile
                         |> setCurrentPlayer2 game
                         |> update (AddToAvailableRooms tile)
 
                 Just Excavate1 ->
                     activePlayer
-                        |> PlayerBoard.escavateRoom tile Nothing
+                        |> PlayerBoard.escavateRoom tile
                         |> setCurrentPlayer2 game
                         |> update (AddToAvailableRooms tile)
 
                 Just Excavate2 ->
                     activePlayer
-                        |> PlayerBoard.escavateRoom tile (Just Excavate1)
+                        |> PlayerBoard.escavateRoom tile
                         |> setCurrentPlayer2 game
+                        |> pushToPhase (Just Excavate1)
                         |> update (AddToAvailableRooms tile)
 
                 Just (Activate1 first) ->
                     activePlayer
                         |> PlayerBoard.applyWoodStoreroom first 1
-                        |> PlayerBoard.activateRoom tile Nothing
-                        |> updateGame game
+                        |> PlayerBoard.activateRoom tile
+                        |> setCurrentPlayer2 game
+                        |> Tuple.pair Cmd.none
+                        |> swap
 
                 Just (Activate2 first) ->
                     activePlayer
-                        |> PlayerBoard.activateRoom tile (PlayerBoard.applyEquipmentRoom (Activate2 first) activePlayer)
-                        |> updateGame game
+                        |> PlayerBoard.activateRoom tile
+                        |> setCurrentPlayer2 game
+                        |> pushToPhase (PlayerBoard.applyEquipmentRoom (Activate2 first) activePlayer)
+                        |> Tuple.pair Cmd.none
+                        |> swap
 
                 Just (Activate3 first) ->
                     activePlayer
-                        |> PlayerBoard.activateRoom tile (PlayerBoard.applyEquipmentRoom (Activate3 first) activePlayer)
-                        |> updateGame game
+                        |> PlayerBoard.activateRoom tile
+                        |> setCurrentPlayer2 game
+                        |> pushToPhase (PlayerBoard.applyEquipmentRoom (Activate3 first) activePlayer)
+                        |> Tuple.pair Cmd.none
+                        |> swap
 
                 _ ->
                     ( game, Cmd.none )
@@ -171,11 +179,18 @@ update msg ({ player1, player2 } as game) =
             ( setCurrentPlayer
                 { activePlayer
                     | resources = updateResources activePlayer.resources
-                    , subphase = maybeSubphase
                 }
                 game
             , Cmd.none
             )
+
+pushToPhase: Maybe Subphase -> Game -> Game
+pushToPhase sub game =
+    case sub of
+        Just subphase ->
+            { game | stack = Stack.push subphase game.stack }
+        Nothing ->
+            game
 
 
 swap ( a, b ) =
@@ -190,13 +205,14 @@ updateGame game player =
     ( setCurrentPlayer player game, Cmd.none )
 
 
+pickActionTile: Game -> PlayerBoard -> Tile -> Game
 pickActionTile game activePlayer tile =
     let
         player =
             { activePlayer | actionTiles = { tile | status = Active } :: activePlayer.actionTiles }
     in
     { game
-        | phase = ActionPhase
+        | stack = Stack.push ActionPhase game.stack
         , actionTiles = Tiles.updateStatus tile Empty game.actionTiles
     }
         |> setCurrentPlayer player
@@ -206,7 +222,7 @@ pickActionTile game activePlayer tile =
 activateProspectingSite : PlayerBoard -> Tile -> Game -> Game
 activateProspectingSite player tile game =
     if tile.title == tileSottobosco.title && PlayerBoard.playerHasEquipment player tileProspectingSite then
-        setCurrentPlayer (PlayerBoard.activateRoom tileProspectingSite Nothing player) game
+        setCurrentPlayer (PlayerBoard.activateRoom tileProspectingSite player) game
 
     else
         game
@@ -296,7 +312,7 @@ nextRound game =
                 game.actionTiles
     in
     { game
-        | phase = NewActionPhase
+        | stack = [NewActionPhase]
         , round = round
         , actions = actions
         , actionTiles = actionTiles
@@ -308,7 +324,7 @@ nextRound game =
 nextPlayer : Game -> Game
 nextPlayer game =
     { game
-        | phase = NewActionPhase
+        | stack = [NewActionPhase]
         , currentPlayer =
             if game.currentPlayer == 1 then
                 2
@@ -395,20 +411,20 @@ viewActionTile game tile =
 viewMain : Game -> Html GameMsg
 viewMain game =
     div [ class "mainboard" ]
-        [ viewBoard game.player1
-        , viewAvailableRooms (getCurrentPlayer game) game.availableRooms
-        , viewBoard game.player2
+        [ viewBoard game.player1 (Stack.top game.stack)
+        , viewAvailableRooms (getCurrentPlayer game) (Stack.top game.stack) game.availableRooms
+        , viewBoard game.player2 (Stack.top game.stack)
         ]
 
 
-viewAvailableRooms : PlayerBoard -> List Tile -> Html GameMsg
-viewAvailableRooms player rooms =
-    div [ class "availablerooms" ] (List.map (viewAvailableRoom player) rooms)
+viewAvailableRooms : PlayerBoard -> Maybe Subphase -> List Tile -> Html GameMsg
+viewAvailableRooms player subphase rooms =
+    div [ class "availablerooms" ] (List.map (viewAvailableRoom player subphase) rooms)
 
 
-viewAvailableRoom : PlayerBoard -> Tile -> Html GameMsg
-viewAvailableRoom player room =
-    if player.subphase == Just Furnish && isRoomSelectable player room then
+viewAvailableRoom : PlayerBoard -> Maybe Subphase -> Tile -> Html GameMsg
+viewAvailableRoom player subphase room =
+    if subphase == Just Furnish && isRoomSelectable player room then
         viewTile [ class "availableroom pick", onClick (SelectRoomTile room) ] player.resources room
 
     else

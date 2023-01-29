@@ -120,7 +120,6 @@ type alias PlayerBoard =
     , rooms : List Tile
     , walls : Array Wall
     , actionTiles : List Tile
-    , subphase : Maybe Subphase
     }
 
 

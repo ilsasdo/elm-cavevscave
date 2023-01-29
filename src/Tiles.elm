@@ -5,7 +5,6 @@ import Game exposing (Action, GameMsg(..), Resources, Subphase(..), Tile, TileSt
 import Html exposing (Attribute, Html, div)
 import Html.Attributes exposing (class, style)
 import Html.Events as Html
-import HtmlExt exposing (onClick)
 import Random
 import Random.List
 import Resources exposing (addEmmer, addFlax, addFood, addGold, addStone, addWood, alwaysDoable, minStone, priceFood, priceFree, priceGold, priceStone, priceWood, require, topEmmer, topFlax, topFood, topGold, topStone, topWood)

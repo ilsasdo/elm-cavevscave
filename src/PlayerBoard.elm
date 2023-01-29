@@ -7,18 +7,18 @@ import Html exposing (Html, div)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import Resources
-import Tiles exposing (consumeAction, tileCaveEntrance, tileDungeon, tileEmpty, tileEquipmentRoom, tileFreeAction, tileRettingRoom, tileRock, tileWoodStoreroom, viewTile)
+import Tiles exposing (tileCaveEntrance, tileDungeon, tileEmpty, tileEquipmentRoom, tileFreeAction, tileRettingRoom, tileRock, tileWoodStoreroom, viewTile)
 import Walls
 
 
 newBoard : PlayerBoard
 newBoard =
-    PlayerBoard (Resources 1 1 1 1 1 1 1 7 0) tileFreeAction [] (Array.repeat 14 Game.None) [] Nothing
+    PlayerBoard (Resources 1 1 1 1 1 1 1 7 0) tileFreeAction [] (Array.repeat 14 Game.None) []
 
 
 emptyBoard : PlayerBoard
 emptyBoard =
-    PlayerBoard (Resources 0 0 0 0 0 0 0 7 0) tileFreeAction [] (Array.fromList []) [] Nothing
+    PlayerBoard (Resources 0 0 0 0 0 0 0 7 0) tileFreeAction [] (Array.fromList []) []
 
 
 init : List Tile -> List Tile
@@ -78,7 +78,6 @@ buildWall wallIndex player =
     { player
         | walls = walls
         , rooms = Tiles.updateWalls walls player.rooms
-        , subphase = Nothing
     }
 
 
@@ -91,7 +90,6 @@ destroyWall wallIndex player =
     { player
         | walls = walls
         , rooms = Tiles.updateWalls walls player.rooms
-        , subphase = Nothing
     }
 
 
@@ -99,7 +97,6 @@ placeRoom : Tile -> Tile -> PlayerBoard -> PlayerBoard
 placeRoom tile tileToPlace player =
     { player
         | resources = payRoom tileToPlace.price player.resources
-        , subphase = Nothing
         , rooms =
             List.map
                 (\r ->
@@ -176,15 +173,13 @@ payRoom price resources =
 
 deactivateRooms player =
     { player
-        | subphase = Nothing
-        , rooms = Tiles.deactivateTiles player.rooms
+        | rooms = Tiles.deactivateTiles player.rooms
     }
 
 
-activateRoom tile subphase player =
+activateRoom tile player =
     { player
-        | subphase = subphase
-        , rooms = Tiles.updateStatus tile Game.Active player.rooms
+        | rooms = Tiles.updateStatus tile Game.Active player.rooms
     }
 
 
@@ -251,11 +246,10 @@ applyWoodStoreroom first qty player =
         player
 
 
-escavateRoom : Tile -> Maybe Subphase -> PlayerBoard -> PlayerBoard
-escavateRoom tile subphase player =
+escavateRoom : Tile -> PlayerBoard -> PlayerBoard
+escavateRoom tile player =
     { player
-        | subphase = subphase
-        , resources = addFoodForBonusRooms player tile
+        | resources = addFoodForBonusRooms player tile
         , rooms =
             Tiles.updateStatus tile Game.Empty player.rooms
                 |> Tiles.updateWalls player.walls
@@ -360,22 +354,22 @@ isRoom tileIndex roomArray =
         |> (\t -> t.status /= Rock)
 
 
-viewBoard : PlayerBoard -> Html GameMsg
-viewBoard board =
+viewBoard : PlayerBoard -> Maybe Subphase -> Html GameMsg
+viewBoard board subphase =
     div [ class "playerboard" ]
         [ viewActionTiles board.resources board.actionTiles
         , div [ class "board" ]
-            ([ viewResources board.resources board.subphase, viewFreeAction board ]
-                ++ viewRooms board
-                ++ viewWalls board
+            ([ viewResources board.resources subphase, viewFreeAction board ]
+                ++ viewRooms board subphase
+                ++ viewWalls board subphase
             )
         ]
 
 
-viewWalls : PlayerBoard -> List (Html GameMsg)
-viewWalls board =
+viewWalls : PlayerBoard -> Maybe Subphase -> List (Html GameMsg)
+viewWalls board subphase =
     board.walls
-        |> Array.indexedMap (viewWall board.subphase)
+        |> Array.indexedMap (viewWall subphase)
         |> Array.toList
 
 
@@ -406,14 +400,14 @@ viewActionTiles resources actionTiles =
     div [ class "actiontiles" ] (List.map (viewTile [ class "actiontile" ] resources) actionTiles)
 
 
-viewRooms : PlayerBoard -> List (Html GameMsg)
-viewRooms board =
-    List.indexedMap (viewRoom board) board.rooms
+viewRooms : PlayerBoard -> Maybe Subphase -> List (Html GameMsg)
+viewRooms board subphase =
+    List.indexedMap (viewRoom board subphase) board.rooms
 
 
-viewRoom : PlayerBoard -> Int -> Tile -> Html GameMsg
-viewRoom board index tile =
-    case board.subphase of
+viewRoom : PlayerBoard -> Maybe Subphase -> Int -> Tile -> Html GameMsg
+viewRoom board subphase index tile =
+    case subphase of
         Just ExcavateThroughWall ->
             if tile.status == Rock && isExcavatable board tile then
                 viewSelectableTile board.resources index tile
