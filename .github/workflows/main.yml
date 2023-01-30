@@ -1,4 +1,4 @@
-name: build
+name: deploy-to-github-pages
 run-name: deploy-to-website
 on: [push]
 jobs:
@@ -10,7 +10,7 @@ jobs:
         with:
           node-version: '14'
       - run: npm install -g elm
-      - run: elm make src/Minesweeper.elm --output dist/build.js
+      - run: elm make src/Main.elm --output dist/build.js
       - name: Pushes to public repository
         id: push_directory
         uses: cpina/github-action-push-to-another-repository@ssh-deploy-key
