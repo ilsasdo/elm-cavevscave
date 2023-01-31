@@ -143,7 +143,7 @@ update msg ({ player1, player2 } as game) =
                         |> PlayerBoard.escavateRoom tile
                         |> setCurrentPlayer2 game
                         |> popFromPhase
-                        |> pushToPhase (Just Excavate1)
+                        |> pushToPhase [Excavate1]
                         |> update (AddToAvailableRooms tile)
 
                 Just (Activate1 first) ->
@@ -192,14 +192,9 @@ popFromPhase game =
     { game | stack = Stack.pop game.stack }
 
 
-pushToPhase : Maybe Subphase -> Game -> Game
-pushToPhase sub game =
-    case sub of
-        Just subphase ->
-            { game | stack = Stack.push subphase game.stack }
-
-        Nothing ->
-            game
+pushToPhase : List Subphase -> Game -> Game
+pushToPhase subphase game =
+    { game | stack = Stack.pushAll subphase game.stack }
 
 
 swap ( a, b ) =

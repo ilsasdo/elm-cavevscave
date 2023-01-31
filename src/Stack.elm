@@ -9,6 +9,9 @@ push : a -> Stack a -> Stack a
 push a stack =
     a :: stack
 
+pushAll : List a -> Stack a -> Stack a
+pushAll list stack =
+    list ++ stack
 
 top : Stack a -> Maybe a
 top stack =

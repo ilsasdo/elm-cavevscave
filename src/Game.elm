@@ -73,7 +73,7 @@ type alias Action =
     , available : Bool
     , isDoable : Resources -> Bool
     , do : Resources -> Resources
-    , subphase : Maybe Subphase
+    , subphase : List Subphase
     , disableActions : List Int
     }
 
