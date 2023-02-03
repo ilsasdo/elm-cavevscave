@@ -16,7 +16,7 @@ type GameMsg
     | RemoveFromAvailableRooms Tile
     | WallBuilt
     | WallDestroyed
-    | ResourceChosen (Maybe Subphase) (Resources -> Resources)
+    | ResourceChosen (Resources -> Resources)
 
 
 type TileStatus
@@ -42,12 +42,8 @@ type Subphase
     | BuildWall
     | DestroyWall
     | ExcavateThroughWall
-    | Activate1 Bool
-    | Activate2 Bool
-    | Activate3 Bool
-    | ChooseResource3
-    | ChooseResource2
-    | ChooseResource1
+    | Activate
+    | ChooseResource
 
 
 type Wall
@@ -156,20 +152,8 @@ subphaseToString subphase =
         Just ExcavateThroughWall ->
             "Escavate through a Wall"
 
-        Just (Activate1 first) ->
+        Just Activate ->
             "Activate a Room 1"
 
-        Just (Activate2 first) ->
-            "Activate a Room 2"
-
-        Just (Activate3 first) ->
-            "Activate a Room 3"
-
-        Just ChooseResource3 ->
-            "Choose Three Resources"
-
-        Just ChooseResource2 ->
-            "Choose Two Resources"
-
-        Just ChooseResource1 ->
+        Just ChooseResource ->
             "Choose One Resource"

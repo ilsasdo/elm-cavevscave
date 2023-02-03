@@ -201,36 +201,22 @@ activateRoom tile player =
     }
 
 
+applyEquipmentRoom : List Subphase -> PlayerBoard -> List Subphase
 applyEquipmentRoom subphase player =
-    if playerHasEquipment player tileEquipmentRoom then
-        case subphase of
-            Activate2 first ->
-                if first then
-                    Just (Activate2 False)
-
-                else
-                    Just (Activate1 False)
-
-            Activate3 first ->
-                if first then
-                    Just (Activate3 False)
-
-                else
-                    Just (Activate2 False)
-
-            _ ->
-                Nothing
+    let
+        activateCount =
+            subphase
+                |> List.filter ((==) Activate)
+                |> List.length
+    in
+    if
+        ((activateCount == 2) || (activateCount == 3))
+            && playerHasEquipment player tileEquipmentRoom
+    then
+        Activate :: subphase
 
     else
-        case subphase of
-            Activate2 first ->
-                Just (Activate1 False)
-
-            Activate3 first ->
-                Just (Activate2 False)
-
-            _ ->
-                Nothing
+        subphase
 
 
 applyRettingRoom player newResources =
@@ -256,9 +242,14 @@ applyDungeon player =
         player
 
 
-applyWoodStoreroom first qty player =
-    if first && playerHasEquipment player tileWoodStoreroom then
-        { player | resources = Resources.addFood qty player.resources }
+applyWoodStoreroom : List Subphase -> PlayerBoard -> PlayerBoard
+applyWoodStoreroom phases player =
+    if
+        (List.length phases == 1)
+            && (List.head phases == Just Activate)
+            && playerHasEquipment player tileWoodStoreroom
+    then
+        { player | resources = Resources.addFood 1 player.resources }
 
     else
         player
@@ -454,21 +445,7 @@ viewRoom board subphase index tile =
             else
                 viewNonSelectableTile board.resources index tile
 
-        Just (Activate1 first) ->
-            if tile.status == Available then
-                viewSelectableTile board.resources index tile
-
-            else
-                viewNonSelectableTile board.resources index tile
-
-        Just (Activate2 first) ->
-            if tile.status == Available then
-                viewSelectableTile board.resources index tile
-
-            else
-                viewNonSelectableTile board.resources index tile
-
-        Just (Activate3 first) ->
+        Just Activate ->
             if tile.status == Available then
                 viewSelectableTile board.resources index tile
 
@@ -502,14 +479,8 @@ viewResources resources subphase =
 
 viewResource resource qty subphase resfun =
     case subphase of
-        Just ChooseResource3 ->
-            div [ class (resource ++ " " ++ "qty" ++ toString qty), onClick (ResourceChosen (Just ChooseResource2) resfun) ] []
-
-        Just ChooseResource2 ->
-            div [ class (resource ++ " " ++ "qty" ++ toString qty), onClick (ResourceChosen (Just ChooseResource1) resfun) ] []
-
-        Just ChooseResource1 ->
-            div [ class (resource ++ " " ++ "qty" ++ toString qty), onClick (ResourceChosen Nothing resfun) ] []
+        Just ChooseResource ->
+            div [ class (resource ++ " " ++ "qty" ++ toString qty), onClick (ResourceChosen resfun) ] []
 
         _ ->
             div [ class (resource ++ " " ++ "qty" ++ toString qty) ] []

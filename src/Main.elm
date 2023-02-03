@@ -90,8 +90,9 @@ update msg ({ player1, player2 } as game) =
             game
                 |> getCurrentPlayer
                 |> PlayerBoard.doAction tile action
+                |> PlayerBoard.applyWoodStoreroom action.subphase
                 |> setCurrentPlayer2 game
-                |> pushToPhase action.subphase
+                |> pushToPhase (PlayerBoard.applyEquipmentRoom action.subphase (getCurrentPlayer game))
                 |> Tuple.pair Cmd.none
                 |> swap
 
@@ -146,43 +147,23 @@ update msg ({ player1, player2 } as game) =
                         |> pushToPhase [Excavate1]
                         |> update (AddToAvailableRooms tile)
 
-                Just (Activate1 first) ->
-                    activePlayer
-                        |> PlayerBoard.applyWoodStoreroom first 1
-                        |> PlayerBoard.activateRoom tile
-                        |> setCurrentPlayer2 game
-                        |> popFromPhase
-                        |> Tuple.pair Cmd.none
-                        |> swap
-
-                Just (Activate2 first) ->
+                Just Activate ->
                     activePlayer
                         |> PlayerBoard.activateRoom tile
                         |> setCurrentPlayer2 game
                         |> popFromPhase
-                        |> pushToPhase (PlayerBoard.applyEquipmentRoom (Activate2 first) activePlayer)
-                        |> Tuple.pair Cmd.none
-                        |> swap
-
-                Just (Activate3 first) ->
-                    activePlayer
-                        |> PlayerBoard.activateRoom tile
-                        |> setCurrentPlayer2 game
-                        |> popFromPhase
-                        |> pushToPhase (PlayerBoard.applyEquipmentRoom (Activate3 first) activePlayer)
                         |> Tuple.pair Cmd.none
                         |> swap
 
                 _ ->
                     ( game, Cmd.none )
 
-        ResourceChosen maybeSubphase updateResources ->
+        ResourceChosen updateResources ->
             game
                 |> getCurrentPlayer
                 |> PlayerBoard.chooseResource updateResources
                 |> setCurrentPlayer2 game
                 |> popFromPhase
-                |> pushToPhase maybeSubphase
                 |> Tuple.pair Cmd.none
                 |> swap
 

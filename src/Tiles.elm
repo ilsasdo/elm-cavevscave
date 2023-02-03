@@ -264,7 +264,7 @@ tileColtivare =
         "assets/img/rounds/coltivare.jpg"
         priceFree
         noWalls
-        [ topAction alwaysDoable (\r -> r) [Activate1 True] [ 0 ]
+        [ topAction alwaysDoable (\r -> r) [Activate] [ 0 ]
         , bottomAction alwaysDoable (\r -> r |> addEmmer 2 |> addFlax 1) [] [ 1 ]
         ]
 
@@ -278,7 +278,7 @@ tileSottobosco =
         "assets/img/rounds/sottobosco.jpg"
         priceFree
         noWalls
-        [ topAction alwaysDoable (\r -> r) [Activate1 True] [ 0 ]
+        [ topAction alwaysDoable (\r -> r) [Activate] [ 0 ]
         , bottomAction alwaysDoable (addWood 2) [] [ 1 ]
         ]
 
@@ -321,7 +321,7 @@ tileCostruireUnMuro =
         "assets/img/rounds/costruire_un_muro.jpg"
         priceFree
         noWalls
-        [ topLeftAction alwaysDoable (\r -> r) [Activate1 True] [ 0 ]
+        [ topLeftAction alwaysDoable (\r -> r) [Activate] [ 0 ]
         , thirdAction alwaysDoable (addWood 1) [] [ 1, 2 ]
         , fourthAction alwaysDoable (addStone 1) [] [ 1, 2 ]
         , bottomAction (require .availableWalls (>) 0) (\r -> r) [BuildWall] [ 3 ]
@@ -337,7 +337,7 @@ tileMinare =
         "assets/img/rounds/minare.jpg"
         priceFree
         noWalls
-        [ leftAction alwaysDoable (\r -> r) [Activate2 True] [ 0, 1 ]
+        [ leftAction alwaysDoable (\r -> r) [Activate, Activate] [ 0, 1 ]
         , rightAction alwaysDoable (\r -> r) [ExcavateThroughWall] [ 0, 1 ]
         ]
 
@@ -381,7 +381,7 @@ tileSpedizione =
         noWalls
         [ firstAction (require .wood (>=) 5) (\r -> r |> addWood -5 |> addGold 5) [] [ 0, 1, 2 ]
         , secondAction (require .stone (>=) 5) (\r -> r |> addStone -5 |> addGold 5) [] [ 0, 1, 2 ]
-        , rightAction alwaysDoable (\r -> r) [Activate3 True] [ 0, 1, 2 ]
+        , rightAction alwaysDoable (\r -> r) [Activate, Activate, Activate] [ 0, 1, 2 ]
         ]
 
 
@@ -394,7 +394,7 @@ tilePerforare =
         "assets/img/rounds/perforare.jpg"
         priceFree
         noWalls
-        [ topAction alwaysDoable (\r -> r) [Activate1 True] [ 0 ]
+        [ topAction alwaysDoable (\r -> r) [Activate] [ 0 ]
         , bottomAction (\r -> require .gold (>) r.opponentsGold r) (\r -> r) [Excavate1] [ 1 ]
         ]
 
@@ -784,7 +784,7 @@ tileStanzaDiSnodo =
         (priceFree |> priceWood 2)
         (Game.Walls Game.None Game.Placed Game.None Game.Placed)
         -- TODO: resources should be update after wall choice
-        [ fullAction Resources.atLeastThreeResources (\res -> res |> addGold 2) [ChooseResource3] [ 0 ] ]
+        [ fullAction Resources.atLeastThreeResources (\res -> res |> addGold 2) [ChooseResource, ChooseResource, ChooseResource] [ 0 ] ]
 
 
 tileTesoreria : Tile
