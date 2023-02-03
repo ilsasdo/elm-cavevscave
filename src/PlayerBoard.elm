@@ -11,14 +11,14 @@ import Tiles exposing (tileCaveEntrance, tileDungeon, tileEmpty, tileEquipmentRo
 import Walls
 
 
-newBoard : PlayerBoard
-newBoard =
-    PlayerBoard (Resources 1 1 1 1 1 1 1 7 0) tileFreeAction [] (Array.repeat 14 Game.None) []
+newBoard : Bool -> PlayerBoard
+newBoard active =
+    PlayerBoard (Resources 1 1 1 1 1 1 1 7 0) tileFreeAction [] (Array.repeat 14 Game.None) [] active
 
 
 emptyBoard : PlayerBoard
 emptyBoard =
-    PlayerBoard (Resources 0 0 0 0 0 0 0 7 0) tileFreeAction [] (Array.fromList []) []
+    PlayerBoard (Resources 0 0 0 0 0 0 0 7 0) tileFreeAction [] (Array.fromList []) [] False
 
 
 init : List Tile -> List Tile
@@ -365,10 +365,21 @@ isRoom tileIndex roomArray =
 
 viewBoard : PlayerBoard -> Maybe Subphase -> Html GameMsg
 viewBoard board subphase =
-    div [ class "playerboard" ]
+    let
+        activeClass =
+            if board.active then
+                "active"
+
+            else
+                ""
+    in
+    div
+        [ class "playerboard"
+        , class activeClass
+        ]
         [ viewActionTiles board.resources board.actionTiles
         , div [ class "board" ]
-            ([ viewResources board.resources subphase, viewFreeAction board ]
+            ([ viewResources board subphase, viewFreeAction board ]
                 ++ viewRooms board subphase
                 ++ viewWalls board subphase
             )
@@ -416,6 +427,9 @@ viewRooms board subphase =
 
 viewRoom : PlayerBoard -> Maybe Subphase -> Int -> Tile -> Html GameMsg
 viewRoom board subphase index tile =
+    if not board.active then
+        viewNonSelectableTile board.resources index tile
+    else
     case subphase of
         Just ExcavateThroughWall ->
             if tile.status == Rock && isExcavatable board tile then
@@ -424,15 +438,8 @@ viewRoom board subphase index tile =
             else
                 viewNonSelectableTile board.resources index tile
 
-        Just Excavate1 ->
+        Just Excavate ->
             if tile.status == Rock && isExcavatable board tile then
-                viewSelectableTile board.resources index tile
-
-            else
-                viewNonSelectableTile board.resources index tile
-
-        Just Excavate2 ->
-            if tile.status == Rock then
                 viewSelectableTile board.resources index tile
 
             else
@@ -466,21 +473,24 @@ viewNonSelectableTile resources index tile =
         [ viewTile [] resources tile ]
 
 
-viewResources resources subphase =
+viewResources board subphase =
     div [ class "resources" ]
-        [ viewResource "food" resources.food subphase (\r -> { r | food = r.food - 1 })
-        , viewResource "wood" resources.wood subphase (\r -> { r | wood = r.wood - 1 })
-        , viewResource "stone" resources.stone subphase (\r -> { r | stone = r.stone - 1 })
-        , viewResource "emmer" resources.emmer subphase (\r -> { r | emmer = r.emmer - 1 })
-        , viewResource "flax" resources.flax subphase (\r -> { r | flax = r.flax - 1 })
-        , viewResource "gold" resources.gold subphase (\r -> { r | gold = r.gold - 1 })
+        [ viewResource board.active "food" board.resources.food subphase (\r -> { r | food = r.food - 1 })
+        , viewResource board.active "wood" board.resources.wood subphase (\r -> { r | wood = r.wood - 1 })
+        , viewResource board.active "stone" board.resources.stone subphase (\r -> { r | stone = r.stone - 1 })
+        , viewResource board.active "emmer" board.resources.emmer subphase (\r -> { r | emmer = r.emmer - 1 })
+        , viewResource board.active "flax" board.resources.flax subphase (\r -> { r | flax = r.flax - 1 })
+        , viewResource board.active "gold" board.resources.gold subphase (\r -> { r | gold = r.gold - 1 })
         ]
 
 
-viewResource resource qty subphase resfun =
-    case subphase of
-        Just ChooseResource ->
-            div [ class (resource ++ " " ++ "qty" ++ toString qty), onClick (ResourceChosen resfun) ] []
+viewResource active resource qty subphase resfun =
+    if active then
+        case subphase of
+            Just ChooseResource ->
+                div [ class (resource ++ " " ++ "qty" ++ toString qty), onClick (ResourceChosen resfun) ] []
 
-        _ ->
-            div [ class (resource ++ " " ++ "qty" ++ toString qty) ] []
+            _ ->
+                div [ class (resource ++ " " ++ "qty" ++ toString qty) ] []
+    else
+        div [ class (resource ++ " " ++ "qty" ++ toString qty) ] []

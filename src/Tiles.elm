@@ -292,8 +292,8 @@ tileScavare =
         "assets/img/rounds/scavare.jpg"
         priceFree
         noWalls
-        [ topLeftAction alwaysDoable (\r -> r) [Excavate1] [ 0, 1 ]
-        , topRightAction (require .food (>=) 2) (addFood -2) [Excavate2] [ 0, 1 ]
+        [ topLeftAction alwaysDoable (\r -> r) [Excavate] [ 0, 1 ]
+        , topRightAction (require .food (>=) 2) (addFood -2) [Excavate, Excavate] [ 0, 1 ]
         , bottomAction alwaysDoable (addStone 1) [] [ 2 ]
         ]
 
@@ -364,7 +364,7 @@ tileEspansione =
         "assets/img/rounds/espansione.jpg"
         priceFree
         noWalls
-        [ topAction alwaysDoable (\r -> r) [Excavate1] [ 0 ]
+        [ topAction alwaysDoable (\r -> r) [Excavate] [ 0 ]
         , bottomLeftAction (require .food (>=) 5) (addFood -5) [Furnish] [ 1, 2 ]
         , bottomRightAction (require .gold (>=) 1) (addGold -1) [Furnish] [ 1, 2 ]
         ]
@@ -395,7 +395,7 @@ tilePerforare =
         priceFree
         noWalls
         [ topAction alwaysDoable (\r -> r) [Activate] [ 0 ]
-        , bottomAction (\r -> require .gold (>) r.opponentsGold r) (\r -> r) [Excavate1] [ 1 ]
+        , bottomAction (\r -> require .gold (>) r.opponentsGold r) (\r -> r) [Excavate] [ 1 ]
         ]
 
 

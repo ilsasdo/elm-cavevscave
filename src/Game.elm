@@ -35,8 +35,7 @@ type TileType
 type Subphase
     = NewActionPhase
     | ActionPhase
-    | Excavate1
-    | Excavate2
+    | Excavate
     | Furnish
     | PlaceRoom Tile
     | BuildWall
@@ -102,7 +101,6 @@ type alias Game =
     , player2 : PlayerBoard
     , round : Int -- starts with 1 ends with 8
     , actions : Int -- 2 actions for rounds 1,2,3. 3 actions for rounds 4,5,6,7. 4 actions for round 8
-    , currentPlayer : Int -- 1 or 2
     , actionTiles : List Tile
     , availableRooms : List Tile
     , availableWalls : Int
@@ -116,6 +114,7 @@ type alias PlayerBoard =
     , rooms : List Tile
     , walls : Array Wall
     , actionTiles : List Tile
+    , active : Bool
     }
 
 
@@ -131,11 +130,8 @@ subphaseToString subphase =
         Nothing ->
             ""
 
-        Just Excavate1 ->
+        Just Excavate ->
             "Escavate 1"
-
-        Just Excavate2 ->
-            "Escavate 2"
 
         Just Furnish ->
             "Furnish"

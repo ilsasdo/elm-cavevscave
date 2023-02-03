@@ -17,7 +17,7 @@ main =
 
 init : () -> ( Game, Cmd GameMsg )
 init _ =
-    ( Game PlayerBoard.newBoard PlayerBoard.newBoard 1 2 1 [] Tiles.initCommonRooms 7 [ NewActionPhase ], Tiles.initRandomTiles )
+    ( Game (PlayerBoard.newBoard True) (PlayerBoard.newBoard False) 1 2 [] Tiles.initCommonRooms 7 [ NewActionPhase ], Tiles.initRandomTiles )
 
 
 update : GameMsg -> Game -> ( Game, Cmd GameMsg )
@@ -116,7 +116,11 @@ update msg ({ player1, player2 } as game) =
         SelectRoomTile tile ->
             case Stack.top game.stack of
                 Just Furnish ->
-                    ( setCurrentPlayer activePlayer game, Cmd.none )
+                    game
+                        |> popFromPhase
+                        |> pushToPhase [ PlaceRoom tile ]
+                        |> Tuple.pair Cmd.none
+                        |> swap
 
                 Just (PlaceRoom tileToPlace) ->
                     activePlayer
@@ -132,19 +136,11 @@ update msg ({ player1, player2 } as game) =
                         |> popFromPhase
                         |> update (AddToAvailableRooms tile)
 
-                Just Excavate1 ->
+                Just Excavate ->
                     activePlayer
                         |> PlayerBoard.escavateRoom tile
                         |> setCurrentPlayer2 game
                         |> popFromPhase
-                        |> update (AddToAvailableRooms tile)
-
-                Just Excavate2 ->
-                    activePlayer
-                        |> PlayerBoard.escavateRoom tile
-                        |> setCurrentPlayer2 game
-                        |> popFromPhase
-                        |> pushToPhase [Excavate1]
                         |> update (AddToAvailableRooms tile)
 
                 Just Activate ->
@@ -215,7 +211,10 @@ activateProspectingSite player tile game =
 
 pass : Game -> Game
 pass game =
-    if List.length game.player1.actionTiles == game.actions && List.length game.player2.actionTiles == game.actions then
+    if
+        (List.length game.player1.actionTiles == game.actions)
+            && (List.length game.player2.actionTiles == game.actions)
+    then
         nextRound game
 
     else
@@ -307,15 +306,11 @@ nextRound game =
 
 
 nextPlayer : Game -> Game
-nextPlayer game =
+nextPlayer ({player1, player2} as game) =
     { game
         | stack = [ NewActionPhase ]
-        , currentPlayer =
-            if game.currentPlayer == 1 then
-                2
-
-            else
-                1
+        , player1 = { player1 | active = not player1.active }
+        , player2 = { player2 | active = not player2.active }
     }
 
 
@@ -337,7 +332,7 @@ viewStatusBar game =
                 ("Round: "
                     ++ String.fromInt game.round
                     ++ " || Player "
-                    ++ String.fromInt game.currentPlayer
+                    ++ String.fromInt (if game.player1.active then 1 else 2)
                     ++ " || Actions: "
                     ++ (game |> getCurrentPlayer |> .actionTiles |> List.length |> String.fromInt)
                     ++ "/"
@@ -350,10 +345,9 @@ viewStatusBar game =
             ]
         ]
 
-
 getCurrentPlayer : Game -> PlayerBoard
 getCurrentPlayer game =
-    if game.currentPlayer == 1 then
+    if game.player1.active then
         game.player1
 
     else
@@ -362,7 +356,7 @@ getCurrentPlayer game =
 
 opponentPlayer : Game -> PlayerBoard
 opponentPlayer game =
-    if game.currentPlayer == 1 then
+    if game.player1.active then
         game.player2
 
     else
@@ -371,7 +365,7 @@ opponentPlayer game =
 
 setCurrentPlayer : PlayerBoard -> Game -> Game
 setCurrentPlayer player game =
-    if game.currentPlayer == 1 then
+    if game.player1.active then
         { game | player1 = player }
 
     else
