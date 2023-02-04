@@ -39,6 +39,7 @@ type Subphase
     | ExcavateThroughWall
     | Activate
     | ChooseResource
+    | SelectAdditionalCave
 
 
 type Wall

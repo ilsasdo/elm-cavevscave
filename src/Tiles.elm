@@ -811,6 +811,31 @@ tileTesoreria =
         (Game.Walls Game.Placed Game.Placed Game.Placed Game.Placed)
         [ fullAction (require .gold (>=) 3) (\res -> res |> addGold -3 |> addGold 4 |> addFood 1) [] [ 0 ] ]
 
+------------------------
+--- ADDITIONAL CAVERN --
+------------------------
+tileAdditionalCavern3Walls : Tile
+tileAdditionalCavern3Walls =
+    Tile "Additional Cavern 3 Walls"
+        Gray
+        Available
+        0
+        "assets/img/additionalcavern3.jpg"
+        priceFree
+        (Game.Walls Game.Placed Game.Placed Game.Placed Game.None)
+        []
+
+tileAdditionalCavern4Walls : Tile
+tileAdditionalCavern4Walls =
+    Tile "Additional Cavern 4 Walls"
+        Gray
+        Available
+        0
+        "assets/img/additionalcavern4.jpg"
+        priceFree
+        (Game.Walls Game.Placed Game.Placed Game.Placed Game.Placed)
+        []
+
 
 firstAction : (Resources -> Bool) -> (Resources -> Resources) -> List Subphase -> List Int -> Action
 firstAction isDoable do subphase disableActions =

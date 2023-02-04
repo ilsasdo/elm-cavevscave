@@ -32,6 +32,18 @@ activatePlayer opponentsGold player =
         , resources = Resources.updateOpponentsGold opponentsGold player.resources
     }
 
+
+caveIsAllFurnished : PlayerBoard -> Bool
+caveIsAllFurnished player =
+    let
+        emptyOrRockRooms =
+            player.rooms
+                |> List.filter (\r -> r.status == Rock || r.status == Empty)
+                |> List.length
+    in
+    emptyOrRockRooms == 0
+
+
 restorePlayerPass : PlayerBoard -> PlayerBoard
 restorePlayerPass board =
     { board
@@ -48,6 +60,7 @@ restorePlayerNextRound round ({ resources } as player) =
         , rooms = List.map Tiles.restoreTile player.rooms
         , resources = { resources | actions = round }
     }
+
 
 chooseResource : (Resources -> Resources) -> PlayerBoard -> PlayerBoard
 chooseResource updateResources player =
@@ -182,12 +195,6 @@ payRoom price resources =
     }
 
 
-deactivateRooms player =
-    { player
-        | rooms = Tiles.deactivateTiles player.rooms
-    }
-
-
 activateRoom tile player =
     { player
         | rooms = Tiles.updateStatus tile Game.Active player.rooms
@@ -228,7 +235,12 @@ applyRettingRoom player newResources =
 
 
 selectActionTile tile player =
-    { player | actionTiles = List.append player.actionTiles [{ tile | status = Active }] }
+    { player | actionTiles = List.append player.actionTiles [ { tile | status = Active } ] }
+
+
+addAdditionalCave: Tile -> PlayerBoard -> PlayerBoard
+addAdditionalCave tile player =
+    { player | rooms = List.append player.rooms [{tile | status = Empty }]}
 
 
 applyProspectingSite : Tile -> PlayerBoard -> PlayerBoard
@@ -435,38 +447,39 @@ viewRoom : PlayerBoard -> Maybe Subphase -> Int -> Tile -> Html GameMsg
 viewRoom board subphase index tile =
     if not board.active then
         viewNonSelectableTile board.resources index tile
+
     else
-    case subphase of
-        Just ExcavateThroughWall ->
-            if tile.status == Rock && isExcavatable board tile then
-                viewSelectableTile board.resources index tile
+        case subphase of
+            Just ExcavateThroughWall ->
+                if tile.status == Rock && isExcavatable board tile then
+                    viewSelectableTile board.resources index tile
 
-            else
+                else
+                    viewNonSelectableTile board.resources index tile
+
+            Just Excavate ->
+                if tile.status == Rock && isExcavatable board tile then
+                    viewSelectableTile board.resources index tile
+
+                else
+                    viewNonSelectableTile board.resources index tile
+
+            Just (PlaceRoom t) ->
+                if Debug.log "(tile.status == Empty)" (tile.status == Empty) && Walls.matches (Debug.log "(t.walls)" t.walls) (Debug.log "(tile.walls)" tile.walls) then
+                    viewSelectableTile board.resources index tile
+
+                else
+                    viewNonSelectableTile board.resources index tile
+
+            Just Activate ->
+                if tile.status == Available then
+                    viewSelectableTile board.resources index tile
+
+                else
+                    viewNonSelectableTile board.resources index tile
+
+            _ ->
                 viewNonSelectableTile board.resources index tile
-
-        Just Excavate ->
-            if tile.status == Rock && isExcavatable board tile then
-                viewSelectableTile board.resources index tile
-
-            else
-                viewNonSelectableTile board.resources index tile
-
-        Just (PlaceRoom t) ->
-            if Debug.log "(tile.status == Empty)" (tile.status == Empty) && Walls.matches (Debug.log "(t.walls)" t.walls) (Debug.log "(tile.walls)" tile.walls) then
-                viewSelectableTile board.resources index tile
-
-            else
-                viewNonSelectableTile board.resources index tile
-
-        Just Activate ->
-            if tile.status == Available then
-                viewSelectableTile board.resources index tile
-
-            else
-                viewNonSelectableTile board.resources index tile
-
-        _ ->
-            viewNonSelectableTile board.resources index tile
 
 
 viewSelectableTile resources index tile =
@@ -498,5 +511,6 @@ viewResource active resource qty subphase resfun =
 
             _ ->
                 div [ class (resource ++ " " ++ "qty" ++ toString qty) ] []
+
     else
         div [ class (resource ++ " " ++ "qty" ++ toString qty) ] []

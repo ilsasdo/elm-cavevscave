@@ -8,7 +8,7 @@ import Html.Events exposing (onClick)
 import PlayerBoard exposing (isRoomSelectable, restorePlayerNextRound, restorePlayerPass, viewBoard)
 import Resources exposing (updateOpponentsGold)
 import Stack
-import Tiles exposing (viewTile)
+import Tiles exposing (tileAdditionalCavern3Walls, tileAdditionalCavern4Walls, viewTile)
 
 
 main =
@@ -67,8 +67,9 @@ update msg ({ player1, player2 } as game) =
             game
                 |> getCurrentPlayer
                 |> PlayerBoard.selectActionTile tile
+                |> PlayerBoard.applyProspectingSite tile
                 |> setCurrentPlayer game
-                |> pushToPhase [ActionPhase]
+                |> pushToPhase [ ActionPhase ]
                 |> removeActionTile tile
                 |> Tuple.pair Cmd.none
                 |> swap
@@ -120,6 +121,7 @@ update msg ({ player1, player2 } as game) =
                         |> setCurrentPlayer game
                         |> popFromPhase
                         |> removeFromAvailableRooms tileToPlace
+                        |> applyAdditionalCave
                         |> Tuple.pair Cmd.none
                         |> swap
 
@@ -149,6 +151,14 @@ update msg ({ player1, player2 } as game) =
                         |> Tuple.pair Cmd.none
                         |> swap
 
+                Just SelectAdditionalCave ->
+                    activePlayer
+                        |> PlayerBoard.addAdditionalCave tile
+                        |> setCurrentPlayer game
+                        |> popFromPhase
+                        |> Tuple.pair Cmd.none
+                        |> swap
+
                 _ ->
                     ( game, Cmd.none )
 
@@ -160,6 +170,23 @@ update msg ({ player1, player2 } as game) =
                 |> popFromPhase
                 |> Tuple.pair Cmd.none
                 |> swap
+
+
+applyAdditionalCave game =
+    if
+        PlayerBoard.caveIsAllFurnished (getCurrentPlayer game)
+            && isAdditionalCaveAvailable game
+    then
+        pushToPhase [ SelectAdditionalCave ] game
+
+    else
+        game
+
+
+isAdditionalCaveAvailable : Game -> Bool
+isAdditionalCaveAvailable game =
+    (List.length game.player1.rooms == 10)
+        && (List.length game.player2.rooms == 10)
 
 
 popFromPhase : Game -> Game
@@ -176,8 +203,8 @@ swap ( a, b ) =
     ( b, a )
 
 
-setCurrentPlayer: Game -> PlayerBoard -> Game
-setCurrentPlayer game player=
+setCurrentPlayer : Game -> PlayerBoard -> Game
+setCurrentPlayer game player =
     if game.player1.active then
         { game | player1 = player }
 
@@ -214,9 +241,9 @@ activatePlayer game =
             opponentPlayer game
     in
     game
-    |> getCurrentPlayer
-    |> PlayerBoard.activatePlayer opponent.resources.gold
-    |> setCurrentPlayer game
+        |> getCurrentPlayer
+        |> PlayerBoard.activatePlayer opponent.resources.gold
+        |> setCurrentPlayer game
 
 
 updateAvailableWalls : Int -> Game -> Game
@@ -284,7 +311,7 @@ nextRound game =
 
 
 nextPlayer : Game -> Game
-nextPlayer ({player1, player2} as game) =
+nextPlayer ({ player1, player2 } as game) =
     { game
         | stack = [ NewActionPhase ]
         , player1 = { player1 | active = not player1.active }
@@ -310,7 +337,13 @@ viewStatusBar game =
                 ("Round: "
                     ++ String.fromInt game.round
                     ++ " || Player "
-                    ++ String.fromInt (if game.player1.active then 1 else 2)
+                    ++ String.fromInt
+                        (if game.player1.active then
+                            1
+
+                         else
+                            2
+                        )
                     ++ " || Actions: "
                     ++ (game |> getCurrentPlayer |> .actionTiles |> List.length |> String.fromInt)
                     ++ "/"
@@ -322,6 +355,7 @@ viewStatusBar game =
                 )
             ]
         ]
+
 
 getCurrentPlayer : Game -> PlayerBoard
 getCurrentPlayer game =
@@ -361,6 +395,7 @@ viewMain game =
     div [ class "mainboard" ]
         [ viewBoard game.player1 (Stack.top game.stack)
         , viewAvailableRooms (getCurrentPlayer game) (Stack.top game.stack) game.availableRooms
+        , viewChooseAdditionalCavern game
         , viewBoard game.player2 (Stack.top game.stack)
         ]
 
@@ -368,6 +403,18 @@ viewMain game =
 viewAvailableRooms : PlayerBoard -> Maybe Subphase -> List Tile -> Html GameMsg
 viewAvailableRooms player subphase rooms =
     div [ class "availablerooms" ] (List.map (viewAvailableRoom player subphase) rooms)
+
+
+viewChooseAdditionalCavern : Game -> Html GameMsg
+viewChooseAdditionalCavern game =
+    if Stack.top game.stack == Just SelectAdditionalCave then
+        div [ class "additionalcaverns" ]
+            (List.map (viewAdditionalCavern (getCurrentPlayer game)) [ tileAdditionalCavern3Walls, tileAdditionalCavern4Walls ])
+    else
+        Html.text ""
+
+viewAdditionalCavern player room =
+    viewTile [ class "additionalcavern pick", onClick (SelectRoomTile room) ] player.resources room
 
 
 viewAvailableRoom : PlayerBoard -> Maybe Subphase -> Tile -> Html GameMsg
