@@ -7,7 +7,7 @@ import Html exposing (Html, div)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import Resources
-import Tiles exposing (tileCaveEntrance, tileDungeon, tileEmpty, tileEquipmentRoom, tileFreeAction, tileRettingRoom, tileRock, tileWoodStoreroom, viewTile)
+import Tiles exposing (tileCaveEntrance, tileDungeon, tileEmpty, tileEquipmentRoom, tileFreeAction, tileProspectingSite, tileRettingRoom, tileRock, tileSottobosco, tileWoodStoreroom, viewTile)
 import Walls
 
 
@@ -232,6 +232,19 @@ applyRettingRoom player newResources =
 
     else
         newResources
+
+
+selectActionTile tile player =
+    { player | actionTiles = List.append player.actionTiles [{ tile | status = Active }] }
+
+
+applyProspectingSite : Tile -> PlayerBoard -> PlayerBoard
+applyProspectingSite tile player =
+    if tile.title == tileSottobosco.title && playerHasEquipment player tileProspectingSite then
+        activateRoom tileProspectingSite player
+
+    else
+        player
 
 
 applyDungeon player =

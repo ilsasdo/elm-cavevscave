@@ -7,10 +7,11 @@
 
 ## nice to have
 
-1. Rollback Move
-2. You cannot use the Rooms that you Furnish right away
-3. Player should not be able to click on furnish room action if there is no room he can furnish
-4. Player should not be able to choose "demolire un muro" if he doesn't have a wall to destroy.
+1. single player mode
+2. Rollback Move
+3. You cannot use the Rooms that you Furnish right away
+4. Player should not be able to click on furnish room action if there is no room he can furnish
+5. Player should not be able to choose "demolire un muro" if he doesn't have a wall to destroy.
 
 ## Feature Roadmap
 

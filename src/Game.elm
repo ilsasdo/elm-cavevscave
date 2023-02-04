@@ -12,10 +12,6 @@ type GameMsg
     | InitRoundTiles (List Tile)
     | PickRoundTile Tile
     | Pass
-    | AddToAvailableRooms Tile
-    | RemoveFromAvailableRooms Tile
-    | WallBuilt
-    | WallDestroyed
     | ResourceChosen (Resources -> Resources)
 
 
