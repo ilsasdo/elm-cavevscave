@@ -26,35 +26,28 @@ init rooms =
     List.take 4 rooms ++ [ tileEmpty ] ++ (rooms |> List.drop 4 |> List.take 1) ++ [ tileCaveEntrance ] ++ List.drop 5 rooms
 
 
+activatePlayer opponentsGold player =
+    { player
+        | freeAction = player.freeAction |> Tiles.restoreTile |> Tiles.setStatus Active
+        , resources = Resources.updateOpponentsGold opponentsGold player.resources
+    }
+
 restorePlayerPass : PlayerBoard -> PlayerBoard
 restorePlayerPass board =
     { board
         | actionTiles = List.map (\t -> { t | status = Available }) board.actionTiles
         , freeAction = Tiles.setStatus Available board.freeAction
-        , rooms = List.map restoreTile board.rooms
+        , rooms = List.map Tiles.restoreTile board.rooms
     }
 
 
-restorePlayerNextRound : PlayerBoard -> Int -> PlayerBoard
-restorePlayerNextRound ({ resources } as player) round =
+restorePlayerNextRound : Int -> PlayerBoard -> PlayerBoard
+restorePlayerNextRound round ({ resources } as player) =
     { player
         | actionTiles = []
-        , rooms = List.map restoreTile player.rooms
+        , rooms = List.map Tiles.restoreTile player.rooms
         , resources = { resources | actions = round }
     }
-
-
-restoreTile : Tile -> Tile
-restoreTile room =
-    if room.status == Active then
-        { room
-            | status = Available
-            , actions = List.map (\a -> { a | available = True }) room.actions
-        }
-
-    else
-        room
-
 
 chooseResource : (Resources -> Resources) -> PlayerBoard -> PlayerBoard
 chooseResource updateResources player =

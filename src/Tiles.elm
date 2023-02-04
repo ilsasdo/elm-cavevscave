@@ -82,6 +82,19 @@ updateStatus tile status tiles =
         )
         tiles
 
+
+restoreTile : Tile -> Tile
+restoreTile room =
+    if room.status == Active then
+        { room
+            | status = Available
+            , actions = List.map (\a -> { a | available = True }) room.actions
+        }
+
+    else
+        room
+
+
 deactivateTiles tiles =
     List.map
         (\t ->

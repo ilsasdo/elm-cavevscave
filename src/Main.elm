@@ -67,7 +67,7 @@ update msg ({ player1, player2 } as game) =
             game
                 |> getCurrentPlayer
                 |> PlayerBoard.selectActionTile tile
-                |> setCurrentPlayer2 game
+                |> setCurrentPlayer game
                 |> pushToPhase [ActionPhase]
                 |> removeActionTile tile
                 |> Tuple.pair Cmd.none
@@ -78,7 +78,7 @@ update msg ({ player1, player2 } as game) =
                 |> getCurrentPlayer
                 |> PlayerBoard.doAction tile action
                 |> PlayerBoard.applyWoodStoreroom action.subphase
-                |> setCurrentPlayer2 game
+                |> setCurrentPlayer game
                 |> pushToPhase (PlayerBoard.applyEquipmentRoom action.subphase (getCurrentPlayer game))
                 |> Tuple.pair Cmd.none
                 |> swap
@@ -89,7 +89,7 @@ update msg ({ player1, player2 } as game) =
                     activePlayer
                         |> PlayerBoard.buildWall index
                         |> PlayerBoard.applyDungeon
-                        |> setCurrentPlayer2 game
+                        |> setCurrentPlayer game
                         |> updateAvailableWalls -1
                         |> Tuple.pair Cmd.none
                         |> swap
@@ -97,7 +97,7 @@ update msg ({ player1, player2 } as game) =
                 Just DestroyWall ->
                     activePlayer
                         |> PlayerBoard.destroyWall index
-                        |> setCurrentPlayer2 game
+                        |> setCurrentPlayer game
                         |> updateAvailableWalls 1
                         |> Tuple.pair Cmd.none
                         |> swap
@@ -117,7 +117,7 @@ update msg ({ player1, player2 } as game) =
                 Just (PlaceRoom tileToPlace) ->
                     activePlayer
                         |> PlayerBoard.placeRoom tile tileToPlace
-                        |> setCurrentPlayer2 game
+                        |> setCurrentPlayer game
                         |> popFromPhase
                         |> removeFromAvailableRooms tileToPlace
                         |> Tuple.pair Cmd.none
@@ -126,7 +126,7 @@ update msg ({ player1, player2 } as game) =
                 Just ExcavateThroughWall ->
                     activePlayer
                         |> PlayerBoard.escavateRoom tile
-                        |> setCurrentPlayer2 game
+                        |> setCurrentPlayer game
                         |> addToAvailableRooms tile
                         |> popFromPhase
                         |> Tuple.pair Cmd.none
@@ -135,7 +135,7 @@ update msg ({ player1, player2 } as game) =
                 Just Excavate ->
                     activePlayer
                         |> PlayerBoard.escavateRoom tile
-                        |> setCurrentPlayer2 game
+                        |> setCurrentPlayer game
                         |> addToAvailableRooms tile
                         |> popFromPhase
                         |> Tuple.pair Cmd.none
@@ -144,7 +144,7 @@ update msg ({ player1, player2 } as game) =
                 Just Activate ->
                     activePlayer
                         |> PlayerBoard.activateRoom tile
-                        |> setCurrentPlayer2 game
+                        |> setCurrentPlayer game
                         |> popFromPhase
                         |> Tuple.pair Cmd.none
                         |> swap
@@ -156,7 +156,7 @@ update msg ({ player1, player2 } as game) =
             game
                 |> getCurrentPlayer
                 |> PlayerBoard.chooseResource updateResources
-                |> setCurrentPlayer2 game
+                |> setCurrentPlayer game
                 |> popFromPhase
                 |> Tuple.pair Cmd.none
                 |> swap
@@ -176,8 +176,13 @@ swap ( a, b ) =
     ( b, a )
 
 
-setCurrentPlayer2 player game =
-    setCurrentPlayer game player
+setCurrentPlayer: Game -> PlayerBoard -> Game
+setCurrentPlayer game player=
+    if game.player1.active then
+        { game | player1 = player }
+
+    else
+        { game | player2 = player }
 
 
 removeActionTile : Tile -> Game -> Game
@@ -195,7 +200,9 @@ pass game =
 
     else
         game
-            |> setCurrentPlayer (restorePlayerPass (getCurrentPlayer game))
+            |> getCurrentPlayer
+            |> restorePlayerPass
+            |> setCurrentPlayer game
             |> nextPlayer
             |> activatePlayer
 
@@ -203,18 +210,13 @@ pass game =
 activatePlayer : Game -> Game
 activatePlayer game =
     let
-        player =
-            getCurrentPlayer game
-
         opponent =
             opponentPlayer game
     in
-    setCurrentPlayer
-        { player
-            | freeAction = player.freeAction |> PlayerBoard.restoreTile |> Tiles.setStatus Active
-            , resources = updateOpponentsGold opponent.resources.gold player.resources
-        }
-        game
+    game
+    |> getCurrentPlayer
+    |> PlayerBoard.activatePlayer opponent.resources.gold
+    |> setCurrentPlayer game
 
 
 updateAvailableWalls : Int -> Game -> Game
@@ -276,8 +278,8 @@ nextRound game =
         , round = round
         , actions = actions
         , actionTiles = actionTiles
-        , player1 = restorePlayerNextRound game.player1 actions
-        , player2 = restorePlayerNextRound game.player2 actions
+        , player1 = restorePlayerNextRound actions game.player1
+        , player2 = restorePlayerNextRound actions game.player2
     }
 
 
@@ -337,15 +339,6 @@ opponentPlayer game =
 
     else
         game.player1
-
-
-setCurrentPlayer : PlayerBoard -> Game -> Game
-setCurrentPlayer player game =
-    if game.player1.active then
-        { game | player1 = player }
-
-    else
-        { game | player2 = player }
 
 
 viewActionTiles : Game -> Html GameMsg
