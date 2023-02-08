@@ -11,9 +11,9 @@ import Tiles exposing (tileCaveEntrance, tileDungeon, tileEmpty, tileEquipmentRo
 import Walls
 
 
-newBoard : Bool -> PlayerBoard
-newBoard active =
-    PlayerBoard (Resources 1 1 1 1 1 1 1 7 0) tileFreeAction [] (Array.repeat 14 Game.None) [] active
+newBoard : Bool -> Int -> PlayerBoard
+newBoard active gold =
+    PlayerBoard (Resources 1 1 1 1 1 gold 1 7 0) tileFreeAction [] (Array.repeat 14 Game.None) [] active
 
 
 emptyBoard : PlayerBoard

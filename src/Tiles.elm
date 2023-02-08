@@ -11,46 +11,72 @@ import Resources exposing (addEmmer, addFlax, addFood, addGold, addStone, addWoo
 import Walls exposing (noWalls)
 
 
-initRandomTiles =
-    setupRandomTiles
-        [ tileWarehouse
-        , tileAltareSacrificale
-        , tileBancarella
-        , tileCameraSegreta
-        , tileCavaInEspansione
-        , tileDeposito
-        , tileFiliera
-        , tileForno
-        , tileGoldMine
-        , tileOfficina
-        , tileLuxuryRoom
-        , tileStanzaDiSnodo
-        , tileTesoreria
-        , tileProspectingSite
-        , tileDungeon
-        , tileEquipmentRoom
-        , tileRettingRoom
-        , tileWoodStoreroom
-        ]
-        [ tileLavoriDomestici
-        , tileColtivare
-        , tileSottobosco
-        , tileScavare
-        ]
-        [ tileArredare
-        , tileCostruireUnMuro
-        , tileMinare
-        ]
-        [ tileDemolireUnMuro
-        , tileEspansione
-        , tileSpedizione
-        , tilePerforare
-        ]
-        [ tileRinnovare ]
+soloPlayerTiles =
+    soloPlayerRandomTiles playerBoardTiles startingCommonRooms round1actions round2actions soloRound3actions round4actions
 
 
-initCommonRooms : List Tile
-initCommonRooms =
+twoPlayersTiles =
+    twoPlayersRandomTiles playerBoardTiles round1actions round2actions round3actions round4actions
+
+
+playerBoardTiles =
+    [ tileWarehouse
+    , tileAltareSacrificale
+    , tileBancarella
+    , tileCameraSegreta
+    , tileCavaInEspansione
+    , tileDeposito
+    , tileFiliera
+    , tileForno
+    , tileGoldMine
+    , tileOfficina
+    , tileLuxuryRoom
+    , tileStanzaDiSnodo
+    , tileTesoreria
+    , tileProspectingSite
+    , tileDungeon
+    , tileEquipmentRoom
+    , tileRettingRoom
+    , tileWoodStoreroom
+    ]
+
+
+round1actions =
+    [ tileLavoriDomestici
+    , tileColtivare
+    , tileSottobosco
+    , tileScavare
+    ]
+
+
+round2actions =
+    [ tileArredare
+    , tileCostruireUnMuro
+    , tileMinare
+    ]
+
+
+soloRound3actions =
+    [ tileEspansione
+    , tileSpedizione
+    , tilePerforare
+    ]
+
+
+round3actions =
+    [ tileDemolireUnMuro
+    , tileEspansione
+    , tileSpedizione
+    , tilePerforare
+    ]
+
+
+round4actions =
+    [ tileRinnovare ]
+
+
+startingCommonRooms : List Tile
+startingCommonRooms =
     [ tileShelf
     , tileSpinningWheel
     , tileMacina
@@ -60,14 +86,26 @@ initCommonRooms =
     ]
 
 
-setupRandomTiles : List Tile -> List Tile -> List Tile -> List Tile -> List Tile -> Cmd GameMsg
-setupRandomTiles rooms round1Tiles round2Tiles round3Tiles round4Tiles =
+soloPlayerRandomTiles : List Tile -> List Tile -> List Tile -> List Tile -> List Tile -> List Tile -> Cmd GameMsg
+soloPlayerRandomTiles rooms commonRooms round1Tiles round2Tiles round3Tiles round4Tiles =
     Cmd.batch
         [ Random.generate InitPlayerBoard (Random.List.shuffle rooms)
-        , Random.generate InitRoundTiles (Random.List.shuffle round4Tiles)
-        , Random.generate InitRoundTiles (Random.List.shuffle round3Tiles)
-        , Random.generate InitRoundTiles (Random.List.shuffle round2Tiles)
-        , Random.generate InitRoundTiles (Random.List.shuffle round1Tiles)
+        , Random.generate InitCommonRooms (Random.List.choices 3 commonRooms)
+        , Random.generate InitActionTiles (Random.List.shuffle round4Tiles)
+        , Random.generate InitActionTiles (Random.List.shuffle round3Tiles)
+        , Random.generate InitActionTiles (Random.List.shuffle round2Tiles)
+        , Random.generate InitActionTiles (Random.List.shuffle round1Tiles)
+        ]
+
+
+twoPlayersRandomTiles : List Tile -> List Tile -> List Tile -> List Tile -> List Tile -> Cmd GameMsg
+twoPlayersRandomTiles rooms round1Tiles round2Tiles round3Tiles round4Tiles =
+    Cmd.batch
+        [ Random.generate InitPlayerBoard (Random.List.shuffle rooms)
+        , Random.generate InitActionTiles (Random.List.shuffle round4Tiles)
+        , Random.generate InitActionTiles (Random.List.shuffle round3Tiles)
+        , Random.generate InitActionTiles (Random.List.shuffle round2Tiles)
+        , Random.generate InitActionTiles (Random.List.shuffle round1Tiles)
         ]
 
 
@@ -250,9 +288,9 @@ tileLavoriDomestici =
         "assets/img/rounds/lavori_domestici.jpg"
         priceFree
         noWalls
-        [ topAction (\r -> r.food > r.actions) (\r -> r |> addFood -r.actions) [Furnish] [ 0 ]
-        , bottomLeftAction (require .food (>=) 5) (addFood -5) [Furnish] [ 1, 2 ]
-        , bottomRightAction (require .gold (>=) 1) (addGold -1) [Furnish] [ 1, 2 ]
+        [ topAction (\r -> r.food > r.actions) (\r -> r |> addFood -r.actions) [ Furnish ] [ 0 ]
+        , bottomLeftAction (require .food (>=) 5) (addFood -5) [ Furnish ] [ 1, 2 ]
+        , bottomRightAction (require .gold (>=) 1) (addGold -1) [ Furnish ] [ 1, 2 ]
         ]
 
 
@@ -265,7 +303,7 @@ tileColtivare =
         "assets/img/rounds/coltivare.jpg"
         priceFree
         noWalls
-        [ topAction alwaysDoable (\r -> r) [Activate] [ 0 ]
+        [ topAction alwaysDoable (\r -> r) [ Activate ] [ 0 ]
         , bottomAction alwaysDoable (\r -> r |> addEmmer 2 |> addFlax 1) [] [ 1 ]
         ]
 
@@ -279,7 +317,7 @@ tileSottobosco =
         "assets/img/rounds/sottobosco.jpg"
         priceFree
         noWalls
-        [ topAction alwaysDoable (\r -> r) [Activate] [ 0 ]
+        [ topAction alwaysDoable (\r -> r) [ Activate ] [ 0 ]
         , bottomAction alwaysDoable (addWood 2) [] [ 1 ]
         ]
 
@@ -293,8 +331,8 @@ tileScavare =
         "assets/img/rounds/scavare.jpg"
         priceFree
         noWalls
-        [ topLeftAction alwaysDoable (\r -> r) [Excavate] [ 0, 1 ]
-        , topRightAction (require .food (>=) 2) (addFood -2) [Excavate, Excavate] [ 0, 1 ]
+        [ topLeftAction alwaysDoable (\r -> r) [ Excavate ] [ 0, 1 ]
+        , topRightAction (require .food (>=) 2) (addFood -2) [ Excavate, Excavate ] [ 0, 1 ]
         , bottomAction alwaysDoable (addStone 1) [] [ 2 ]
         ]
 
@@ -309,7 +347,7 @@ tileArredare =
         priceFree
         noWalls
         [ topAction alwaysDoable (addFood 1) [] [ 0 ]
-        , bottomAction (\r -> r.food > r.actions) (\r -> r |> addFood r.actions) [Furnish] [ 1 ]
+        , bottomAction (\r -> r.food > r.actions) (\r -> r |> addFood r.actions) [ Furnish ] [ 1 ]
         ]
 
 
@@ -322,10 +360,10 @@ tileCostruireUnMuro =
         "assets/img/rounds/costruire_un_muro.jpg"
         priceFree
         noWalls
-        [ topLeftAction alwaysDoable (\r -> r) [Activate] [ 0 ]
+        [ topLeftAction alwaysDoable (\r -> r) [ Activate ] [ 0 ]
         , thirdAction alwaysDoable (addWood 1) [] [ 1, 2 ]
         , fourthAction alwaysDoable (addStone 1) [] [ 1, 2 ]
-        , bottomAction (require .availableWalls (>) 0) (\r -> r) [BuildWall] [ 3 ]
+        , bottomAction (require .availableWalls (>) 0) (\r -> r) [ BuildWall ] [ 3 ]
         ]
 
 
@@ -338,8 +376,8 @@ tileMinare =
         "assets/img/rounds/minare.jpg"
         priceFree
         noWalls
-        [ leftAction alwaysDoable (\r -> r) [Activate, Activate] [ 0, 1 ]
-        , rightAction alwaysDoable (\r -> r) [ExcavateThroughWall] [ 0, 1 ]
+        [ leftAction alwaysDoable (\r -> r) [ Activate, Activate ] [ 0, 1 ]
+        , rightAction alwaysDoable (\r -> r) [ ExcavateThroughWall ] [ 0, 1 ]
         ]
 
 
@@ -353,7 +391,7 @@ tileDemolireUnMuro =
         priceFree
         noWalls
         -- TODO: resources should be update after wall choice
-        [ fullAction alwaysDoable (\r -> r |> addStone 2 |> addFood 3 |> addGold 1) [DestroyWall] [ 0 ] ]
+        [ fullAction alwaysDoable (\r -> r |> addStone 2 |> addFood 3 |> addGold 1) [ DestroyWall ] [ 0 ] ]
 
 
 tileEspansione : Tile
@@ -365,9 +403,9 @@ tileEspansione =
         "assets/img/rounds/espansione.jpg"
         priceFree
         noWalls
-        [ topAction alwaysDoable (\r -> r) [Excavate] [ 0 ]
-        , bottomLeftAction (require .food (>=) 5) (addFood -5) [Furnish] [ 1, 2 ]
-        , bottomRightAction (require .gold (>=) 1) (addGold -1) [Furnish] [ 1, 2 ]
+        [ topAction alwaysDoable (\r -> r) [ Excavate ] [ 0 ]
+        , bottomLeftAction (require .food (>=) 5) (addFood -5) [ Furnish ] [ 1, 2 ]
+        , bottomRightAction (require .gold (>=) 1) (addGold -1) [ Furnish ] [ 1, 2 ]
         ]
 
 
@@ -382,7 +420,7 @@ tileSpedizione =
         noWalls
         [ firstAction (require .wood (>=) 5) (\r -> r |> addWood -5 |> addGold 5) [] [ 0, 1, 2 ]
         , secondAction (require .stone (>=) 5) (\r -> r |> addStone -5 |> addGold 5) [] [ 0, 1, 2 ]
-        , rightAction alwaysDoable (\r -> r) [Activate, Activate, Activate] [ 0, 1, 2 ]
+        , rightAction alwaysDoable (\r -> r) [ Activate, Activate, Activate ] [ 0, 1, 2 ]
         ]
 
 
@@ -395,8 +433,8 @@ tilePerforare =
         "assets/img/rounds/perforare.jpg"
         priceFree
         noWalls
-        [ topAction alwaysDoable (\r -> r) [Activate] [ 0 ]
-        , bottomAction (\r -> require .gold (>) r.opponentsGold r) (\r -> r) [Excavate] [ 1 ]
+        [ topAction alwaysDoable (\r -> r) [ Activate ] [ 0 ]
+        , bottomAction (\r -> require .gold (>) r.opponentsGold r) (\r -> r) [ Excavate ] [ 1 ]
         ]
 
 
@@ -409,8 +447,8 @@ tileRinnovare =
         "assets/img/rounds/rinnovare.jpg"
         priceFree
         noWalls
-        [ topAction (require .availableWalls (>) 0) (\r -> r) [BuildWall] [ 0 ]
-        , bottomAction alwaysDoable (\r -> r) [Furnish] [ 1 ]
+        [ topAction (require .availableWalls (>) 0) (\r -> r) [ BuildWall ] [ 0 ]
+        , bottomAction alwaysDoable (\r -> r) [ Furnish ] [ 1 ]
         ]
 
 
@@ -785,7 +823,7 @@ tileStanzaDiSnodo =
         (priceFree |> priceWood 2)
         (Game.Walls Game.None Game.Placed Game.None Game.Placed)
         -- TODO: resources should be update after wall choice
-        [ fullAction Resources.atLeastThreeResources (\res -> res |> addGold 2) [ChooseResource, ChooseResource, ChooseResource] [ 0 ] ]
+        [ fullAction Resources.atLeastThreeResources (\res -> res |> addGold 2) [ ChooseResource, ChooseResource, ChooseResource ] [ 0 ] ]
 
 
 tileTesoreria : Tile
@@ -799,9 +837,13 @@ tileTesoreria =
         (Game.Walls Game.Placed Game.Placed Game.Placed Game.Placed)
         [ fullAction (require .gold (>=) 3) (\res -> res |> addGold -3 |> addGold 4 |> addFood 1) [] [ 0 ] ]
 
+
+
 ------------------------
 --- ADDITIONAL CAVERN --
 ------------------------
+
+
 tileAdditionalCavern3Walls : Tile
 tileAdditionalCavern3Walls =
     Tile "Additional Cavern 3 Walls"
@@ -812,6 +854,7 @@ tileAdditionalCavern3Walls =
         priceFree
         (Game.Walls Game.Placed Game.Placed Game.Placed Game.None)
         []
+
 
 tileAdditionalCavern4Walls : Tile
 tileAdditionalCavern4Walls =

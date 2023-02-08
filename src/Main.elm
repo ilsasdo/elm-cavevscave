@@ -17,7 +17,15 @@ main =
 
 init : () -> ( Game, Cmd GameMsg )
 init _ =
-    ( Game (PlayerBoard.newBoard True) (PlayerBoard.newBoard False) 1 2 [] Tiles.initCommonRooms 7 [ NewActionPhase ], Tiles.initRandomTiles )
+    soloPlayerGame
+
+
+soloPlayerGame =
+    ( Game SoloGame (PlayerBoard.newBoard True 1) (PlayerBoard.newBoard False -1) 1 2 [] [] 7 [ NewActionPhase ], Tiles.soloPlayerTiles )
+
+
+twoPlayersGame =
+    ( Game TwoPlayersGame (PlayerBoard.newBoard True 1) (PlayerBoard.newBoard False 1) 1 2 [] Tiles.startingCommonRooms 7 [ NewActionPhase ], Tiles.twoPlayersTiles )
 
 
 update : GameMsg -> Game -> ( Game, Cmd GameMsg )
@@ -27,7 +35,7 @@ update msg ({ player1, player2 } as game) =
             getCurrentPlayer game
     in
     case msg of
-        InitRoundTiles tiles ->
+        InitActionTiles tiles ->
             ( { game
                 | actionTiles =
                     List.indexedMap
@@ -59,6 +67,9 @@ update msg ({ player1, player2 } as game) =
               }
             , Cmd.none
             )
+
+        InitCommonRooms (availableRooms, discardedRooms) ->
+            ( { game | availableRooms = availableRooms }, Cmd.none)
 
         Pass ->
             ( pass game, Cmd.none )
@@ -219,6 +230,26 @@ removeActionTile tile game =
 
 pass : Game -> Game
 pass game =
+    if game.gameType == TwoPlayersGame then
+        twoPlayersGamePass game
+    else
+        soloPlayerGamePass game
+
+
+soloPlayerGamePass game =
+    if List.length game.player1.actionTiles == game.actions
+    then
+        nextRound game
+
+    else
+        game
+            |> getCurrentPlayer
+            |> restorePlayerPass
+            |> setCurrentPlayer {game | stack = [ NewActionPhase ]}
+            |> activatePlayer
+
+
+twoPlayersGamePass game =
     if
         (List.length game.player1.actionTiles == game.actions)
             && (List.length game.player2.actionTiles == game.actions)
