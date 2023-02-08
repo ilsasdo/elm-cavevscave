@@ -6,7 +6,6 @@ import Html exposing (Html, div, text)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import PlayerBoard exposing (isRoomSelectable, restorePlayerNextRound, restorePlayerPass, viewBoard)
-import Resources exposing (updateOpponentsGold)
 import Stack
 import Tiles exposing (tileAdditionalCavern3Walls, tileAdditionalCavern4Walls, viewTile)
 
@@ -68,8 +67,8 @@ update msg ({ player1, player2 } as game) =
             , Cmd.none
             )
 
-        InitCommonRooms (availableRooms, discardedRooms) ->
-            ( { game | availableRooms = availableRooms }, Cmd.none)
+        InitCommonRooms ( availableRooms, discardedRooms ) ->
+            ( { game | availableRooms = availableRooms }, Cmd.none )
 
         Pass ->
             ( pass game, Cmd.none )
@@ -145,11 +144,12 @@ update msg ({ player1, player2 } as game) =
                         |> Tuple.pair Cmd.none
                         |> swap
 
-                Just Excavate ->
+                Just (Excavate times) ->
                     activePlayer
                         |> PlayerBoard.escavateRoom tile
                         |> setCurrentPlayer game
                         |> addToAvailableRooms tile
+                        |> soloPlayerUncoverRoom times
                         |> popFromPhase
                         |> Tuple.pair Cmd.none
                         |> swap
@@ -183,6 +183,28 @@ update msg ({ player1, player2 } as game) =
                 |> swap
 
 
+soloPlayerUncoverRoom : Int -> Game -> Game
+soloPlayerUncoverRoom excavateTimes ({ player2 } as game) =
+    let
+        room =
+            List.head game.player2.rooms
+    in
+    if excavateTimes == 2 then
+        game
+
+    else
+        case room of
+            Just r ->
+                { game
+                    | availableRooms = game.availableRooms ++ [ { r | status = Available } ]
+                    , player2 = { player2 | rooms = List.drop 1 player2.rooms }
+                }
+
+            Nothing ->
+                game
+
+
+applyAdditionalCave: Game -> Game
 applyAdditionalCave game =
     if
         PlayerBoard.caveIsAllFurnished (getCurrentPlayer game)
@@ -232,20 +254,20 @@ pass : Game -> Game
 pass game =
     if game.gameType == TwoPlayersGame then
         twoPlayersGamePass game
+
     else
         soloPlayerGamePass game
 
 
 soloPlayerGamePass game =
-    if List.length game.player1.actionTiles == game.actions
-    then
+    if List.length game.player1.actionTiles == game.actions then
         nextRound game
 
     else
         game
             |> getCurrentPlayer
             |> restorePlayerPass
-            |> setCurrentPlayer {game | stack = [ NewActionPhase ]}
+            |> setCurrentPlayer { game | stack = [ NewActionPhase ] }
             |> activatePlayer
 
 
@@ -441,8 +463,10 @@ viewChooseAdditionalCavern game =
     if Stack.top game.stack == Just SelectAdditionalCave then
         div [ class "additionalcaverns" ]
             (List.map (viewAdditionalCavern (getCurrentPlayer game)) [ tileAdditionalCavern3Walls, tileAdditionalCavern4Walls ])
+
     else
         Html.text ""
+
 
 viewAdditionalCavern player room =
     viewTile [ class "additionalcavern pick", onClick (SelectRoomTile room) ] player.resources room

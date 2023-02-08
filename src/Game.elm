@@ -36,7 +36,7 @@ type TileType
 type Subphase
     = NewActionPhase
     | ActionPhase
-    | Excavate
+    | Excavate Int
     | Furnish
     | PlaceRoom Tile
     | BuildWall
@@ -133,8 +133,8 @@ subphaseToString subphase =
         Nothing ->
             ""
 
-        Just Excavate ->
-            "Escavate 1"
+        Just (Excavate times) ->
+            "Escavate " ++ String.fromInt times
 
         Just Furnish ->
             "Furnish"

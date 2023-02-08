@@ -267,7 +267,7 @@ applyWoodStoreroom phases player =
             && (List.head phases == Just Activate)
             && playerHasEquipment player tileWoodStoreroom
     then
-        { player | resources = Resources.addFood 1 player.resources }
+        { player | resources = Resources.addWood 1 player.resources }
 
     else
         player
@@ -457,7 +457,7 @@ viewRoom board subphase index tile =
                 else
                     viewNonSelectableTile board.resources index tile
 
-            Just Excavate ->
+            Just (Excavate times) ->
                 if tile.status == Rock && isExcavatable board tile then
                     viewSelectableTile board.resources index tile
 

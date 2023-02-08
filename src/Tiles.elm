@@ -331,8 +331,8 @@ tileScavare =
         "assets/img/rounds/scavare.jpg"
         priceFree
         noWalls
-        [ topLeftAction alwaysDoable (\r -> r) [ Excavate ] [ 0, 1 ]
-        , topRightAction (require .food (>=) 2) (addFood -2) [ Excavate, Excavate ] [ 0, 1 ]
+        [ topLeftAction alwaysDoable (\r -> r) [ Excavate 1] [ 0, 1 ]
+        , topRightAction (require .food (>=) 2) (addFood -2) [ Excavate 2, Excavate 2 ] [ 0, 1 ]
         , bottomAction alwaysDoable (addStone 1) [] [ 2 ]
         ]
 
@@ -347,7 +347,7 @@ tileArredare =
         priceFree
         noWalls
         [ topAction alwaysDoable (addFood 1) [] [ 0 ]
-        , bottomAction (\r -> r.food > r.actions) (\r -> r |> addFood r.actions) [ Furnish ] [ 1 ]
+        , bottomAction (\r -> r.food > r.actions) (\r -> r |> addFood -r.actions) [ Furnish ] [ 1 ]
         ]
 
 
@@ -403,7 +403,7 @@ tileEspansione =
         "assets/img/rounds/espansione.jpg"
         priceFree
         noWalls
-        [ topAction alwaysDoable (\r -> r) [ Excavate ] [ 0 ]
+        [ topAction alwaysDoable (\r -> r) [ Excavate 1] [ 0 ]
         , bottomLeftAction (require .food (>=) 5) (addFood -5) [ Furnish ] [ 1, 2 ]
         , bottomRightAction (require .gold (>=) 1) (addGold -1) [ Furnish ] [ 1, 2 ]
         ]
@@ -434,7 +434,7 @@ tilePerforare =
         priceFree
         noWalls
         [ topAction alwaysDoable (\r -> r) [ Activate ] [ 0 ]
-        , bottomAction (\r -> require .gold (>) r.opponentsGold r) (\r -> r) [ Excavate ] [ 1 ]
+        , bottomAction (\r -> require .gold (>) r.opponentsGold r) (\r -> r) [ Excavate 1 ] [ 1 ]
         ]
 
 
@@ -798,7 +798,7 @@ tileSalotto =
         "assets/img/rooms/salotto.jpg"
         (priceFree |> priceStone 1 |> priceGold 1)
         (Game.Walls Game.Placed Game.Placed Game.None Game.Placed)
-        [ fullAction alwaysDoable (\res -> res |> topWood 1 |> topWood 1 |> topEmmer 1 |> topFlax 1 |> topFood 1 |> topGold 1) [] [ 0 ] ]
+        [ fullAction alwaysDoable (\res -> res |> topStone 1 |> topWood 1 |> topEmmer 1 |> topFlax 1 |> topFood 1 |> topGold 1) [] [ 0 ] ]
 
 
 tileLuxuryRoom : Tile
