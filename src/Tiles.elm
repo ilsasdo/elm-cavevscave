@@ -95,18 +95,6 @@ restoreTile room =
         room
 
 
-deactivateTiles tiles =
-    List.map
-        (\t ->
-            if t.status == Game.Active then
-                { t | status = Game.Available }
-
-            else
-                t
-        )
-        tiles
-
-
 updateWalls : Array Wall -> List Tile -> List Tile
 updateWalls walls tiles =
     List.indexedMap (updateTileWalls walls) tiles
@@ -345,7 +333,7 @@ tileMinare : Tile
 tileMinare =
     Tile "Minare"
         Gray
-        Available
+        Rock
         5
         "assets/img/rounds/minare.jpg"
         priceFree
@@ -387,7 +375,7 @@ tileSpedizione : Tile
 tileSpedizione =
     Tile "Spedizione"
         Gray
-        Available
+        Rock
         9
         "assets/img/rounds/spedizione.jpg"
         priceFree

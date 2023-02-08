@@ -150,3 +150,6 @@ subphaseToString subphase =
 
         Just ChooseResource ->
             "Choose One Resource"
+
+        Just SelectAdditionalCave ->
+            "Choose the additional cave"
