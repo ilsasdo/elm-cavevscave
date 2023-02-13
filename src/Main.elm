@@ -424,8 +424,9 @@ viewSoloGame game =
     div [] [
           viewStatusBar game
         , viewActionTiles game
+        , viewAvailableRooms (getCurrentPlayer game) (Stack.top game.stack) game.availableRooms
+        , div [class "pure-g"] [div [class "pure-u-1"][viewBoard game.player1 (Stack.top game.stack)]]
     ]
-
 
 
 viewStatusBar : Game -> Html GameMsg
@@ -477,11 +478,11 @@ opponentPlayer game =
 
 viewActionTiles : Game -> Html GameMsg
 viewActionTiles game =
-    div [ class "pure-g" ]
-        [ div [class "pure-u-1"] (List.map (viewActionTile game) (game.actionTiles |> List.take 4))
-        , div [class "pure-u-1"] (List.map (viewActionTile game) (game.actionTiles |> List.drop 4 |> List.take 3))
-        , div [class "pure-u-1"] (List.map (viewActionTile game) (game.actionTiles |> List.drop 7 |> List.take 3))
-        , div [class "pure-u-1"] (List.map (viewActionTile game) (game.actionTiles |> List.drop 10 ))]
+    div [ class "pure-g actiontiles" ]
+        [ div [class "pure-u-md-1-4"] (List.map (viewActionTile game) (game.actionTiles |> List.take 4))
+        , div [class "pure-u-md-1-4"] (List.map (viewActionTile game) (game.actionTiles |> List.drop 4 |> List.take 3))
+        , div [class "pure-u-md-1-4"] (List.map (viewActionTile game) (game.actionTiles |> List.drop 7 |> List.take 3))
+        , div [class "pure-u-md-1-4"] (List.map (viewActionTile game) (game.actionTiles |> List.drop 10 ))]
 
 
 viewActionTile : Game -> Tile -> Html GameMsg
@@ -505,7 +506,8 @@ viewMain game =
 
 viewAvailableRooms : PlayerBoard -> Maybe Subphase -> List Tile -> Html GameMsg
 viewAvailableRooms player subphase rooms =
-    div [ class "availablerooms" ] (List.map (viewAvailableRoom player subphase) rooms)
+    div [ class "pure-g availablerooms" ]
+        [ div [class "pure-u-md-12"] (List.map (viewAvailableRoom player subphase) rooms)]
 
 
 viewChooseAdditionalCavern : Game -> Html GameMsg
