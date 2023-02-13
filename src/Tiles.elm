@@ -203,28 +203,25 @@ updateTileWalls walls index tile =
 
 viewTile : List (Attribute GameMsg) -> Resources -> Tile -> Html GameMsg
 viewTile attributes resources tile =
-    div attributes
-        [ case tile.status of
-            Active ->
-                div
-                    [ style "background-image" ("url(" ++ tile.src ++ ")")
-                    , class "tile"
-                    ]
-                    (List.map (viewAction tile resources) tile.actions)
+    case tile.status of
+        Active ->
+            div
+                ([ style "background-image" ("url(" ++ tile.src ++ ")")
+                , class "tile"] ++ attributes)
+                (List.map (viewAction tile resources) tile.actions)
 
-            Available ->
-                div
-                    [ style "background-image" ("url(" ++ tile.src ++ ")")
-                    , class "tile"
-                    ]
-                    []
+        Available ->
+            div
+                ([ style "background-image" ("url(" ++ tile.src ++ ")")
+                , class "tile"
+                ] ++ attributes)
+                []
 
-            Empty ->
-                div [ class "tile empty" ] []
+        Empty ->
+            div ([ class "tile empty" ] ++ attributes) []
 
-            Rock ->
-                div [ class "tile hidden" ] []
-        ]
+        Rock ->
+            div ([ class "tile rock" ] ++ attributes) []
 
 
 viewAction : Tile -> Resources -> Action -> Html GameMsg

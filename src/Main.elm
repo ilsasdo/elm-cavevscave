@@ -2,7 +2,7 @@ module Main exposing (main)
 
 import Browser
 import Game exposing (..)
-import Html exposing (Html, div, text)
+import Html exposing (Html, button, div, h1, text)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import PlayerBoard exposing (isRoomSelectable, restorePlayerNextRound, restorePlayerPass, viewBoard)
@@ -16,15 +16,19 @@ main =
 
 init : () -> ( Game, Cmd GameMsg )
 init _ =
-    soloPlayerGame
+    notStartedGame
+
+
+notStartedGame =
+    ( Game NotStarted SoloGame (PlayerBoard.newBoard True 1) (PlayerBoard.newBoard False -1) 1 2 [] [] 7 [ NewActionPhase ], Cmd.none)
 
 
 soloPlayerGame =
-    ( Game SoloGame (PlayerBoard.newBoard True 1) (PlayerBoard.newBoard False -1) 1 2 [] [] 7 [ NewActionPhase ], Tiles.soloPlayerTiles )
+    ( Game InPlay SoloGame (PlayerBoard.newBoard True 1) (PlayerBoard.newBoard False -1) 1 2 [] [] 7 [ NewActionPhase ], Tiles.soloPlayerTiles )
 
 
 twoPlayersGame =
-    ( Game TwoPlayersGame (PlayerBoard.newBoard True 1) (PlayerBoard.newBoard False 1) 1 2 [] Tiles.startingCommonRooms 7 [ NewActionPhase ], Tiles.twoPlayersTiles )
+    ( Game InPlay TwoPlayersGame (PlayerBoard.newBoard True 1) (PlayerBoard.newBoard False 1) 1 2 [] Tiles.startingCommonRooms 7 [ NewActionPhase ], Tiles.twoPlayersTiles )
 
 
 update : GameMsg -> Game -> ( Game, Cmd GameMsg )
@@ -34,6 +38,9 @@ update msg ({ player1, player2 } as game) =
             getCurrentPlayer game
     in
     case msg of
+        StartGame mode ->
+            startGame mode
+
         InitActionTiles tiles ->
             ( { game
                 | actionTiles =
@@ -182,6 +189,13 @@ update msg ({ player1, player2 } as game) =
                 |> Tuple.pair Cmd.none
                 |> swap
 
+startGame mode =
+    case mode of
+        SoloGame ->
+            soloPlayerGame
+
+        TwoPlayersGame ->
+            twoPlayersGame
 
 soloPlayerUncoverRoom : Int -> Game -> Game
 soloPlayerUncoverRoom excavateTimes ({ player2 } as game) =
@@ -252,7 +266,7 @@ removeActionTile tile game =
 
 pass : Game -> Game
 pass game =
-    if game.gameType == TwoPlayersGame then
+    if game.mode == TwoPlayersGame then
         twoPlayersGamePass game
 
     else
@@ -374,18 +388,51 @@ nextPlayer ({ player1, player2 } as game) =
 
 view : Game -> Html GameMsg
 view game =
-    div [ class "container" ]
-        [ viewStatusBar game
-        , viewActionTiles game
-        , viewMain game
+    case game.status of
+        NotStarted ->
+            viewGameNotStarted game
+
+        InPlay ->
+            viewInPlayGame game
+
+        GameEnded ->
+            div [ class ""] [text "Game ended."]
+
+
+viewGameNotStarted game =
+    div [ class "pure-g game-not-started" ]
+        [ div [class "pure-u-1 menu-item"] [h1 [] [text "Cave vs Cave"]]
+        , div [class "pure-u-1 menu-item"] [button [class "pure-button", onClick (StartGame SoloGame)] [text "Solo Game"]]
+        , div [class "pure-u-1 menu-item"] [button [class "pure-button", onClick (StartGame TwoPlayersGame)] [text "Two Player Game"]]
         ]
+
+
+viewInPlayGame game =
+    case game.mode of
+        SoloGame ->
+            viewSoloGame game
+
+        TwoPlayersGame ->
+            div [ class "container" ]
+                [ viewStatusBar game
+                , viewActionTiles game
+                , viewMain game
+                ]
+
+
+viewSoloGame game =
+    div [] [
+          viewStatusBar game
+        , viewActionTiles game
+    ]
+
 
 
 viewStatusBar : Game -> Html GameMsg
 viewStatusBar game =
-    div [ class "statusbar" ]
+    div [ class "pure-g statusbar" ]
         [ Html.button [ onClick Pass ] [ text "Pass" ]
-        , div []
+        , div [class "pure-u-1"]
             [ text
                 ("Round: "
                     ++ String.fromInt game.round
@@ -430,8 +477,11 @@ opponentPlayer game =
 
 viewActionTiles : Game -> Html GameMsg
 viewActionTiles game =
-    div [ class "actiontiles" ]
-        (List.map (viewActionTile game) game.actionTiles)
+    div [ class "pure-g" ]
+        [ div [class "pure-u-1"] (List.map (viewActionTile game) (game.actionTiles |> List.take 4))
+        , div [class "pure-u-1"] (List.map (viewActionTile game) (game.actionTiles |> List.drop 4 |> List.take 3))
+        , div [class "pure-u-1"] (List.map (viewActionTile game) (game.actionTiles |> List.drop 7 |> List.take 3))
+        , div [class "pure-u-1"] (List.map (viewActionTile game) (game.actionTiles |> List.drop 10 ))]
 
 
 viewActionTile : Game -> Tile -> Html GameMsg

@@ -4,17 +4,25 @@ import Array exposing (Array)
 import Stack exposing (Stack)
 
 
-type GameType
+type GameStatus
+    = NotStarted
+    | InPlay
+    | GameEnded
+
+
+type GameMode
     = SoloGame
     | TwoPlayersGame
 
+
 type GameMsg
-    = SelectRoomTile Tile
+    = StartGame GameMode
+    | SelectRoomTile Tile
     | DoAction Tile Action
     | SelectWall Int
     | InitPlayerBoard (List Tile)
     | InitActionTiles (List Tile)
-    | InitCommonRooms (List Tile, List Tile)
+    | InitCommonRooms ( List Tile, List Tile )
     | PickRoundTile Tile
     | Pass
     | ResourceChosen (Resources -> Resources)
@@ -82,6 +90,7 @@ type alias Resources =
     , emmer : Int
     , flax : Int
     , gold : Int
+
     -- actions available in current round are not a proper resource
     -- but are used to pay some actions
     , actions : Int
@@ -99,7 +108,8 @@ type alias Walls =
 
 
 type alias Game =
-    { gameType: GameType
+    { status : GameStatus
+    , mode : GameMode
     , player1 : PlayerBoard
     , player2 : PlayerBoard
     , round : Int -- starts with 1 ends with 8
