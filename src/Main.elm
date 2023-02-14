@@ -69,7 +69,7 @@ update msg ({ player1, player2 } as game) =
                     { player2
                         | rooms =
                             if game.mode == SoloGame then
-                                rooms
+                                List.drop 9 rooms |> List.take 9
 
                             else
                                 List.drop 9 rooms |> List.take 9 |> PlayerBoard.init
