@@ -109,11 +109,11 @@ twoPlayersRandomTiles rooms round1Tiles round2Tiles round3Tiles round4Tiles =
         ]
 
 
-updateStatus tile status tiles =
+updateStatus tile fromStatus toStatus tiles =
     List.map
         (\t ->
-            if t.title == tile.title then
-                { t | status = status }
+            if t.title == tile.title && t.status == fromStatus then
+                { t | status = toStatus }
 
             else
                 t

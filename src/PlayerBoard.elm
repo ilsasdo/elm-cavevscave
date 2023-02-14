@@ -208,7 +208,7 @@ payRoom price resources =
 
 activateRoom tile player =
     { player
-        | rooms = Tiles.updateStatus tile Game.Active player.rooms
+        | rooms = Tiles.updateStatus tile Available Active player.rooms
     }
 
 
@@ -288,8 +288,9 @@ escavateRoom : Tile -> PlayerBoard -> PlayerBoard
 escavateRoom tile player =
     { player
         | resources = addFoodForBonusRooms player tile
-        , rooms = player.rooms
-                |> Tiles.updateStatus tile Empty
+        , rooms =
+            player.rooms
+                |> Tiles.updateStatus tile Rock Empty
                 |> Tiles.updateWalls player.walls
     }
 

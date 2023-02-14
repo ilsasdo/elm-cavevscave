@@ -67,7 +67,12 @@ update msg ({ player1, player2 } as game) =
                     }
                 , player2 =
                     { player2
-                        | rooms = List.drop 9 rooms |> List.take 9 |> PlayerBoard.init
+                        | rooms =
+                            if game.mode == SoloGame then
+                                rooms
+
+                            else
+                                List.drop 9 rooms |> List.take 9 |> PlayerBoard.init
                         , freeAction = Tiles.setStatus Available player1.freeAction
                     }
               }
@@ -267,7 +272,7 @@ setCurrentPlayer game player =
 
 removeActionTile : Tile -> Game -> Game
 removeActionTile tile game =
-    { game | actionTiles = Tiles.updateStatus tile Empty game.actionTiles }
+    { game | actionTiles = Tiles.updateStatus tile Available Empty game.actionTiles }
 
 
 pass : Game -> Game
