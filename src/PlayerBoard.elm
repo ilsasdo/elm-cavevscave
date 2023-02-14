@@ -13,12 +13,12 @@ import Walls
 
 newBoard : Bool -> Int -> PlayerBoard
 newBoard active gold =
-    PlayerBoard (Resources 1 1 1 1 1 gold 1 7 0) tileFreeAction [] (Array.repeat 14 Game.None) [] active
+    PlayerBoard (Resources 1 1 1 1 1 gold 1 7 0) tileFreeAction [] (Array.repeat 14 Game.None) [] active 1
 
 
 emptyBoard : PlayerBoard
 emptyBoard =
-    PlayerBoard (Resources 0 0 0 0 0 0 0 7 0) tileFreeAction [] (Array.fromList []) [] False
+    PlayerBoard (Resources 0 0 0 0 0 0 0 7 0) tileFreeAction [] (Array.fromList []) [] False 1
 
 
 init : List Tile -> List Tile
@@ -30,6 +30,17 @@ activatePlayer opponentsGold player =
     { player
         | freeAction = player.freeAction |> Tiles.restoreTile |> Tiles.setStatus Active
         , resources = Resources.updateOpponentsGold opponentsGold player.resources
+    }
+
+
+updateScore : PlayerBoard -> PlayerBoard
+updateScore player =
+    { player
+        | score =
+            player.rooms
+                |> List.filter (\r -> r.status == Available || r.status == Active)
+                |> List.map (\r -> r.score)
+                |> List.foldl (+) player.resources.gold
     }
 
 
@@ -238,9 +249,9 @@ selectActionTile tile player =
     { player | actionTiles = List.append player.actionTiles [ { tile | status = Active } ] }
 
 
-addAdditionalCave: Tile -> PlayerBoard -> PlayerBoard
+addAdditionalCave : Tile -> PlayerBoard -> PlayerBoard
 addAdditionalCave tile player =
-    { player | rooms = List.append player.rooms [{tile | status = Empty }]}
+    { player | rooms = List.append player.rooms [ { tile | status = Empty } ] }
 
 
 applyProspectingSite : Tile -> PlayerBoard -> PlayerBoard
@@ -277,8 +288,8 @@ escavateRoom : Tile -> PlayerBoard -> PlayerBoard
 escavateRoom tile player =
     { player
         | resources = addFoodForBonusRooms player tile
-        , rooms =
-            Tiles.updateStatus tile Game.Empty player.rooms
+        , rooms = player.rooms
+                |> Tiles.updateStatus tile Empty
                 |> Tiles.updateWalls player.walls
     }
 
@@ -465,7 +476,7 @@ viewRoom board subphase index tile =
                     viewNonSelectableTile board.resources index tile
 
             Just (PlaceRoom t) ->
-                if Debug.log "(tile.status == Empty)" (tile.status == Empty) && Walls.matches (Debug.log "(t.walls)" t.walls) (Debug.log "(tile.walls)" tile.walls) then
+                if tile.status == Empty && Walls.matches t.walls tile.walls then
                     viewSelectableTile board.resources index tile
 
                 else

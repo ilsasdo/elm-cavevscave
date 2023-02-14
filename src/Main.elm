@@ -2,7 +2,7 @@ module Main exposing (main)
 
 import Browser
 import Game exposing (..)
-import Html exposing (Html, button, div, h1, text)
+import Html exposing (Html, a, button, div, h1, text)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import PlayerBoard exposing (isRoomSelectable, restorePlayerNextRound, restorePlayerPass, viewBoard)
@@ -20,7 +20,7 @@ init _ =
 
 
 notStartedGame =
-    ( Game NotStarted SoloGame (PlayerBoard.newBoard True 1) (PlayerBoard.newBoard False -1) 1 2 [] [] 7 [ NewActionPhase ], Cmd.none)
+    ( Game NotStarted SoloGame (PlayerBoard.newBoard True 1) (PlayerBoard.newBoard False -1) 1 2 [] [] 7 [ NewActionPhase ], Cmd.none )
 
 
 soloPlayerGame =
@@ -96,6 +96,7 @@ update msg ({ player1, player2 } as game) =
                 |> getCurrentPlayer
                 |> PlayerBoard.doAction tile action
                 |> PlayerBoard.applyWoodStoreroom action.subphase
+                |> PlayerBoard.updateScore
                 |> setCurrentPlayer game
                 |> pushToPhase (PlayerBoard.applyEquipmentRoom action.subphase (getCurrentPlayer game))
                 |> Tuple.pair Cmd.none
@@ -108,6 +109,7 @@ update msg ({ player1, player2 } as game) =
                         |> PlayerBoard.buildWall index
                         |> PlayerBoard.applyDungeon
                         |> setCurrentPlayer game
+                        |> popFromPhase
                         |> updateAvailableWalls -1
                         |> Tuple.pair Cmd.none
                         |> swap
@@ -116,6 +118,7 @@ update msg ({ player1, player2 } as game) =
                     activePlayer
                         |> PlayerBoard.destroyWall index
                         |> setCurrentPlayer game
+                        |> popFromPhase
                         |> updateAvailableWalls 1
                         |> Tuple.pair Cmd.none
                         |> swap
@@ -135,6 +138,7 @@ update msg ({ player1, player2 } as game) =
                 Just (PlaceRoom tileToPlace) ->
                     activePlayer
                         |> PlayerBoard.placeRoom tile tileToPlace
+                        |> PlayerBoard.updateScore
                         |> setCurrentPlayer game
                         |> popFromPhase
                         |> removeFromAvailableRooms tileToPlace
@@ -189,6 +193,7 @@ update msg ({ player1, player2 } as game) =
                 |> Tuple.pair Cmd.none
                 |> swap
 
+
 startGame mode =
     case mode of
         SoloGame ->
@@ -196,6 +201,7 @@ startGame mode =
 
         TwoPlayersGame ->
             twoPlayersGame
+
 
 soloPlayerUncoverRoom : Int -> Game -> Game
 soloPlayerUncoverRoom excavateTimes ({ player2 } as game) =
@@ -218,7 +224,7 @@ soloPlayerUncoverRoom excavateTimes ({ player2 } as game) =
                 game
 
 
-applyAdditionalCave: Game -> Game
+applyAdditionalCave : Game -> Game
 applyAdditionalCave game =
     if
         PlayerBoard.caveIsAllFurnished (getCurrentPlayer game)
@@ -343,16 +349,8 @@ nextRound game =
         round =
             game.round + 1
 
-        -- 2 actions for rounds 1,2,3. 3 actions for rounds 4,5,6,7. 4 actions for round 8
         actions =
-            if round < 4 then
-                2
-
-            else if round < 8 then
-                3
-
-            else
-                4
+            actionsPerRound game.mode round
 
         -- restore the action tiles and flip the next round tile
         actionTiles =
@@ -377,6 +375,32 @@ nextRound game =
     }
 
 
+
+-- with two players:
+-- 2 actions for rounds 1,2,3. 3 actions for rounds 4,5,6,7. 4 actions for round 8
+
+
+actionsPerRound mode round =
+    if mode == SoloGame then
+        if round < 4 then
+            2
+
+        else if round < 7 then
+            3
+
+        else
+            4
+
+    else if round < 4 then
+        2
+
+    else if round < 8 then
+        3
+
+    else
+        4
+
+
 nextPlayer : Game -> Game
 nextPlayer ({ player1, player2 } as game) =
     { game
@@ -396,14 +420,14 @@ view game =
             viewInPlayGame game
 
         GameEnded ->
-            div [ class ""] [text "Game ended."]
+            div [ class "" ] [ text "Game ended." ]
 
 
 viewGameNotStarted game =
     div [ class "pure-g game-not-started" ]
-        [ div [class "pure-u-1 menu-item"] [h1 [] [text "Cave vs Cave"]]
-        , div [class "pure-u-1 menu-item"] [button [class "pure-button", onClick (StartGame SoloGame)] [text "Solo Game"]]
-        , div [class "pure-u-1 menu-item"] [button [class "pure-button", onClick (StartGame TwoPlayersGame)] [text "Two Player Game"]]
+        [ div [ class "pure-u-1 menu-item" ] [ h1 [] [ text "Cave vs Cave" ] ]
+        , div [ class "pure-u-1 menu-item" ] [ button [ class "pure-button", onClick (StartGame SoloGame) ] [ text "Solo Game" ] ]
+        , div [ class "pure-u-1 menu-item" ] [ button [ class "pure-button", onClick (StartGame TwoPlayersGame) ] [ text "Two Player Game" ] ]
         ]
 
 
@@ -421,23 +445,34 @@ viewInPlayGame game =
 
 
 viewSoloGame game =
-    div [] [
-          viewStatusBar game
-        , viewActionTiles game
-        , viewAvailableRooms (getCurrentPlayer game) (Stack.top game.stack) game.availableRooms
-        , div [class "pure-g"] [div [class "pure-u-1"][viewBoard game.player1 (Stack.top game.stack)]]
-    ]
+    div []
+        [ viewStatusBar game
+        , div [ class "content" ]
+            [ viewActionTiles game
+            , viewAvailableRooms (getCurrentPlayer game) (Stack.top game.stack) game.availableRooms
+            , div [ class "pure-g" ] [ div [ class "pure-u-1" ] [ viewBoard game.player1 (Stack.top game.stack) ] ]
+            ]
+        , viewFooter game
+        ]
+
+
+viewFooter : Game -> Html GameMsg
+viewFooter game =
+    div [ class "pure-g footer" ]
+        [ div [ class "pure-u-1-2" ] [ text (Stack.top game.stack |> subphaseToString) ]
+        , div [ class "pure-u-1-2" ] [ Html.button [ onClick Pass ] [ text "Pass" ] ]
+        ]
 
 
 viewStatusBar : Game -> Html GameMsg
 viewStatusBar game =
     div [ class "pure-g statusbar" ]
-        [ Html.button [ onClick Pass ] [ text "Pass" ]
-        , div [class "pure-u-1"]
+        [ div [ class "pure-u-8-24" ] [ text "Cave vs Cave" ]
+        , div [ class "pure-u-3-24 item" ] [ text ("R: " ++ String.fromInt game.round) ]
+        , div [ class "pure-u-3-24 item" ] [ text ("W: " ++ (game.availableWalls |> String.fromInt)) ]
+        , div [ class "pure-u-3-24 item" ]
             [ text
-                ("Round: "
-                    ++ String.fromInt game.round
-                    ++ " || Player "
+                ("P: "
                     ++ String.fromInt
                         (if game.player1.active then
                             1
@@ -445,16 +480,10 @@ viewStatusBar game =
                          else
                             2
                         )
-                    ++ " || Actions: "
-                    ++ (game |> getCurrentPlayer |> .actionTiles |> List.length |> String.fromInt)
-                    ++ "/"
-                    ++ String.fromInt game.actions
-                    ++ " || Phase: "
-                    ++ (Stack.top game.stack |> subphaseToString)
-                    ++ " || Available Walls: "
-                    ++ (game.availableWalls |> String.fromInt)
                 )
             ]
+        , div [ class "pure-u-4-24 item" ] [ text ("A: " ++ (game |> getCurrentPlayer |> .actionTiles |> List.length |> String.fromInt) ++ "/" ++ String.fromInt game.actions) ]
+        , div [ class "pure-u-3-24 item score" ] [ text (game |> getCurrentPlayer |> .score |> String.fromInt) ]
         ]
 
 
@@ -479,10 +508,11 @@ opponentPlayer game =
 viewActionTiles : Game -> Html GameMsg
 viewActionTiles game =
     div [ class "pure-g actiontiles" ]
-        [ div [class "pure-u-md-1-4"] (List.map (viewActionTile game) (game.actionTiles |> List.take 4))
-        , div [class "pure-u-md-1-4"] (List.map (viewActionTile game) (game.actionTiles |> List.drop 4 |> List.take 3))
-        , div [class "pure-u-md-1-4"] (List.map (viewActionTile game) (game.actionTiles |> List.drop 7 |> List.take 3))
-        , div [class "pure-u-md-1-4"] (List.map (viewActionTile game) (game.actionTiles |> List.drop 10 ))]
+        [ div [ class "pure-u-md-1-4" ] (List.map (viewActionTile game) (game.actionTiles |> List.take 4))
+        , div [ class "pure-u-md-1-4" ] (List.map (viewActionTile game) (game.actionTiles |> List.drop 4 |> List.take 3))
+        , div [ class "pure-u-md-1-4" ] (List.map (viewActionTile game) (game.actionTiles |> List.drop 7 |> List.take 3))
+        , div [ class "pure-u-md-1-4" ] (List.map (viewActionTile game) (game.actionTiles |> List.drop 10))
+        ]
 
 
 viewActionTile : Game -> Tile -> Html GameMsg
@@ -507,7 +537,7 @@ viewMain game =
 viewAvailableRooms : PlayerBoard -> Maybe Subphase -> List Tile -> Html GameMsg
 viewAvailableRooms player subphase rooms =
     div [ class "pure-g availablerooms" ]
-        [ div [class "pure-u-md-12"] (List.map (viewAvailableRoom player subphase) rooms)]
+        [ div [ class "pure-u-md-12" ] (List.map (viewAvailableRoom player subphase) rooms) ]
 
 
 viewChooseAdditionalCavern : Game -> Html GameMsg

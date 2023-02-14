@@ -128,6 +128,7 @@ type alias PlayerBoard =
     , walls : Array Wall
     , actionTiles : List Tile
     , active : Bool
+    , score: Int
     }
 
 
@@ -135,16 +136,16 @@ subphaseToString : Maybe Subphase -> String
 subphaseToString subphase =
     case subphase of
         Just NewActionPhase ->
-            "New Action Phase"
+            "Choose a New Action Tile"
 
         Just ActionPhase ->
-            "Action Phase"
+            "Play Your Actions"
 
         Nothing ->
             ""
 
         Just (Excavate times) ->
-            "Escavate " ++ String.fromInt times
+            "Select A Room to Excavate " ++ String.fromInt times
 
         Just Furnish ->
             "Furnish"
@@ -153,16 +154,16 @@ subphaseToString subphase =
             "PlaceRoom " ++ tile.title
 
         Just BuildWall ->
-            "Build a Wall"
+            "Select a Wall to Build"
 
         Just DestroyWall ->
-            "Destroy a Wall"
+            "Select a Wall to Destroy"
 
         Just ExcavateThroughWall ->
-            "Escavate through a Wall"
+            "Select a Room to Escavate (through walls)"
 
         Just Activate ->
-            "Activate a Room 1"
+            "Select a Room to Activate"
 
         Just ChooseResource ->
             "Choose One Resource"

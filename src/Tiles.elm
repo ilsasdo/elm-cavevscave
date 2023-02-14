@@ -7,7 +7,7 @@ import Html.Attributes exposing (class, style)
 import Html.Events as Html
 import Random
 import Random.List
-import Resources exposing (addEmmer, addFlax, addFood, addGold, addStone, addWood, alwaysDoable, minStone, priceFood, priceFree, priceGold, priceStone, priceWood, require, topEmmer, topFlax, topFood, topGold, topStone, topWood)
+import Resources exposing (addEmmer, addFlax, addFood, addGold, addStone, addWood, alwaysDoable, minStone, priceFree, priceGold, priceStone, priceWood, require, topEmmer, topFlax, topFood, topGold, topStone, topWood)
 import Walls exposing (noWalls)
 
 
@@ -285,7 +285,7 @@ tileLavoriDomestici =
         "assets/img/rounds/lavori_domestici.jpg"
         priceFree
         noWalls
-        [ topAction (\r -> r.food > r.actions) (\r -> r |> addFood -r.actions) [ Furnish ] [ 0 ]
+        [ topAction (\r -> r.food >= r.actions) (\r -> r |> addFood -r.actions) [ Furnish ] [ 0 ]
         , bottomLeftAction (require .food (>=) 5) (addFood -5) [ Furnish ] [ 1, 2 ]
         , bottomRightAction (require .gold (>=) 1) (addGold -1) [ Furnish ] [ 1, 2 ]
         ]
@@ -344,7 +344,7 @@ tileArredare =
         priceFree
         noWalls
         [ topAction alwaysDoable (addFood 1) [] [ 0 ]
-        , bottomAction (\r -> r.food > r.actions) (\r -> r |> addFood -r.actions) [ Furnish ] [ 1 ]
+        , bottomAction (\r -> r.food >= r.actions) (\r -> r |> addFood -r.actions) [ Furnish ] [ 1 ]
         ]
 
 
@@ -697,9 +697,9 @@ tileCavaInEspansione =
         Rock
         8
         "assets/img/rooms/cava_in_espansione.jpg"
-        (priceFree |> priceWood 1 |> priceStone 3)
+        (priceFree |> priceWood 3 |> priceStone 1)
         (Game.Walls Game.Placed Game.Placed Game.None Game.Placed)
-        [ fullAction (require .gold (>=) 1) (\res -> res) [] [ 0 ] ]
+        [ fullAction (require .gold (>=) 1) (\res -> addGold -1 res) [Excavate 1] [ 0 ] ]
 
 
 tileDeposito : Tile

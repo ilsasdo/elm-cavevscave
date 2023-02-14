@@ -16,7 +16,7 @@ type alias Node =
 
 
 emptyGame =
-    Game PlayerBoard.emptyBoard PlayerBoard.emptyBoard 0 0 0 NewActionPhase [] [] 0
+    Game PlayerBoard.emptyBoard PlayerBoard.emptyBoard 0 0 0 NewActionPhase [] []
 
 
 playAI game =
