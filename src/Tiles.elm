@@ -778,7 +778,7 @@ tileOfficina =
         [ fullAction
             (\res ->
                 require .flax (>=) 1 res
-                    && require .food (>=) 2 res
+                    && require .wood (>=) 2 res
             )
             (\res -> res |> addWood -2 |> addFlax -1 |> addGold 3)
             []
