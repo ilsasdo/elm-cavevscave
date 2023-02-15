@@ -156,10 +156,10 @@ moreOrangeRooms : PlayerBoard -> Tile -> Bool
 moreOrangeRooms player tile =
     let
         orangeCount =
-            player.rooms |> List.filter (\t -> t.tileType == Orange) |> List.length
+            player.rooms |> List.filter (\t -> t.tileType == Orange && (t.status == Available || t.status == Active)) |> List.length
 
         blueCount =
-            player.rooms |> List.filter (\t -> t.tileType == Blue) |> List.length
+            player.rooms |> List.filter (\t -> t.tileType == Blue && (t.status == Available || t.status == Active)) |> List.length
     in
     if tile.tileType == Blue then
         orangeCount > (blueCount + 1)
@@ -171,7 +171,7 @@ moreOrangeRooms player tile =
 playerHasEquipment : PlayerBoard -> Tile -> Bool
 playerHasEquipment player tile =
     player.rooms
-        |> List.filter (\t -> t.status == Available)
+        |> List.filter (\t -> t.status == Available || t.status == Active)
         |> List.filter (\t -> t.title == tile.title)
         |> List.length
         |> (<) 0
