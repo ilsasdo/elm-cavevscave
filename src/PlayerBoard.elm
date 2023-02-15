@@ -135,7 +135,7 @@ placeRoom tile tileToPlace player =
         , rooms =
             List.map
                 (\r ->
-                    if r.title == tile.title then
+                    if r.title == tile.title && r.status == Empty then
                         tileToPlace
 
                     else
