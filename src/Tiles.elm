@@ -233,8 +233,8 @@ viewAction tile resources action =
         div [ class ("action notdoable " ++ action.classes) ] []
 
 
-consumeAction : Tile -> Action -> Tile
-consumeAction tile action =
+consumeAction : Action -> Tile -> Tile
+consumeAction action tile  =
     { tile
         | actions =
             tile.actions

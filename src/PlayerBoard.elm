@@ -82,7 +82,7 @@ doAction : Tile -> Action -> PlayerBoard -> PlayerBoard
 doAction tile action player =
     let
         consumedTile =
-            Tiles.consumeAction tile action
+            Tiles.consumeAction action tile
     in
     { player
         | resources = action.do player.resources |> applyRettingRoom player
@@ -95,7 +95,7 @@ updateTile : Tile -> List Tile -> List Tile
 updateTile tile tiles =
     List.map
         (\r ->
-            if r.title == tile.title then
+            if r.title == tile.title && r.status == tile.status then
                 tile
 
             else
