@@ -158,12 +158,12 @@ updateWalls walls tiles =
 
 
 updateTileWalls : Array Wall -> Int -> Tile -> Tile
-updateTileWalls walls index tile =
+updateTileWalls walls tileIndex tile =
     if tile.status /= Empty then
         tile
 
     else
-        case index of
+        case tileIndex of
             0 ->
                 { tile | walls = Game.Walls Game.Placed (Walls.get 0 walls) (Walls.get 1 walls) Game.Placed }
 
@@ -186,7 +186,7 @@ updateTileWalls walls index tile =
                 { tile | walls = Game.Walls (Walls.get 7 walls) (Walls.get 9 walls) (Walls.get 10 walls) Game.Placed }
 
             7 ->
-                { tile | walls = Game.Walls (Walls.get 8 walls) Game.Placed (Walls.get 9 walls) (Walls.get 11 walls) }
+                { tile | walls = Game.Walls (Walls.get 8 walls) Game.Placed (Walls.get 11 walls) (Walls.get 9 walls) }
 
             8 ->
                 { tile | walls = Game.Walls (Walls.get 10 walls) (Walls.get 12 walls) Game.Placed Game.Placed }
